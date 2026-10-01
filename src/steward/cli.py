@@ -157,6 +157,54 @@ def cmd_lineage(args: argparse.Namespace) -> int:
     return code
 
 
+def cmd_catalog(args: argparse.Namespace) -> int:
+    """Claim 4's gate: the generated catalog is accepted by the validating mock, a second sync sends nothing,
+    the reconciliation is empty, ownership and classification read back right."""
+    from steward import catalog_sync, pipeline
+    from steward.core.findings import report
+
+    e = pipeline.load()
+    findings = catalog_sync.gate(e)
+    print(
+        f"catalog (MOCK, in memory): {len(catalog_sync.desired(e))} commands generated from {len(e.contracts)} contracts"
+    )
+    code, lines = report("catalog", findings)
+    print("\n".join(lines))
+    return code
+
+
+def cmd_sync(args: argparse.Namespace) -> int:
+    """Claim 4: build the catalog from the estate, send only what changed (twice -> 0), report the mode."""
+    import json
+    from pathlib import Path
+
+    from steward import catalog_sync, pipeline
+
+    if args.mode == "real":
+        print(
+            "REAL mode needs a Collibra trial instance (DAY-ONE step 7, T024): the read-back and the instance id map "
+            "are not built yet. Nothing was sent. The mock stands, and says so on every surface."
+        )
+        return 2
+    client = catalog_sync.mock(Path(args.state))
+    rep = catalog_sync.sync(client, pipeline.load(), args.at)
+    client.save()  # also a failed run: the run log is how STALE knows the last good sync
+    print(json.dumps(rep, indent=2))
+    return 0 if rep["status"] == "ok" else 1
+
+
+def cmd_reconcile(args: argparse.Namespace) -> int:
+    """Claim 4: the reconciliation report — what GCP has that the catalog lacks, and the reverse."""
+    import json
+    from pathlib import Path
+
+    from steward import catalog_sync, pipeline
+
+    rep = catalog_sync.reconcile(catalog_sync.mock(Path(args.state)), pipeline.load(), args.at)
+    print(json.dumps(rep, indent=2))
+    return 0 if not (rep["in_gcp_not_in_catalog"] or rep["in_catalog_not_in_gcp"] or rep["in_both_differing"]) else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="steward", description=__doc__)
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -180,7 +228,21 @@ def main(argv: list[str] | None = None) -> int:
     )
     ln.add_argument("--lookml", help="LookML project root (default: lookml/)")
     ln.add_argument("--jobs", help="job history JSON (default: the labelled fixture)")
+    sub.add_parser("catalog", help="claim 4: the generated catalog is valid, idempotent, reconciled, owned")
+    sy = sub.add_parser("sync", help="claim 4: generate the catalog from the estate and send only what changed")
+    sy.add_argument(
+        "--mode", choices=["mock", "real"], default="mock", help="mock (default, validating) or real Collibra"
+    )
+    sy.add_argument("--state", default="out/collibra-mock.json", help="the mock's state file")
+    sy.add_argument("--at", default=None, help="ISO timestamp of the run (default: now, UTC)")
+    rc = sub.add_parser("reconcile", help="claim 4: in GCP not in the catalog · in the catalog not in GCP · differing")
+    rc.add_argument("--state", default="out/collibra-mock.json", help="the mock's state file")
+    rc.add_argument("--at", default=None, help="ISO timestamp of the run (default: now, UTC)")
     args = parser.parse_args(argv)
+    if getattr(args, "at", "x") is None:
+        from datetime import UTC, datetime
+
+        args.at = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     if args.cmd == "version":
         from steward import __version__
 
@@ -194,6 +256,9 @@ def main(argv: list[str] | None = None) -> int:
         "marketplace": cmd_marketplace,
         "retention": cmd_retention,
         "lineage": cmd_lineage,
+        "catalog": cmd_catalog,
+        "sync": cmd_sync,
+        "reconcile": cmd_reconcile,
     }[args.cmd](args)
 
 

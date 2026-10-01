@@ -163,3 +163,33 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   IMEI, e-mail or IBAN is pseudonymised data (GDPR Art. 4(5)): enumerable, so reversible. It is acceptable
   as a join key and is reported as `PSEUDONYMISED_ID_ON_DASHBOARD` (warn) wherever it is displayed — the
   pseudonymisation-vs-anonymisation line the interview rehearses (scenario 158).
+- **B20 — The catalog payload follows the Import API guide as read on 2026-10-01, which changed four things
+  the first draft assumed.** (1) A relation key is the fully qualified form
+  `Column:is part of:contains:Table:TARGET` (or an id / `PUBLIC_ID:` form), not `is part of:TARGET`.
+  (2) A responsibility names a role and a user group **by id** (`{"userGroup": {"id": …}}`); a group name is
+  not accepted. (3) Responsibilities live on the **domain**: asset-level responsibilities are off by default
+  in Collibra Console and an import that sets them errors — the mock behaves like the default, and each
+  dataset's domain carries Owner / Steward / Custodian. (4) With `attributesAction=REPLACE` the Import API
+  leaves attributes a command omits, so a value that stops applying (a column's "Proposed Classification"
+  once a contract declares it) would stay in the catalog and be read as current: every asset of a type
+  always carries the same attribute set and an expired value is overwritten with an explicit "none". The
+  client states `continueOnError=false` itself because the instance default changed in Collibra 2026.07
+  (`true` from then), and treats only `COMPLETED`/`SUCCESS` as a sync — `COMPLETED_WITH_ERROR` and `ABORTED`
+  committed part of it. **Not confirmed:** the `/rest/2.0` prefix, whether a create needs top-level
+  `name`/`domain` beside `identifier`, and the relation types themselves (Steward's own vocabulary; an
+  instance maps them in `catalog/collibra.instance.yaml`). T024 settles these.
+- **B21 — "Last reconciled" is a property of the run, not of the asset.** Writing a timestamp on every
+  asset every run would make a second sync "change" everything. Instead: `Last Changed` is stamped only on
+  assets whose content changed; every run — including one that sent nothing, and one that failed — is
+  appended to the mock's run log with its mode; the community and every domain description say
+  `catalog mode: MOCK|REAL`; the STALE marker is computed from the run log. The catalog entry therefore
+  shows when it last *changed* and from which mode; when it was last *reconciled* is in the sync report and
+  the demo's Catalog page. (Doctrine 2 asks that a catalog entry say when it was last reconciled; this is the
+  closest reading that keeps claim 4's idempotency, and it is stated here rather than hidden.)
+- **B22 — The catalog never deletes.** An asset in the catalog that GCP no longer has is listed by the
+  reconciliation (`in_catalog_not_in_gcp`) and stays until a human retires it (doctrine 4). A dataset whose
+  tables a log sink creates on first write (B15) is catalogued before they exist and listed under
+  `pending_first_write` instead of as drift; once the sink writes, the live harvest contains it.
+- **B23 — Directory ids are derived, fictional, and the mock's only source of identity.** The 10 contract
+  groups map to `uuid5` ids in `catalog/collibra.yaml`; a contract naming a group not listed stops the build
+  (`OWNER_GROUP_UNKNOWN`). Steward assigns groups, never individual users: the mock refuses `user`.
