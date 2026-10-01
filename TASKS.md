@@ -226,7 +226,7 @@ closes        BigQuery datasets (EU location), partitioned + clustered tables, n
 out_of_scope  governance controls
 stop_at       row counts match the generator
 review        no
-status        open
+status        written + validated; seats are service accounts (no human identity); apply and data load wait for the author's go (hard stop)
 ```
 
 ```
@@ -238,7 +238,7 @@ closes        compiled controls applied; three role transcripts of one query cap
 out_of_scope  —
 stop_at       transcripts shown
 review        yes
-status        open
+status        terraform generated + validated (compiled controls, data-transfer agent grant); apply + three role transcripts wait for the author's go (hard stop)
 ```
 
 ```
@@ -251,7 +251,7 @@ closes        DLP findings on row-limited samples captured; core detector vs DLP
 out_of_scope  de-identification of full tables
 stop_at       comparison shown
 review        yes
-status        open
+status        DLP inspect template generated + validated; sampled inspection and the comparison with the core detector need the live estate (hard stop)
 ```
 
 ```
@@ -264,7 +264,7 @@ closes        BigQuery-job lineage captured from Dataplex; one DQ scan per key t
 out_of_scope  Composer / OpenLineage-from-Airflow (deferred)
 stop_at       evidence shown
 review        no
-status        open
+status        Dataplex DQ scans generated + validated (contract rules on untagged columns only); lineage capture and aspects need the live estate (hard stop)
 ```
 
 ```
@@ -277,7 +277,7 @@ closes        one listing; one approved request → IAM binding with Condition e
 out_of_scope  —
 stop_at       evidence shown
 review        yes
-status        open
+status        terraform generated + validated (exchange, listing, expiring grants, audit sink); live capture waits for the author's go (hard stop)
 ```
 
 ```

@@ -359,6 +359,7 @@ def compile_controls(contracts: list[Contract], roles: Roles, harvest: dict) -> 
     # ── governance ─────────────────────────────────────────────────────────────────────────────
     gov: dict = {"resource": {}, "data": {}, "locals": {}}
     G = gov["resource"]
+    gov["data"]["google_project"] = {"this": {"project_id": "${var.project_id}"}}  # the Data Transfer agent's address
     gov["data"]["google_parameter_manager_parameter_version"] = {
         "estate": {"parameter": "steward-estate", "parameter_version_id": "${var.estate_version}"}
     }
