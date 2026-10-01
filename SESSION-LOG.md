@@ -172,3 +172,29 @@
   κάθε explore· τρεις παλιές διατυπώσεις «k-anonymity»· τεστ + μετάλλαξη για LINEAGE_UNTRACED· εργασίες
   ιστορικού χωρίς ημερομηνία ή με μελλοντική απορρίπτονται.
 - **Ανοιχτό:** ιστορικό εργασιών live (T015)· Looker API μόνο με trial (D3).
+
+### 2026-10-01 · T021 — claim 4, κατάλογος που παράγεται, είναι ιδεμποτέντ και συμφιλιώνεται (mock)
+- **Έκλεισε:** `core/catalog.py` (καθαρό): χτίζει από contracts + harvest κοινότητα, domains, assets
+  (Schema/Table/Column/Report/Business Term), σχέσεις και responsibilities· diff μόνο στα πεδία που γράφει
+  το Steward· `reconcile` με έξι κατηγορίες απόκλισης. `adapters/collibra/mock.py`: validating mock με
+  ατομικό import (staged deepcopy) που απορρίπτει άγνωστους τύπους, ελλείποντα υποχρεωτικά attributes,
+  dangling relations, σχέσεις σε συντομογραφία, άγνωστους ρόλους/principals (18 κωδικοί απόρριψης).
+  `client.py` (REAL): γραμμένο σύμφωνα με το Import API, **δεν έχει τρέξει ποτέ σε πραγματικό instance**
+  (`sync --mode real` βγαίνει με 2 και δεν στέλνει τίποτα). `catalog_sync.py`: sync, reconcile, stale
+  marker (24 ώρες, γράφεται και στον κατάλογο), πύλη. CLI: `catalog`, `sync`, `reconcile`.
+- **Απόδειξη:** `make evals` (claim 4, σενάρια A–G: καθαρό· 20 περιπτώσεις άρνησης· drift· νέα έκδοση
+  contract με ιστορικό· αποτυχία + stale marker· χωρίς προεπιλεγμένο owner· ανθρώπινα πεδία)· `steward
+  catalog` στο `make check`· `tests/test_catalog.py` (20)· gate-proof με 10 μεταλλάξεις στο `catalog` και 22
+  στο `catalog-eval`, όλες αρνημένες από την ονομασμένη πύλη για τον σωστό λόγο.
+- **Review (επίπεδο 2, φρέσκο context):** 11 ευρήματα — σοβαρότερα: (1) η σύγκριση δεν ήταν ιδεμποτέντ όταν
+  κάποιος πρόσθετε ξένα attributes/owners στο Collibra → diff «owned keys» (B24)· (2) παραγόμενα assets που
+  δεν παράγονται πια έμεναν ανεπαίσθητα → `in_catalog_not_generated`· (3) «δεν βρέθηκαν προσωπικά δεδομένα»
+  για στήλες που δεν είχαν σαρωθεί → «Not scanned» και σάρωση όλων των αδήλωτων στηλών· (4) το gate
+  διάβαζε το payload και όχι τον κατάλογο → ανάγνωση πίσω (read-back)· (5) ελλιπείς μεταλλάξεις· (6) το mock
+  δεν επικύρωνε σχήματα· (7) ο sync δεν ήταν φρουρούμενος και ο stale marker δεν γραφόταν στον κατάλογο·
+  (8) όροι glossary γεννιόντουσαν Accepted (B25)· (9–11) client, λήξη pending, τρόπος (B26–B27).
+- **Πέρασμα επαλήθευσης:** 5 μεταλλάξεις βρέθηκαν STALE ή με λάθος λόγο μετά τις διορθώσεις (μία μάλιστα
+  έπεφτε σε KeyError του eval αντί της πύλης)· ξαναγράφτηκαν, και προστέθηκε ξεχωριστή μετάλλαξη για την
+  πραγματική μη-ιδεμποτένσια (`if False:` στη σύγκριση) αντί να ταυτίζεται με τη VOLATILE.
+- **Ανοιχτό:** πραγματικό Collibra μόνο με trial (T024)· το operating model είναι δικό μας, όχι παρατηρημένο·
+  `client.current()` δεν υλοποιείται (T024).

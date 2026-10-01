@@ -173,7 +173,7 @@ closes        `adapters/collibra/payload.py` builds communities/domains/assets/r
 out_of_scope  real Collibra (only if a trial exists — T024)
 stop_at       reconciliation report shown
 review        yes
-status        open
+status        closed (2026-10-01) — built in core/catalog.py + catalog_sync.py rather than payload.py; see SESSION-LOG
 ```
 
 ```
