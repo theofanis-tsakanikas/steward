@@ -10,15 +10,23 @@ and a business catalog (Collibra) is supposed to describe it. A new governance t
 estate declare itself and keep the catalog honest. Steward is that team's tooling.
 
 ## The data (synthetic, seeded, deterministic)
-| Table | Grain | Interesting columns | Why it is hard |
-|---|---|---|---|
-| `customers` | one row per customer | `customer_id`, `full_name`, `email`, `msisdn`, `birth_date`, `address` (STRUCT), `country`, `segment`, `consent` (STRUCT) | direct identifiers; nested address; consent as data |
-| `customers.contracts` | ARRAY<STRUCT> inside `customers` | `plan`, `start_date`, `end_date`, `status`, `monthly_fee` | nested one-to-many; UNNEST double-counting trap |
-| `usage_events` | one row per event, partitioned by `event_date`, clustered by `msisdn`, `cell_id` | `msisdn`, `imsi`, `cell_id`, `event_type` (voice/sms/data), `volume_mb`, `duration_s` | **traffic and location data** — a stricter category (ePrivacy), not only GDPR |
-| `network_events` | one row per device attach | `imei` (Luhn-valid), `imsi`, `cell_id`, `ts` | device identifiers that look like plain numbers |
-| `billing` | one row per invoice | `invoice_id`, `customer_id`, `iban`, `amount`, `due_date` | financial identifiers; retention driven by tax law |
-| `support_tickets` | one row per ticket | `ticket_id`, `customer_id`, `notes_free_text`, `ref_2` | **PII planted in free text and in a column named `ref_2`** — claim 1's trap |
-| `legacy_crm_export` | one undocumented table | cryptic column names, no contract | scenario 161: reverse-engineering metadata from a legacy system |
+The operator is **Halverra Telecom** (fictional; see `docs/DECISIONS.md` B1). `synthetic/generate.py`
+(seed `20261001`, anchor date 2026-09-30) writes these tables; `synthetic/data/_schema.json` is the
+authoritative schema and this table is checked against it by hand at every schema change.
+
+| Table | Rows | Grain | Interesting columns | Why it is hard |
+|---|---|---|---|---|
+| `crm.customers` | 600 | one row per customer | `customer_id`, `full_name`, `email`, `msisdn`, `birth_date`, `address` (STRUCT street/city/postcode), `country`, `segment`, `consent` (STRUCT marketing/profiling/updated_at), `created_at` | direct identifiers; nested address; consent as data |
+| `crm.customers.contracts` | 1–3 per customer | ARRAY<STRUCT> inside `customers` | `contract_id`, `plan`, `start_date`, `end_date`, `status`, `monthly_fee` | nested one-to-many; UNNEST double-counting trap |
+| `crm.support_tickets` | 400 | one row per ticket | `ticket_id`, `customer_id`, `notes_free_text`, `ref_2`, `country` | **PII planted in free text (~22% of notes: MSISDN, email, birth date, IBAN) and in `ref_2` (~80% MSISDNs)** — claim 1's trap |
+| `network.usage_events` | 6,000 | one row per event, partitioned by `event_date`, clustered by `msisdn`, `cell_id` | `msisdn`, `imsi`, `cell_id`, `country`, `event_type` (voice/sms/data), `volume_mb`, `duration_s` | **traffic and location data** — a stricter category (ePrivacy), not only GDPR |
+| `network.network_events` | 3,000 | one row per device attach, partitioned by `event_date` | `imei` (Luhn-valid), `imsi`, `cell_id`, `country`, `rat` | device identifiers that look like plain numbers |
+| `finance.billing` | 1,802 | one row per invoice, partitioned by `issue_date` | `invoice_id`, `customer_id`, `iban` (valid mod-97), `amount`, `due_date`, `country` | financial identifiers; retention driven by tax law; planted defects (negative amounts, orphan customers, two duplicate invoices) |
+| `legacy.legacy_crm_export` | 150 | one undocumented table | `k_id`, `nm_1`, `tel_a` (spaced `0030 …` numbers), `fld_7` (IBAN), `dt_x` (DD/MM/YYYY birth dates), `adr_l1`, `cd_s`, `upd` | scenario 161: reverse-engineering metadata from a legacy system; no contract |
+
+Identifiers are random numbers in the right *shape* with real check digits (IBAN mod-97, IMEI Luhn).
+MCCs are the real country codes; MNCs are `97`, chosen to be unlikely to name a real network (not
+verified against the ITU list). E-mail domains are the reserved `example.*` domains.
 
 The generator also writes `synthetic/_planted.json`: where PII was planted. **The detector never reads it**; only the eval does.
 

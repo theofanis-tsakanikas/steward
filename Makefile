@@ -30,6 +30,7 @@ claims: evals ## alias of evals (portfolio Makefile contract)
 
 check: ## every structural gate + every generator in --check mode
 	$(PY) scripts/check_core_purity.py
+	$(PY) synthetic/generate.py --check
 	$(PY) scripts/generate.py --check
 
 gate-proof: ## plant violations; the NAMED gate must refuse each one
@@ -44,6 +45,9 @@ contracts-validate: ## contracts load and cross-check
 
 synthetic: ## regenerate the fictional operator's data (seeded, deterministic)
 	$(PY) synthetic/generate.py
+
+synthetic-sample: ## print 20 rows per synthetic table
+	$(PY) synthetic/sample.py 20
 
 generate: ## regenerate every generated artefact from contracts
 	$(PY) scripts/generate.py
