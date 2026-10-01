@@ -234,3 +234,7 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   Collibra mode. A live mode (reading the running estate) waits for phase 3 (T017); until `evidence/live/`
   exists the demo cannot silently show anything but the offline fixture. Streamlit is pinned `>=1.50` for
   `width="stretch"`; the Lineage graph uses `st.graphviz_chart` (rendered in the browser, no network).
+- **B32 — gitleaks allowlists `evidence/MANIFEST.json` by path, and nothing else.** The manifest maps file
+  names to SHA-256 digests; a name such as `fixture/access.json` made `generic-api-key` read the digest as a
+  credential. The allowlist is the one file the evidence writer produces; every other evidence file is
+  still scanned, and the defaults stay on.

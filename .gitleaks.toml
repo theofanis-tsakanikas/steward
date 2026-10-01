@@ -1,0 +1,7 @@
+# Gitleaks reads this file from the repository root. Defaults stay on.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "evidence/MANIFEST.json lists SHA-256 digests keyed by file name; a key such as fixture/access.json trips generic-api-key. It holds no secret by construction (steward evidence writes it)."
+paths = ['''evidence/MANIFEST\.json''']
