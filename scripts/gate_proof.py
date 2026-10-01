@@ -259,9 +259,16 @@ def run_all(selected: list[Mutation]) -> tuple[list[dict], bool]:
             text = path.read_text()
             if text.count(m.find) != m.count:
                 found = text.count(m.find)
-                status, detail = "STALE", (
-                    f"target text found {found}× in {m.file}, expected exactly {m.count}× — "
-                    + ("the mutation would change nothing" if not found else "an ambiguous target can silently hit the wrong line")
+                status, detail = (
+                    "STALE",
+                    (
+                        f"target text found {found}× in {m.file}, expected exactly {m.count}× — "
+                        + (
+                            "the mutation would change nothing"
+                            if not found
+                            else "an ambiguous target can silently hit the wrong line"
+                        )
+                    ),
                 )
             else:
                 path.write_text(text.replace(m.find, m.replace, m.count))
