@@ -238,3 +238,37 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   names to SHA-256 digests; a name such as `fixture/access.json` made `generic-api-key` read the digest as a
   credential. The allowlist is the one file the evidence writer produces; every other evidence file is
   still scanned, and the defaults stay on.
+- **B33 — Bootstrap: one pool, one provider, two doors, no key.** `infra/bootstrap/` is applied once from a
+  laptop (local state, then the state bucket for every other layer). It enables the APIs, creates the state
+  bucket, one Workload Identity pool and provider for this GitHub repository, two CI service accounts, the budget
+  and the cost guard. The trust is `repository_owner_id && repository_id && repository && ref == main &&
+  environment in [deploy, destroy]`; `scripts/check_oidc_subjects.py` compares that block with the expected text
+  clause by clause (a substring search would pass `||`, an unapplied condition and a clause pinned to the
+  wrong variable — a hostile review demonstrated all three), and nine gate-proof mutations make it refuse.
+- **B34 — Environments are where trust becomes people.** A condition can pin an environment's *name*; whether a
+  job may run in it is a repository setting (required reviewer, deployment branches = `main`). It has no
+  Terraform in this project, so it is DAY-ONE step 6b. Until it is done, anyone with write access can start a
+  run on `main` in that environment: the trust is necessary, not sufficient.
+- **B35 — Two CI identities, not one.** `steward-deployer` (environment `deploy`) and `steward-destroyer`
+  (environment `destroy`) hold the same project roles but are bound to different environments. The budget guard
+  disables only the deployer, so a spend stop can never close the way to take the estate down. They are equally
+  powerful; the split is about availability under a stop, not least privilege.
+- **B36 — The deployer is effectively project owner, and the files say so.** `projectIamAdmin` lets it grant
+  itself any role; `serviceAccountTokenCreator` lets it become any service account. The compensating controls
+  are the trust condition, the environment reviewer, a dedicated project with a ceiling and an end date, and
+  `make destroy` — **not the guard** (the deployer can alter it; an earlier comment claimed otherwise).
+  *Deferred, unlock = a project to test on:* narrowing the grants with an IAM Condition on
+  `iam.googleapis.com/modifiedGrantsByRole`, and scoping `storage.admin` to the landing bucket. Both need a
+  first apply to learn which roles the layers really grant; a wrong condition fails the apply on denials.
+- **B37 — The guard fails safe on every unreadable input, and stops below the ceiling.** A notification that
+  cannot be decoded (no message, bad base64, bad JSON, not an object), has no cost, a non-numeric cost, NaN or
+  infinity — and a stop level that cannot be read — all mean stop (doctrine 1). The stop level is its own
+  variable (`stop_at`, default 45, strictly below `budget_total`) because budget data lags by hours; it also
+  sends an alert. The guard's role is a custom one (`get`, `enable`, `disable` on the deployer only); the
+  reaper has its own service account. Disabling a service account does not revoke an access token already
+  issued (about an hour).
+- **B38 — The budget period is one calendar month.** The estate lives days; across a month boundary the
+  count restarts. Accepted: the ceiling is stated for the whole project, the stop and the destroy are manual
+  and cheap, and the first week is one month. `costAmount` includes credits (`INCLUDE_ALL_CREDITS`): the guard
+  compares what would be billed. A custom period ending at `expires_at` is the stricter option if the
+  estate ever stands across a boundary.

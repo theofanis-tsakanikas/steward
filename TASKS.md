@@ -213,7 +213,7 @@ closes        terraform bootstrap/: GCS state bucket, Workload Identity pool + p
 out_of_scope  any data resource
 stop_at       author confirms budget alerts visible
 review        yes
-status        open — WRITE and validate autonomously; APPLY only after the author's go (hard stop)
+status        written + validated + reviewed (SESSION-LOG) — APPLY waits for the author's go (hard stop)
 ```
 
 ```
