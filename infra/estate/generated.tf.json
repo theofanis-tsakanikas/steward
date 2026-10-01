@@ -357,6 +357,65 @@
         "parameter_data": "${jsonencode(local.published)}",
         "parameter_version_id": "${var.publish_version}"
       }
+    },
+    "google_storage_bucket": {
+      "landing": {
+        "force_destroy": true,
+        "labels": {
+          "managed-by": "steward",
+          "project": "steward"
+        },
+        "lifecycle_rule": [
+          {
+            "action": {
+              "type": "Delete"
+            },
+            "condition": {
+              "age": 90,
+              "matches_prefix": [
+                "audit/"
+              ]
+            }
+          },
+          {
+            "action": {
+              "type": "Delete"
+            },
+            "condition": {
+              "age": 2555,
+              "matches_prefix": [
+                "crm/"
+              ]
+            }
+          },
+          {
+            "action": {
+              "type": "Delete"
+            },
+            "condition": {
+              "age": 3650,
+              "matches_prefix": [
+                "finance/"
+              ]
+            }
+          },
+          {
+            "action": {
+              "type": "Delete"
+            },
+            "condition": {
+              "age": 180,
+              "matches_prefix": [
+                "network/"
+              ]
+            }
+          }
+        ],
+        "location": "${var.location}",
+        "name": "${var.project_id}-landing",
+        "public_access_prevention": "enforced",
+        "uniform_bucket_level_access": true
+      }
     }
   }
 }

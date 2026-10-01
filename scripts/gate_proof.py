@@ -42,6 +42,8 @@ GATES: dict[str, list[str]] = {
     "quality": [PY, "-m", "steward.cli", "quality"],
     "marketplace": [PY, "-m", "steward.cli", "marketplace"],
     "marketplace-eval": [PY, "evals/run.py", "marketplace"],
+    "retention": [PY, "-m", "steward.cli", "retention"],
+    "retention-eval": [PY, "evals/run.py", "retention"],
 }
 
 
@@ -285,6 +287,36 @@ MUTATIONS: list[Mutation] = [
         ("CORE_CLOCK", "src/steward/core/marketplace.py"),
         "now comes from the evidence capture time, never from a clock the code controls (claim 6 trap)",
         "6",
+    ),
+    Mutation(
+        "partition expiry from the dataset, not the table",
+        "retention",
+        "src/steward/core/compile.py",
+        '                tp["expiration_ms"] = c.table_retention_days(tname) * DAY_MS',
+        '                tp["expiration_ms"] = c.retention.period_days * DAY_MS',
+        ("RETENTION_MISMATCH", "network.network_events"),
+        "the compiled expiry is exactly the declared period, table override included (claim 7)",
+        "7",
+    ),
+    Mutation(
+        "a row-retention DELETE never compiled",
+        "retention",
+        "src/steward/core/retention.py",
+        '            if row["mechanism"]["kind"] != "scheduled_delete":\n                continue',
+        '            if row["mechanism"]["kind"] != "scheduled_delete" or row["table"] == "support_tickets":\n                continue',
+        ("RETENTION_NOT_COMPILED", "crm.support_tickets"),
+        "a declared row retention with no DELETE behind it is a promise nobody keeps",
+        "7",
+    ),
+    Mutation(
+        "the erasure caveat dropped from the report",
+        "retention-eval",
+        "src/steward/core/retention.py",
+        '    return {"caveat": CAVEAT, "rows": rows}',
+        '    return {"caveat": "", "rows": rows}',
+        ("CAVEAT_MISSING", "first line"),
+        "the report's first line says deletion is not immediate (time travel + fail-safe)",
+        "7",
     ),
     Mutation(
         "generated Terraform edited by hand",
