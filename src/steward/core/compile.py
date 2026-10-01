@@ -278,7 +278,10 @@ def compile_controls(contracts: list[Contract], roles: Roles, harvest: dict) -> 
                 "contract-version": str(c.version),
                 "retention-days": str(c.retention.period_days),
             }
-            desc = f"{c.description} Owner {c.owner}; steward {c.steward}; custodian {c.custodian}."
+            desc = (
+                f"{c.description} Owner {c.owner}; steward {c.steward}; custodian {c.custodian}. "
+                f"Lawful basis: {c.lawful_basis}. Retention: {c.retention.period_days} days — {c.retention.legal_basis}."
+            )
         else:
             labels |= {"contract": "none"}
             desc = "No contract. Every column is tagged `restricted` and denied to every role (doctrine 1)."
