@@ -23,10 +23,12 @@ what the values are.
   2. The **log-sink dataset** (`audit`, B15): Cloud Logging creates its tables, so they cannot carry
      Terraform tags. Value-found personal data there is accepted (info) only in tables named
      `cloudaudit_googleapis_com_*` and only of the kinds the contract declares, which may only be `email`;
-     the dataset's readers are its steward alone. Any other table, or any other kind, blocks.
+     the contract validator refuses any reader but its steward and any grantable role. Any other table,
+     or any other kind, blocks.
 - **Ceilings** are part of the door: a contract cannot give a role `clear` beyond its ceiling, and raising
-  a ceiling needs an approval by a privacy-office member who did not ask for it (`CEILING_RAISED`) — so
-  "tag it, then give everyone clear" is not a way round.
+  a ceiling is a new version of `_roles.yaml` approved by someone who was an approver *before* the change
+  and is not its requester (`ROLES_CHANGE_UNAPPROVED`, `CEILING_RAISED`) — so "tag it, then give
+  everyone clear" is not a way round. That approval is an **attestation, not a signature** (ADR 0005).
 - **"Removed" means a clean scan of the whole table, or of a stated sample.** `steward scan` prints its
   row limit; a clean sample is not proof of absence, and the evidence states n.
 
@@ -34,7 +36,8 @@ what the values are.
 - `tests/test_contracts.py::test_only_contract_missing_is_waivable` (a waiver for `PII_UNTAGGED` is refused).
 - `tests/test_no_key.py` — the waiver is refused **and** the scan still blocks; the scan CLI ignores a PII
   waiver file; the gate imports nothing from the waiver machinery; removing the values clears the finding;
-  the log-sink branch is narrow; a ceiling raise needs someone else's approval.
+  the log-sink branch is narrow; a ceiling raise needs a new version approved from the base directory;
+  adding yourself to the approver group in the same PR, reusing an old approval or rewriting history fails.
 - `tests/test_classification.py::test_downgraded_ref_2_is_refused`, `::test_under_declared_kinds_are_refused`.
 - gate-proof: "waiver for personal data" → `WAIVER_REFUSED`; "the tag removed from ref_2" → `PII_UNTAGGED`.
 

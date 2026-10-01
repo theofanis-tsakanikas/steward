@@ -1,3 +1,15 @@
+# This file is governance, so it is versioned like a contract. Any change to it — a directory member, the
+# approver group, a seat, a ceiling — is a new version whose `changes` entry names who asked and who
+# approved. scripts/check_contract_versions.py checks it against the BASE commit: the approver must have
+# been in the base commit's approver group (no adding yourself in the same PR), must not be the requester,
+# and every ceiling kind added must be listed in `ceilings_added` (CEILING_RAISED otherwise). An entry is an
+# attestation, not a signature (ADR 0007).
+version: 1
+changes:
+  - {version: 1, date: "2026-10-01", change: "roles, ceilings, seat groups and directory as first declared",
+     requested_by: "user:katerina.vasileiou@halverra.example", approved_by: "user:dimitris.nikolaou@halverra.example",
+     ceilings_added: [{role: fraud_investigator, kinds: [msisdn, imsi, imei, customer_key, location]}]}
+
 # Roles are the unit every contract speaks in. A role is never a person: principals are bound to
 # roles per environment (config/principals.<env>.yaml), so a contract is the same text offline,
 # in a test project and in production.
@@ -23,9 +35,7 @@ roles:
 # Ceilings: the most any contract may give a role on a tagged column. A role may see a tagged column
 # in `clear` only if every kind the column declares is in its `clear_kinds`; `special` data is never
 # clear for anyone. A contract that exceeds a ceiling fails the access gate. Raising a ceiling is not an
-# edit but an approval: every kind added since the base commit needs a `ceiling_changes` entry approved by
-# a member of the waiver-approver group who is not its requester (scripts/check_contract_versions.py,
-# CEILING_RAISED) — so a ceiling cannot be raised in the same PR that uses it without a named approver.
+# edit but an approval: see `changes` below.
 ceilings:
   analyst: {clear_kinds: []}
   steward: {clear_kinds: []}
@@ -42,8 +52,6 @@ seat_groups:
   fraud_investigator: group:fraud-investigators@halverra.example
   bi_service: group:bi-service@halverra.example
 
-# Approved raises of a ceiling, append-only. Empty: no ceiling has been raised since the first one.
-ceiling_changes: []
 
 # Who may approve a waiver (doctrine 6). Never the requester, never an owner of what is waived.
 waiver_approvers: group:privacy-office@halverra.example
