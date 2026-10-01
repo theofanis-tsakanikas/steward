@@ -1,0 +1,76 @@
+# BigQuery dataset `network`: traffic and location data. ePrivacy Directive Art. 6 and 9 make this
+# stricter than ordinary personal data, so identifiers here are `sensitive-network`.
+dataset: network
+version: 1
+description: Usage (traffic) events and device attach events of Halverra Telecom (fictional).
+owner: group:network-owners@halverra.example
+steward: group:network-stewards@halverra.example
+custodian: group:data-platform@halverra.example
+lawful_basis: "ePrivacy Directive 2002/58/EC Art. 6(2) — traffic data for billing and interconnection"
+retention:
+  period_days: 180
+  legal_basis: "ePrivacy Art. 6(1): erase or anonymise when no longer needed; 180 days for billing disputes (illustrative)"
+marketplace:
+  listable: true
+  approvers: group:network-owners@halverra.example
+  max_grant_days: 14
+  grantable_roles: [analyst, fraud_investigator]
+changelog:
+  - {version: 1, date: "2026-10-01", change: "first contract"}
+
+tables:
+  usage_events:
+    description: One row per voice, SMS or data event. Partitioned by event_date, clustered by msisdn and cell_id.
+    primary_key: [event_id]
+    retention: {mode: partition, column: event_date}
+    row_access: {column: country}
+    freshness: {id: Q-NET-001, column: event_date, max_age_days: 3}
+    columns:
+      event_id:
+        {type: STRING, classification: internal, description: "Event identifier.",
+         quality: [{id: Q-NET-002, kind: completeness}, {id: Q-NET-003, kind: uniqueness}]}
+      event_date: {type: DATE, classification: internal, description: "Event date (partition column)."}
+      event_ts: {type: TIMESTAMP, classification: internal, description: "Event timestamp, UTC."}
+      msisdn:
+        {type: STRING, classification: sensitive-network, kinds: [msisdn], description: "Subscriber number of the event.",
+         masking: {analyst: hash, fraud_investigator: clear, steward: last_four, bi_service: hash},
+         quality: [{id: Q-NET-004, kind: completeness}]}
+      imsi:
+        {type: STRING, classification: sensitive-network, kinds: [imsi], description: "Subscriber identity (SIM).",
+         masking: {analyst: hash, fraud_investigator: clear, steward: nullify, bi_service: hash}}
+      cell_id:
+        {type: STRING, classification: sensitive-network, kinds: [location], description: "Serving cell — location data together with the timestamp.",
+         masking: {analyst: nullify, fraud_investigator: clear, steward: nullify, bi_service: hash}}
+      country:
+        {type: STRING, classification: internal, description: "Country of the network.",
+         quality: [{id: Q-NET-005, kind: validity, allowed: [GR, IT, DE]}]}
+      event_type:
+        {type: STRING, classification: internal, description: "voice | sms | data.",
+         quality: [{id: Q-NET-006, kind: validity, allowed: [voice, sms, data]}]}
+      volume_mb:
+        {type: FLOAT, classification: internal, description: "Data volume, MB.",
+         quality: [{id: Q-NET-007, kind: validity, min: 0}]}
+      duration_s: {type: INTEGER, classification: internal, description: "Call duration, seconds."}
+
+  network_events:
+    description: One row per device attach to the network. Partitioned by event_date.
+    primary_key: [attach_id]
+    retention: {mode: partition, column: event_date, period_days: 90}
+    row_access: {column: country}
+    columns:
+      attach_id:
+        {type: STRING, classification: internal, description: "Attach event identifier.",
+         quality: [{id: Q-NET-010, kind: uniqueness}]}
+      event_date: {type: DATE, classification: internal, description: "Attach date (partition column)."}
+      ts: {type: TIMESTAMP, classification: internal, description: "Attach timestamp, UTC."}
+      imei:
+        {type: STRING, classification: sensitive-network, kinds: [imei], description: "Device identity (handset).",
+         masking: {analyst: hash, fraud_investigator: clear, steward: nullify, bi_service: hash}}
+      imsi:
+        {type: STRING, classification: sensitive-network, kinds: [imsi], description: "Subscriber identity (SIM).",
+         masking: {analyst: hash, fraud_investigator: clear, steward: nullify, bi_service: hash}}
+      cell_id:
+        {type: STRING, classification: sensitive-network, kinds: [location], description: "Cell the device attached to.",
+         masking: {analyst: nullify, fraud_investigator: clear, steward: nullify, bi_service: hash}}
+      country: {type: STRING, classification: internal, description: "Country of the network."}
+      rat: {type: STRING, classification: internal, description: "Radio access technology: 4G | 5G."}

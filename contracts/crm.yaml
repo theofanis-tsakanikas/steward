@@ -1,0 +1,112 @@
+# The single source of truth for BigQuery dataset `crm`. Every control, catalog asset and quality
+# rule for these tables is generated from this file. Change it → bump `version`, add a changelog line.
+dataset: crm
+version: 1
+description: Customer master data and customer-service tickets of Halverra Telecom (fictional).
+owner: group:crm-owners@halverra.example
+steward: group:crm-stewards@halverra.example
+custodian: group:data-platform@halverra.example
+lawful_basis: "GDPR Art. 6(1)(b) — performance of the subscription contract"
+retention:
+  period_days: 2555
+  legal_basis: "GDPR Art. 5(1)(e) storage limitation; 7 years after the last contract ends (illustrative, not a legal determination)"
+marketplace:
+  listable: true
+  approvers: group:crm-owners@halverra.example
+  max_grant_days: 30
+  grantable_roles: [analyst, fraud_investigator]
+changelog:
+  - {version: 1, date: "2026-10-01", change: "first contract"}
+
+tables:
+  customers:
+    description: One row per customer, with the customer's contracts nested as a repeated record.
+    primary_key: [customer_id]
+    retention:
+      mode: row
+      column: contracts.end_date
+      rule: "delete a customer once every contract has ended more than period_days ago"
+    row_access: {column: country}
+    columns:
+      customer_id:
+        {type: STRING, classification: personal, kinds: [customer_key], description: "Pseudonymous customer key; personal data because crm.customers re-identifies it.",
+         masking: {analyst: hash, fraud_investigator: clear, steward: hash, bi_service: hash},
+         quality: [{id: Q-CRM-001, kind: completeness}, {id: Q-CRM-002, kind: uniqueness}]}
+      full_name:
+        {type: STRING, classification: personal, kinds: [person_name], description: "Customer's full name.",
+         masking: {analyst: nullify, fraud_investigator: nullify, steward: nullify, bi_service: nullify}}
+      email:
+        {type: STRING, classification: personal, kinds: [email], description: "Contact e-mail address.",
+         masking: {analyst: email_mask, fraud_investigator: nullify, steward: email_mask, bi_service: hash}}
+      msisdn:
+        {type: STRING, classification: personal, kinds: [msisdn], description: "Primary mobile number, E.164.",
+         masking: {analyst: hash, fraud_investigator: clear, steward: last_four, bi_service: hash},
+         quality: [{id: Q-CRM-003, kind: validity, regex: '^\+[0-9]{10,14}$'}]}
+      birth_date:
+        {type: DATE, classification: personal, kinds: [birth_date], description: "Date of birth.",
+         masking: {analyst: year_only, fraud_investigator: nullify, steward: year_only, bi_service: year_only}}
+      address:
+        {type: RECORD, classification: internal, description: "Postal address (container; leaves carry their own classification)."}
+      address.street:
+        {type: STRING, classification: personal, kinds: [address], description: "Street and number.",
+         masking: {analyst: nullify, fraud_investigator: nullify, steward: nullify, bi_service: nullify}}
+      address.city:
+        {type: STRING, classification: internal, description: "City."}
+      address.postcode:
+        {type: STRING, classification: personal, kinds: [postcode], description: "Postcode — a quasi-identifier together with birth date.",
+         masking: {analyst: nullify, fraud_investigator: nullify, steward: nullify, bi_service: nullify}}
+      country:
+        {type: STRING, classification: internal, description: "Country of the subscription (ISO 3166-1 alpha-2).",
+         quality: [{id: Q-CRM-004, kind: validity, allowed: [GR, IT, DE]}]}
+      segment:
+        {type: STRING, classification: internal, description: "consumer | business | prepaid.",
+         quality: [{id: Q-CRM-005, kind: validity, allowed: [consumer, business, prepaid]}]}
+      consent:
+        {type: RECORD, classification: internal, description: "Consent state (container)."}
+      consent.marketing: {type: BOOLEAN, classification: internal, description: "Consent to marketing contact."}
+      consent.profiling: {type: BOOLEAN, classification: internal, description: "Consent to profiling."}
+      consent.updated_at: {type: TIMESTAMP, classification: internal, description: "When consent last changed."}
+      contracts:
+        {type: RECORD, classification: internal, description: "The customer's subscription contracts (repeated)."}
+      contracts.contract_id: {type: STRING, classification: internal, description: "Contract identifier."}
+      contracts.plan: {type: STRING, classification: internal, description: "Tariff plan name."}
+      contracts.start_date: {type: DATE, classification: internal, description: "Contract start."}
+      contracts.end_date: {type: DATE, classification: internal, description: "Contract end; null while active."}
+      contracts.status:
+        {type: STRING, classification: internal, description: "active | ended.",
+         quality: [{id: Q-CRM-006, kind: validity, allowed: [active, ended]}]}
+      contracts.monthly_fee: {type: NUMERIC, classification: internal, description: "Monthly fee, EUR."}
+      created_at: {type: TIMESTAMP, classification: internal, description: "When the customer record was created."}
+
+  support_tickets:
+    description: One row per customer-service ticket. Agents type into free text.
+    primary_key: [ticket_id]
+    retention:
+      mode: row
+      column: opened_at
+      period_days: 730
+      rule: "delete tickets opened more than period_days ago"
+    row_access: {column: country}
+    columns:
+      ticket_id:
+        {type: STRING, classification: internal, description: "Ticket identifier.",
+         quality: [{id: Q-CRM-010, kind: completeness}, {id: Q-CRM-011, kind: uniqueness}]}
+      customer_id:
+        {type: STRING, classification: personal, kinds: [customer_key], description: "The customer the ticket is about.",
+         masking: {analyst: hash, fraud_investigator: clear, steward: hash, bi_service: hash},
+         quality: [{id: Q-CRM-012, kind: referential, references: crm.customers.customer_id}]}
+      opened_at: {type: TIMESTAMP, classification: internal, description: "When the ticket was opened."}
+      channel: {type: STRING, classification: internal, description: "phone | chat | store | email."}
+      category: {type: STRING, classification: internal, description: "network | billing | device | contract."}
+      notes_free_text:
+        {type: STRING, classification: personal, kinds: [msisdn, email, birth_date, iban],
+         description: "Agent's free-text notes. Agents type phone numbers, e-mails, dates of birth and IBANs here — found by value, not by name.",
+         masking: {analyst: nullify, fraud_investigator: nullify, steward: nullify, bi_service: nullify}}
+      ref_2:
+        {type: STRING, classification: personal, kinds: [msisdn],
+         description: "Meant as an internal reference; in practice agents store the callback number here.",
+         masking: {analyst: hash, fraud_investigator: clear, steward: last_four, bi_service: hash}}
+      country: {type: STRING, classification: internal, description: "Country of the customer."}
+      status:
+        {type: STRING, classification: internal, description: "open | closed.",
+         quality: [{id: Q-CRM-013, kind: validity, allowed: [open, closed]}]}
