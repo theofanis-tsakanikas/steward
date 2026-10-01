@@ -80,6 +80,33 @@ def cmd_quality(args: argparse.Namespace) -> int:
     return code
 
 
+def cmd_marketplace(args: argparse.Namespace) -> int:
+    """Claim 6's gate: judge an IAM snapshot against the ledger. Now = the snapshot's capture time."""
+    import json
+    from pathlib import Path
+
+    from steward import pipeline
+    from steward.core.findings import report
+    from steward.core.marketplace import decide, gate, load_ledger
+
+    e = pipeline.load()
+    ledger, ledger_findings = load_ledger(e.ledger)
+    if ledger is None:
+        code, lines = report("marketplace", ledger_findings)
+        print("\n".join(lines))
+        return code
+    outcomes = decide(ledger, e.contracts, e.roles)
+    snap = json.loads(Path(args.snapshot).read_text()) if args.snapshot else pipeline.iam_snapshot(e, ledger.as_of)
+    print(
+        f"snapshot: {snap.get('source', args.snapshot)}, captured {snap['captured_at']}, {len(snap['bindings'])} bindings"
+    )
+    for o in outcomes:
+        print(f"  {o.request['id']} {o.status:20} {', '.join(r.code for r in o.reasons) or ''}")
+    code, lines = report("marketplace", gate(snap, outcomes, e.contracts, e.roles))
+    print("\n".join(lines))
+    return code
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="steward", description=__doc__)
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -93,13 +120,23 @@ def main(argv: list[str] | None = None) -> int:
     q = sub.add_parser("quality", help="claim 5: rules from contracts, quarantine, source = loaded + quarantined")
     q.add_argument("--out", help="destination directory (default: a temp dir)")
     q.add_argument("--today", help="ISO date for freshness (default: the synthetic anchor date)")
+    m = sub.add_parser("marketplace", help="claim 6: requests, named approvals, expiring grants vs an IAM snapshot")
+    m.add_argument(
+        "--snapshot", help="IAM snapshot JSON (live capture); default: the compiled Terraform at the ledger's as_of"
+    )
     args = parser.parse_args(argv)
     if args.cmd == "version":
         from steward import __version__
 
         print(__version__)
         return 0
-    return {"validate": cmd_validate, "scan": cmd_scan, "compile": cmd_compile, "quality": cmd_quality}[args.cmd](args)
+    return {
+        "validate": cmd_validate,
+        "scan": cmd_scan,
+        "compile": cmd_compile,
+        "quality": cmd_quality,
+        "marketplace": cmd_marketplace,
+    }[args.cmd](args)
 
 
 if __name__ == "__main__":

@@ -31,6 +31,15 @@ ceilings:
   custodian: {clear_kinds: []}
   fraud_investigator: {clear_kinds: [msisdn, imsi, imei, customer_key, location]}
 
+# Which directory group holds each seat. A marketplace request is accepted only from a member of the
+# seat it asks for (claim 6), and the grant goes to that person, not to the whole seat.
+seat_groups:
+  analyst@GR: group:analysts-gr@halverra.example
+  analyst@IT: group:analysts-it@halverra.example
+  analyst@DE: group:analysts-de@halverra.example
+  fraud_investigator: group:fraud-investigators@halverra.example
+  bi_service: group:bi-service@halverra.example
+
 # Who may approve a waiver (doctrine 6). Never the requester, never an owner of what is waived.
 waiver_approvers: group:privacy-office@halverra.example
 
@@ -47,3 +56,8 @@ directory:
   group:data-platform@halverra.example: [serviceAccount:steward-pipeline@halverra-data.example]
   group:privacy-office@halverra.example: [user:dimitris.nikolaou@halverra.example]
   group:data-governance@halverra.example: [user:katerina.vasileiou@halverra.example]
+  group:analysts-gr@halverra.example: [user:eleni.kosta@halverra.example, user:maria.romano@halverra.example, user:anna.pappas@halverra.example]
+  group:analysts-it@halverra.example: [user:luca.ricci@halverra.example, user:sara.greco@halverra.example, user:giorgos.ioannou@halverra.example]
+  group:analysts-de@halverra.example: [user:lena.fischer@halverra.example, user:jonas.becker@halverra.example]
+  group:fraud-investigators@halverra.example: [user:paolo.marino@halverra.example]
+  group:bi-service@halverra.example: [serviceAccount:looker-connection@halverra-data.example]
