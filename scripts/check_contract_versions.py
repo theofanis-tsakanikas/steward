@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Gate (doctrine 4): every contract changed since BASE bumped its version and kept its history.
+"""Gate (doctrines 4 and 5): every contract changed since BASE bumped its version and kept its history,
+and every role ceiling raised since BASE carries an approval by someone other than its requester.
 
     python scripts/check_contract_versions.py [--base REF]
 
@@ -23,7 +24,7 @@ import yaml
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "src"))
 from steward import io  # noqa: E402
-from steward.core.versioning import compare  # noqa: E402
+from steward.core.versioning import compare, compare_roles  # noqa: E402
 
 
 def git(repo: Path, *args: str) -> subprocess.CompletedProcess:
@@ -62,6 +63,10 @@ def main(argv: list[str] | None = None, repo: Path = REPO) -> int:
     }
     new = io.contract_docs(repo / "contracts")
     findings = [f for name in sorted(set(old) | set(new)) for f in compare(name, old.get(name), new.get(name))]
+    old_roles = git(repo, "show", f"{sha}:contracts/_roles.yaml")
+    findings += compare_roles(
+        yaml.safe_load(old_roles.stdout) if old_roles.returncode == 0 else None, io.roles_doc(repo / "contracts")
+    )
     for f in findings:
         print(f.line())
     if findings:
