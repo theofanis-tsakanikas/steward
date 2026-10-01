@@ -1,25 +1,13 @@
-import ast
 import copy
-from pathlib import Path
 
 import pytest
 
 from steward import io, pipeline
 from steward.core.lifecycle import states
-from steward.core.marketplace import active_grants, decide, gate
-
-ROOT = Path(__file__).resolve().parent.parent
+from steward.core.marketplace import active_grants, decide, gate, load_ledger
 
 
-def test_no_clock_is_read():
-    """Claim 6's trap: the evaluator takes now from evidence. No now()/today()/time() call in these modules."""
-    for mod in ("marketplace.py", "lifecycle.py", "compile_marketplace.py"):
-        tree = ast.parse((ROOT / "src/steward/core" / mod).read_text())
-        calls = [n.func.attr for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)]
-        assert not {"now", "today", "utcnow", "time"} & set(calls), mod
-
-
-@pytest.fixture
+@pytest.fixture(scope="module")
 def e():
     return pipeline.load()
 
@@ -32,10 +20,70 @@ def outcome(e, ledger, rid):
     return next(o for o in decide(ledger, e.contracts, e.roles) if o.request["id"] == rid)
 
 
+def codes(o):
+    return sorted(r.code for r in o.reasons if r.severity == "error")
+
+
 def test_group_approval_is_refused(e):
     lg = _ledger()
     lg["decisions"][0]["by"] = "group:network-owners@halverra.example"
-    assert [r.code for r in outcome(e, lg, "R-001").reasons] == ["APPROVER_NOT_HUMAN"]
+    assert codes(outcome(e, lg, "R-001")) == ["APPROVER_NOT_HUMAN"]
+
+
+def test_self_approval_is_caught_across_case_and_whitespace(e):
+    lg = _ledger()
+    lg["requests"][3]["requester"] = " user:Giorgos.Ioannou@halverra.example "
+    assert "SELF_APPROVAL" in codes(outcome(e, lg, "R-004"))
+
+
+def test_unknown_requester_and_wrong_seat_are_refused(e):
+    lg = _ledger()
+    lg["requests"][0]["requester"] = "user:nobody@evil.example"
+    assert {"REQUESTER_UNKNOWN", "REQUESTER_NOT_IN_SEAT"} <= set(codes(outcome(e, lg, "R-001")))
+
+
+def test_the_grant_goes_to_the_person_not_the_seat(e):
+    grants = e.compiled["infra/marketplace/generated.tf.json"]["resource"]["google_bigquery_dataset_iam_member"]
+    assert grants["r_001"]["member"] == '${var.principals["user:eleni.kosta@halverra.example"]}'
+
+
+def test_stale_decision_is_refused(e):
+    lg = _ledger()
+    lg["decisions"][0]["at"] = "2026-12-25T00:00:00Z"
+    assert "DECISION_STALE" in codes(outcome(e, lg, "R-001"))
+
+
+@pytest.mark.parametrize("bad", [{"days": 0}, {"days": -5}, {"days": 7.5}, {"days": "7"}])
+def test_ledger_rejects_bad_days(bad):
+    lg = _ledger()
+    lg["requests"][0].update(bad)
+    assert load_ledger(lg)[0] is None
+
+
+def test_ledger_rejects_duplicates_and_orphan_decisions():
+    lg = _ledger()
+    lg["requests"].append(dict(lg["requests"][0]))
+    assert load_ledger(lg)[0] is None
+    lg = _ledger()
+    lg["decisions"].append(
+        {"request": "R-999", "decision": "approve", "by": "user:x@halverra.example", "at": "2026-09-30T00:00:00Z"}
+    )
+    assert load_ledger(lg)[0] is None
+
+
+def test_an_invalid_ledger_grants_nothing():
+    lg = _ledger()
+    lg["requests"][0]["days"] = -1
+    e2 = pipeline.load(ledger=lg)
+    assert "google_bigquery_dataset_iam_member" not in e2.compiled["infra/marketplace/generated.tf.json"][
+        "resource"
+    ] or all(
+        "condition" not in n
+        for n in e2.compiled["infra/marketplace/generated.tf.json"]["resource"][
+            "google_bigquery_dataset_iam_member"
+        ].values()
+    )
+    assert e2.ledger_findings
 
 
 def test_two_decisions_are_ambiguous(e):
@@ -57,18 +105,49 @@ def test_expired_grants_are_not_compiled(e):
 
 
 def test_active_grants_follow_as_of_not_a_clock(e):
-    outs = decide(e.ledger, e.contracts, e.roles)
+    outs = decide(load_ledger(e.ledger)[0], e.contracts, e.roles)
     assert {o.request["id"] for o in active_grants(outs, "2026-09-01T00:00:00Z")} == {"R-001", "R-002", "R-009"}
     assert {o.request["id"] for o in active_grants(outs, "2026-12-01T00:00:00Z")} == set()
 
 
-def test_standing_reader_without_condition_is_fine(e):
+@pytest.mark.parametrize(
+    "expr",
+    [
+        '!(request.time < timestamp("2026-10-09T15:00:00Z"))',
+        'request.time < timestamp("garbage")',
+        'request.time > timestamp("2026-10-09T15:00:00Z")',
+    ],
+)
+def test_unrecognised_conditions_are_refused_not_parsed(e, expr):
+    snap = {
+        "captured_at": "2026-09-30T18:00:00Z",
+        "bindings": [
+            {
+                "dataset": "network",
+                "member": "user:eleni.kosta@halverra.example",
+                "role": "roles/bigquery.dataViewer",
+                "condition": {"expression": expr},
+            }
+        ],
+    }
+    out = {f.code for f in gate(snap, decide(e.ledger, e.contracts, e.roles), e.contracts, e.roles)}
+    assert out == {"GRANT_CONDITION_UNRECOGNISED"}
+
+
+def test_standing_reader_and_custodian_are_fine(e):
     snap = pipeline.iam_snapshot(e, "2026-09-30T18:00:00Z")
-    assert any(b["seat"] == "analyst@GR" and b["dataset"] == "crm" and not b["condition"] for b in snap["bindings"])
+    assert any(b["member"] == "analyst@GR" and b["dataset"] == "crm" and not b["condition"] for b in snap["bindings"])
     assert [f for f in gate(snap, decide(e.ledger, e.contracts, e.roles), e.contracts, e.roles) if f.blocking] == []
 
 
-def test_lifecycle_never_deletes_and_waits_for_grace():
+def test_audit_dataset_has_a_contract_and_the_sink_targets_it(e):
+    assert any(c.dataset == "audit" and c.log_sink for c in e.contracts)
+    sink = e.compiled["infra/marketplace/generated.tf.json"]["resource"]["google_logging_project_sink"]["data_access"]
+    assert sink["destination"].endswith("/datasets/audit")
+    assert "audit" in e.compiled["infra/estate/generated.tf.json"]["resource"]["google_bigquery_dataset"]
+
+
+def test_lifecycle_never_deletes_and_ignores_stale_notices():
     usage = {
         "captured_at": "2026-09-30T00:00:00Z",
         "dashboards": [
@@ -85,8 +164,14 @@ def test_lifecycle_never_deletes_and_waits_for_grace():
                 "last_viewed": "2026-06-01T00:00:00Z",
                 "notified_at": "2026-09-01T00:00:00Z",
             },
+            {
+                "id": "d",
+                "owner": "group:x@halverra.example",
+                "last_viewed": "2026-06-01T00:00:00Z",
+                "notified_at": "2026-01-01T00:00:00Z",
+            },
         ],
     }
     got = {d["dashboard"]: d["state"] for d in states(usage)}
-    assert got == {"a": "notify-owner", "b": "notify-owner", "c": "archive-due"}
-    assert not any(d["delete"] for d in states(usage))
+    assert got == {"a": "notify-owner", "b": "notify-owner", "c": "archive-due", "d": "notify-owner"}
+    assert all("delete" not in d["state"] and "delete" not in d["action"] for d in states(usage))

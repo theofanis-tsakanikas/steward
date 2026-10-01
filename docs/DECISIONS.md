@@ -122,3 +122,22 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   `_routed_to`, `_failures`, `_quarantined_at` — and the source table's row access policies (an analyst
   must not read another country's quarantined rows). It has no partition expiry: it is emptied by repair,
   not by the calendar. The contracts gate does not report it as an undeclared table.
+- **B15 — A dataset filled by a log sink has a contract without tables.** The `audit` dataset holds
+  BigQuery Data Access audit logs — principals' e-mail addresses — so it is governed like any other: owner,
+  steward, custodian, lawful basis, retention (90 days, compiled as the dataset's default partition
+  expiration because Logging creates the partitioned tables), standing readers (its steward only), not
+  listed. What it does not do is enumerate columns: Cloud Logging creates and owns the tables on first
+  write. The contract declares `log_sink.personal_kinds: [email]`; the classification gate accepts those
+  kinds there (info) and blocks any other; the drift check does not report Logging's tables as undeclared.
+  Column-level tags on sink-created tables are **not** claimed. Found by the T006 review.
+- **B16 — A marketplace grant goes to the person who asked, and only a member of the seat may ask.**
+  `_roles.yaml → seat_groups` names the directory group behind each requestable seat; a request from
+  anyone outside it is REQUESTER_NOT_IN_SEAT, and the compiled IAM binding is the requester's own principal
+  (`var.principals["user:…"]`), not the seat's. Principals compare case-insensitively. The ledger is a
+  strict model (integer days > 0, unique ids, decisions only for known requests); an invalid ledger grants
+  nothing. A decision later than `max_grant_days` after its request is stale. `finance` is not listed
+  (contract v3): it is reached by standing readers only. Found by the T006 review.
+- **B17 — The core reads no clock.** `scripts/check_core_purity.py` refuses a `time` import and any
+  reference to `now`, `today`, `utcnow`, `fromtimestamp`, `time_ns`, `monotonic` or `perf_counter` anywhere
+  under `src/steward/core/` (CORE_CLOCK). "Now" is data: a capture timestamp, a ledger's `as_of`, the
+  synthetic anchor. Replaces a narrower AST test the T006 review showed could be bypassed.

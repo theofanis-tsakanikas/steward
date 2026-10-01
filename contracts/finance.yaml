@@ -1,6 +1,6 @@
 # BigQuery dataset `finance`: invoices. Retention is driven by tax law, not by GDPR alone.
 dataset: finance
-version: 2
+version: 3
 description: Invoices of Halverra Telecom (fictional).
 owner: group:finance-owners@halverra.example
 steward: group:finance-stewards@halverra.example
@@ -16,10 +16,11 @@ marketplace:
   listable: false
   approvers: group:finance-owners@halverra.example
   max_grant_days: 7
-  grantable_roles: [analyst]
+  grantable_roles: []   # not listed: finance is never requested through the marketplace
 changelog:
   - {version: 1, date: "2026-10-01", change: "first contract"}
   - {version: 2, date: "2026-10-01", change: "declare standing readers; marketplace grants only roles that are not readers; drop masking for fraud_investigator, who never reads finance"}
+  - {version: 3, date: "2026-10-01", change: "not listed, so nothing is grantable: finance is reached by standing readers only"}
 
 tables:
   billing:

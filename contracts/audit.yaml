@@ -1,0 +1,26 @@
+# BigQuery dataset `audit`: who read what. Filled by a Cloud Logging sink (BigQuery Data Access audit
+# logs), not by steward's pipeline — so its tables and columns are Logging's, created on first write,
+# and not enumerated here (DECISIONS B15). What is declared: who owns it, who may read it, how long it
+# is kept, and which personal data it holds (principals' e-mail addresses).
+dataset: audit
+version: 1
+description: BigQuery Data Access audit logs for the estate — the input to the access review.
+owner: group:privacy-office@halverra.example
+steward: group:data-governance@halverra.example
+custodian: group:data-platform@halverra.example
+lawful_basis: "GDPR Art. 6(1)(c) and Art. 32 — security of processing: a record of who read personal data"
+retention:
+  period_days: 90
+  legal_basis: "GDPR Art. 5(1)(e) storage limitation; 90 days covers a quarterly access review (illustrative)"
+readers: [steward]
+marketplace:
+  listable: false
+  approvers: group:privacy-office@halverra.example
+  max_grant_days: 7
+  grantable_roles: []
+log_sink:
+  source: "BigQuery Data Access audit logs (sink steward-data-access)"
+  personal_kinds: [email]
+changelog:
+  - {version: 1, date: "2026-10-01", change: "first contract (found by the T006 review: the audit dataset had none)"}
+tables: {}
