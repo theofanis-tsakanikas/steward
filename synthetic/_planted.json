@@ -1,0 +1,229 @@
+{
+  "_read_by": "evals only \u2014 no detector, compiler or gate may read this file",
+  "seed": 20261001,
+  "anchor_date": "2026-09-30",
+  "pii": [
+    {
+      "column": "crm.customers.address.street",
+      "kinds": [
+        "address"
+      ],
+      "planted_in_innocent_column": false
+    },
+    {
+      "column": "crm.customers.birth_date",
+      "kinds": [
+        "birth_date"
+      ],
+      "planted_in_innocent_column": false
+    },
+    {
+      "column": "crm.customers.email",
+      "kinds": [
+        "email"
+      ],
+      "planted_in_innocent_column": false
+    },
+    {
+      "column": "crm.customers.msisdn",
+      "kinds": [
+        "msisdn"
+      ],
+      "planted_in_innocent_column": false
+    },
+    {
+      "column": "crm.support_tickets.notes_free_text",
+      "kinds": [
+        "birth_date",
+        "email",
+        "iban",
+        "msisdn"
+      ],
+      "planted_in_innocent_column": true
+    },
+    {
+      "column": "crm.support_tickets.ref_2",
+      "kinds": [
+        "msisdn"
+      ],
+      "planted_in_innocent_column": true
+    },
+    {
+      "column": "finance.billing.iban",
+      "kinds": [
+        "iban"
+      ],
+      "planted_in_innocent_column": false
+    },
+    {
+      "column": "legacy.legacy_crm_export.adr_l1",
+      "kinds": [
+        "address"
+      ],
+      "planted_in_innocent_column": true
+    },
+    {
+      "column": "legacy.legacy_crm_export.dt_x",
+      "kinds": [
+        "birth_date"
+      ],
+      "planted_in_innocent_column": true
+    },
+    {
+      "column": "legacy.legacy_crm_export.fld_7",
+      "kinds": [
+        "iban"
+      ],
+      "planted_in_innocent_column": true
+    },
+    {
+      "column": "legacy.legacy_crm_export.tel_a",
+      "kinds": [
+        "msisdn"
+      ],
+      "planted_in_innocent_column": true
+    },
+    {
+      "column": "network.network_events.imei",
+      "kinds": [
+        "imei"
+      ],
+      "planted_in_innocent_column": false
+    },
+    {
+      "column": "network.network_events.imsi",
+      "kinds": [
+        "imsi"
+      ],
+      "planted_in_innocent_column": false
+    },
+    {
+      "column": "network.usage_events.imsi",
+      "kinds": [
+        "imsi"
+      ],
+      "planted_in_innocent_column": false
+    },
+    {
+      "column": "network.usage_events.msisdn",
+      "kinds": [
+        "msisdn"
+      ],
+      "planted_in_innocent_column": false
+    }
+  ],
+  "quality_defects": [
+    {
+      "table": "finance.billing",
+      "offset": 135,
+      "key": "INV-2026-000136",
+      "kind": "validity",
+      "column": "amount",
+      "note": "negative invoice amount"
+    },
+    {
+      "table": "finance.billing",
+      "offset": 376,
+      "key": "INV-2026-000377",
+      "kind": "validity",
+      "column": "amount",
+      "note": "negative invoice amount"
+    },
+    {
+      "table": "finance.billing",
+      "offset": 567,
+      "key": "INV-2026-000568",
+      "kind": "referential",
+      "column": "customer_id",
+      "note": "customer_id not in crm.customers"
+    },
+    {
+      "table": "finance.billing",
+      "offset": 1045,
+      "key": "INV-2026-001046",
+      "kind": "referential",
+      "column": "customer_id",
+      "note": "customer_id not in crm.customers"
+    },
+    {
+      "table": "finance.billing",
+      "offset": 1452,
+      "key": "INV-2026-001453",
+      "kind": "validity",
+      "column": "amount",
+      "note": "negative invoice amount"
+    },
+    {
+      "table": "finance.billing",
+      "offset": 1800,
+      "key": "INV-2026-000550",
+      "kind": "uniqueness",
+      "column": "invoice_id",
+      "note": "duplicate of offset 549"
+    },
+    {
+      "table": "finance.billing",
+      "offset": 1801,
+      "key": "INV-2026-000982",
+      "kind": "uniqueness",
+      "column": "invoice_id",
+      "note": "duplicate of offset 981"
+    },
+    {
+      "table": "network.usage_events",
+      "offset": 1976,
+      "key": "E00001977",
+      "kind": "validity",
+      "column": "event_type",
+      "note": "event_type outside the allowed set"
+    },
+    {
+      "table": "network.usage_events",
+      "offset": 2120,
+      "key": "E00002121",
+      "kind": "validity",
+      "column": "event_type",
+      "note": "event_type outside the allowed set"
+    },
+    {
+      "table": "network.usage_events",
+      "offset": 3831,
+      "key": "E00003832",
+      "kind": "completeness",
+      "column": "msisdn",
+      "note": "msisdn missing"
+    },
+    {
+      "table": "network.usage_events",
+      "offset": 4055,
+      "key": "E00004056",
+      "kind": "completeness",
+      "column": "msisdn",
+      "note": "msisdn missing"
+    },
+    {
+      "table": "network.usage_events",
+      "offset": 4171,
+      "key": "E00004172",
+      "kind": "validity",
+      "column": "event_type",
+      "note": "event_type outside the allowed set"
+    },
+    {
+      "table": "network.usage_events",
+      "offset": 4676,
+      "key": "E00004677",
+      "kind": "completeness",
+      "column": "msisdn",
+      "note": "msisdn missing"
+    },
+    {
+      "table": "network.usage_events",
+      "offset": 5966,
+      "key": "E00005967",
+      "kind": "validity",
+      "column": "event_type",
+      "note": "event_type outside the allowed set"
+    }
+  ]
+}

@@ -1,0 +1,386 @@
+{
+  "crm.customers": {
+    "fields": [
+      {
+        "mode": "REQUIRED",
+        "name": "customer_id",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "full_name",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "email",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "msisdn",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "birth_date",
+        "type": "DATE"
+      },
+      {
+        "fields": [
+          {
+            "mode": "NULLABLE",
+            "name": "street",
+            "type": "STRING"
+          },
+          {
+            "mode": "NULLABLE",
+            "name": "city",
+            "type": "STRING"
+          },
+          {
+            "mode": "NULLABLE",
+            "name": "postcode",
+            "type": "STRING"
+          }
+        ],
+        "mode": "NULLABLE",
+        "name": "address",
+        "type": "RECORD"
+      },
+      {
+        "mode": "REQUIRED",
+        "name": "country",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "segment",
+        "type": "STRING"
+      },
+      {
+        "fields": [
+          {
+            "mode": "NULLABLE",
+            "name": "marketing",
+            "type": "BOOLEAN"
+          },
+          {
+            "mode": "NULLABLE",
+            "name": "profiling",
+            "type": "BOOLEAN"
+          },
+          {
+            "mode": "NULLABLE",
+            "name": "updated_at",
+            "type": "TIMESTAMP"
+          }
+        ],
+        "mode": "NULLABLE",
+        "name": "consent",
+        "type": "RECORD"
+      },
+      {
+        "fields": [
+          {
+            "mode": "NULLABLE",
+            "name": "contract_id",
+            "type": "STRING"
+          },
+          {
+            "mode": "NULLABLE",
+            "name": "plan",
+            "type": "STRING"
+          },
+          {
+            "mode": "NULLABLE",
+            "name": "start_date",
+            "type": "DATE"
+          },
+          {
+            "mode": "NULLABLE",
+            "name": "end_date",
+            "type": "DATE"
+          },
+          {
+            "mode": "NULLABLE",
+            "name": "status",
+            "type": "STRING"
+          },
+          {
+            "mode": "NULLABLE",
+            "name": "monthly_fee",
+            "type": "NUMERIC"
+          }
+        ],
+        "mode": "REPEATED",
+        "name": "contracts",
+        "type": "RECORD"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "created_at",
+        "type": "TIMESTAMP"
+      }
+    ],
+    "partition": null,
+    "row_count": 600
+  },
+  "crm.support_tickets": {
+    "fields": [
+      {
+        "mode": "REQUIRED",
+        "name": "ticket_id",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "customer_id",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "opened_at",
+        "type": "TIMESTAMP"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "channel",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "category",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "notes_free_text",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "ref_2",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "country",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "status",
+        "type": "STRING"
+      }
+    ],
+    "partition": null,
+    "row_count": 400
+  },
+  "finance.billing": {
+    "fields": [
+      {
+        "mode": "REQUIRED",
+        "name": "invoice_id",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "customer_id",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "iban",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "amount",
+        "type": "NUMERIC"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "currency",
+        "type": "STRING"
+      },
+      {
+        "mode": "REQUIRED",
+        "name": "issue_date",
+        "type": "DATE"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "due_date",
+        "type": "DATE"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "status",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "country",
+        "type": "STRING"
+      }
+    ],
+    "partition": "issue_date",
+    "row_count": 1802
+  },
+  "legacy.legacy_crm_export": {
+    "fields": [
+      {
+        "mode": "NULLABLE",
+        "name": "k_id",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "nm_1",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "tel_a",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "fld_7",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "dt_x",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "adr_l1",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "cd_s",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "upd",
+        "type": "STRING"
+      }
+    ],
+    "partition": null,
+    "row_count": 150
+  },
+  "network.network_events": {
+    "cluster": [
+      "cell_id"
+    ],
+    "fields": [
+      {
+        "mode": "REQUIRED",
+        "name": "attach_id",
+        "type": "STRING"
+      },
+      {
+        "mode": "REQUIRED",
+        "name": "event_date",
+        "type": "DATE"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "ts",
+        "type": "TIMESTAMP"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "imei",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "imsi",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "cell_id",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "country",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "rat",
+        "type": "STRING"
+      }
+    ],
+    "partition": "event_date",
+    "row_count": 3000
+  },
+  "network.usage_events": {
+    "cluster": [
+      "msisdn",
+      "cell_id"
+    ],
+    "fields": [
+      {
+        "mode": "REQUIRED",
+        "name": "event_id",
+        "type": "STRING"
+      },
+      {
+        "mode": "REQUIRED",
+        "name": "event_date",
+        "type": "DATE"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "event_ts",
+        "type": "TIMESTAMP"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "msisdn",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "imsi",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "cell_id",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "country",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "event_type",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "volume_mb",
+        "type": "FLOAT"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "duration_s",
+        "type": "INTEGER"
+      }
+    ],
+    "partition": "event_date",
+    "row_count": 6000
+  }
+}
