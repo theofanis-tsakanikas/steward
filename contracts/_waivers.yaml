@@ -1,0 +1,13 @@
+# Exceptions expire (doctrine 6). On expiry the finding returns and CI goes red.
+# A waiver for a finding about personal data found in a column is itself refused (doctrine 7).
+waivers:
+  - id: W-001
+    finding: CONTRACT_MISSING
+    target: legacy.legacy_crm_export
+    reason: >-
+      Export from the CRM retired in 2019; no owner has been found yet. Until one is, every column is
+      treated as sensitive and denied to every role (doctrine 1). Reverse-engineered proposals for its
+      columns are in contracts/proposals/ awaiting an owner.
+    approved_by: user:dimitris.nikolaou@halverra.example
+    approved_on: "2026-10-01"
+    expires: "2026-11-30"

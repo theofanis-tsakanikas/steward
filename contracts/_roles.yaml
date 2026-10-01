@@ -1,0 +1,32 @@
+# Roles are the unit every contract speaks in. A role is never a person: principals are bound to
+# roles per environment (config/principals.<env>.yaml), so a contract is the same text offline,
+# in a test project and in production.
+#
+# A "seat" is a role, optionally narrowed to one scope value. Row access policies are compiled per
+# seat; masking is compiled per role.
+roles:
+  analyst:
+    description: Country analyst. Aggregates and masked identifiers, own country's rows only.
+    scoped_by: country
+    scopes: [GR, IT, DE]
+  fraud_investigator:
+    description: Raw line and device identifiers across all countries; every read audited.
+  steward:
+    description: Metadata, descriptions, quality results and masked values. Never raw identifiers.
+  bi_service:
+    description: The Looker connection's service identity. Masked identifiers, all rows.
+  custodian:
+    description: Pipelines that write data and apply controls. Reads nothing it does not write; approves nothing.
+
+# The fictional directory: who is in which group. Approvals are checked against it (doctrine 5).
+# Every address is under halverra.example (RFC 2606) — none can resolve to a real mailbox.
+directory:
+  group:crm-owners@halverra.example: [user:eleni.papadaki@halverra.example, user:marco.ferri@halverra.example]
+  group:crm-stewards@halverra.example: [user:sofia.antoniou@halverra.example]
+  group:network-owners@halverra.example: [user:jonas.weber@halverra.example, user:giorgos.ioannou@halverra.example]
+  group:network-stewards@halverra.example: [user:chiara.greco@halverra.example]
+  group:finance-owners@halverra.example: [user:hannah.becker@halverra.example]
+  group:finance-stewards@halverra.example: [user:luca.romano@halverra.example]
+  group:analytics-owners@halverra.example: [user:anna.christou@halverra.example]
+  group:data-platform@halverra.example: [serviceAccount:steward-pipeline@halverra-data.example]
+  group:privacy-office@halverra.example: [user:dimitris.nikolaou@halverra.example]
