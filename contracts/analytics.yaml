@@ -42,5 +42,5 @@ tables:
       events: {type: INTEGER, classification: internal, description: "Number of events in the cell-week."}
       total_mb: {type: FLOAT, classification: internal, description: "Data volume in the cell-week, MB."}
       subscribers:
-        {type: INTEGER, classification: internal, description: "Distinct subscribers in the cell-week (the k of k-anonymity).",
+        {type: INTEGER, classification: internal, description: "Distinct subscribers in the cell-week (the frequency threshold: published only when >= 5).",
          quality: [{id: Q-ANA-002, kind: validity, min: 5}]}

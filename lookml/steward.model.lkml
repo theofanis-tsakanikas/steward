@@ -16,5 +16,5 @@ explore: customers {
 }
 
 explore: weekly_usage {
-  description: "Weekly network usage per cell, aggregated (k >= 5 subscribers)."
+  description: "Weekly network usage per cell; a cell-week is published only with at least 5 subscribers (a threshold, not anonymity)."
 }

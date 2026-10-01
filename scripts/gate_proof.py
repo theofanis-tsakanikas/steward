@@ -447,6 +447,16 @@ MUTATIONS: list[Mutation] = [
         "3",
     ),
     Mutation(
+        "a load job that no longer lands the billing table",
+        "lineage",
+        "evals/lineage/query_history.json",
+        '"destination": "finance.billing",',
+        '"destination": "finance.billing_old",',
+        ("LINEAGE_UNTRACED", "billing_health:finance.billing"),
+        "every table a dashboard reads traces back to a landing source (claim 3)",
+        "3",
+    ),
+    Mutation(
         "generated Terraform edited by hand",
         "generated",
         "infra/estate/generated.tf.json",

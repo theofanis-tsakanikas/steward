@@ -44,12 +44,13 @@ _ALIAS = re.compile(r"\bAS\s+([A-Za-z_]\w*)", re.I)
 SQL_WORDS = frozenset(
     {
         "select", "from", "where", "and", "or", "not", "null", "is", "in", "as", "on", "case", "when", "then", "else",
-        "end", "exists", "unnest", "count", "distinct", "sum", "avg", "min", "max", "extract", "year", "month", "day",
-        "date", "timestamp", "cast", "safe_cast", "string", "int64", "float64", "numeric", "bool", "true", "false",
-        "yes", "no", "if", "coalesce", "ifnull", "concat", "lower", "upper", "substr", "length", "round", "trunc",
-        "date_trunc", "current_date", "current_timestamp", "interval",
+        "end", "exists", "unnest", "distinct", "true", "false", "yes", "no", "interval", "like", "between", "asc", "desc",
+        "over", "partition", "by", "order", "limit", "safe", "offset", "ordinal", "struct", "array", "with", "all", "any",
+        "string", "int64", "float64", "numeric", "bignumeric", "bool", "bytes", "date", "datetime", "time", "timestamp",
+        "year", "quarter", "month", "week", "day", "hour", "minute", "second", "dayofweek", "isoweek", "isoyear",
     }
 )  # fmt: skip
+_FUNC = re.compile(r"(?<![\w.$`])([A-Za-z_]\w*)\s*\(")
 DIRECT_IDENTIFIERS = frozenset({"msisdn", "imsi", "imei", "email", "iban"})
 HISTORY_WINDOW_DAYS = 30
 
@@ -85,13 +86,20 @@ def resolve(
     if f is None:
         return set(), [f"{view}.{fname}: no such field in view {view}"]
     table = v["sql_table_name"]
-    known = table_columns.get(table, set())
+    known = {c.lower(): c for c in table_columns.get(table, set())}
     cols: set[str] = set()
     bad: list[str] = []
     seen = _seen | {(view, fname)}
-    sql = _LIQUID.sub(" ", f.get("sql") or "")
+    raw_sql = f.get("sql") or ""
+    if _LIQUID.search(raw_sql):
+        bad.append(
+            f"{view}.{fname}: Liquid templating decides at query time what this field reads; not verifiable, refused"
+        )
+    sql = _LIQUID.sub(" ", raw_sql)
+    if re.search(r"\$\{TABLE\}(?!\.)", sql):
+        bad.append(f"{view}.{fname}: ${{TABLE}} used as a value reads the whole row; refused")
     for path in _TABLE_PATH.findall(sql):
-        cols.add(f"{table}.{path}")
+        cols.add(f"{table}.{known.get(path.lower(), path)}")
     refs = 0
     for a, b in _REF.findall(sql):
         if a == "TABLE":
@@ -105,13 +113,23 @@ def resolve(
     aliases = set(_ALIAS.findall(rest))
     if _RAW_SQL.search(_HARMLESS_FROM.sub(" ", rest)):
         bad.append(f"{view}.{fname}: raw SQL (a subquery or a table reference) reads tables the model does not show")
+    functions = {m.lower() for m in _FUNC.findall(rest)}
     for ident in _IDENT.findall(_ALIAS.sub(" ", rest)):
-        if ident.lower() in SQL_WORDS or ident.split(".")[0] in aliases:
+        low = ident.lower()
+        if ident.split(".")[0] in aliases:
             continue
-        if ident in known:
-            cols.add(f"{table}.{ident}")  # a bare column name is valid LookML: Looker selects FROM the view's table
+        if low in known:
+            cols.add(
+                f"{table}.{known[low]}"
+            )  # a bare column name is valid LookML: Looker selects FROM the view's table
+        elif low in SQL_WORDS or low in functions:
+            continue
         elif "." in ident:
             bad.append(f"{view}.{fname}: {ident!r} is an alias.column reference the parser cannot tie to a table")
+        else:
+            bad.append(
+                f"{view}.{fname}: {ident!r} is neither a catalogued column of {table} nor SQL the parser knows — refused, not ignored"
+            )
     for flt in f.get("filters", []):
         c, e = resolve(views, view, flt, table_columns, seen)
         cols |= c
@@ -175,6 +193,7 @@ def evaluate(
     for did, d in lookml["dashboards"].items():
         lookml_tables[did] = set()
         rows = []
+        reached_views: set[str] = set()
         for el in d["elements"]:
             e = explores.get(el["explore"])
             if e is None:
@@ -203,6 +222,7 @@ def evaluate(
                     lookml_tables[did].add(views[v]["sql_table_name"])  # Looker always selects FROM these
             g.add(("explore", el["explore"]), ("dashboard", did), "lookml")
             refs = list(dict.fromkeys(el["refs"] + [f for f in d.get("filters", []) if f.split(".")[0] in allowed]))
+            reached_views.update(allowed)
             for fld in refs:
                 view, _, fname = fld.partition(".")
                 target = f"{did}/{el['name']}/{fld}"
@@ -273,6 +293,16 @@ def evaluate(
                         "as_seen": seen_by_role,
                     }
                 )
+        for flt in d.get("filters", []):
+            if flt.split(".")[0] not in reached_views:
+                out.append(
+                    Finding(
+                        "UNRESOLVED_FIELD",
+                        GATE,
+                        f"{did}/filter/{flt}",
+                        f"dashboard filter on {flt.split('.')[0]!r}, a view no tile's explore reaches",
+                    )
+                )
         per_dashboard[did] = rows
 
     now = datetime.fromisoformat(captured_at.replace("Z", "+00:00"))
@@ -284,12 +314,22 @@ def evaluate(
             for t in j["referenced_tables"]:
                 g.add(("table", t), ("table", j["destination"]), "bigquery-jobs")
         dash = (j.get("labels") or {}).get("looker_dashboard")
+        if not dash:
+            continue
         created = j.get("creation_time")
-        if (
-            dash
-            and created
-            and now - datetime.fromisoformat(created.replace("Z", "+00:00")) <= timedelta(days=HISTORY_WINDOW_DAYS)
-        ):
+        when = datetime.fromisoformat(created.replace("Z", "+00:00")) if created else None
+        if when is None or when > now:
+            why = "has no creation_time" if when is None else f"is dated {created}, after the capture {captured_at}"
+            out.append(
+                Finding(
+                    "LINEAGE_HISTORY_INVALID",
+                    GATE,
+                    j.get("job_id", "?"),
+                    f"dashboard job {why} — history that cannot be placed in time is refused",
+                )
+            )
+            continue
+        if now - when <= timedelta(days=HISTORY_WINDOW_DAYS):
             history.setdefault(dash, set()).update(j.get("referenced_tables", []))
     for did in sorted(set(history) - set(lookml["dashboards"])):
         out.append(

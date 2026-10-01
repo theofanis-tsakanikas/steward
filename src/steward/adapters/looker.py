@@ -45,8 +45,11 @@ def _element_refs(el: dict) -> list[str]:
     refs = list(el.get("fields") or [])
     refs += list((el.get("filters") or {}).keys())
     refs += [s.split()[0] for s in (el.get("sorts") or [])]
+    refs += [v for v in (el.get("listen") or {}).values() if isinstance(v, str)]
     for dyn in el.get("dynamic_fields") or []:
         refs += _REF.findall(str(dyn))
+        if isinstance(dyn, dict) and dyn.get("based_on"):
+            refs.append(dyn["based_on"])
     return refs
 
 
@@ -62,6 +65,10 @@ def parse(root: Path) -> dict:
         for e in m.get("explores", []):
             if "extends" in e or "extends__all" in e or e["name"].startswith("+"):
                 unsupported.append(f"explore {e['name']}: extends/refinement")
+            if e["name"] in explores:
+                unsupported.append(
+                    f"explore {e['name']}: defined in two models ({explores[e['name']]['model']}, {name})"
+                )
             explores[e["name"]] = {
                 "model": name,
                 "from": e.get("from") or e.get("view_name") or e["name"],
@@ -79,19 +86,25 @@ def parse(root: Path) -> dict:
     for p in sorted((root / "dashboards").glob("*.dashboard.lookml")):
         for d in yaml.safe_load(p.read_text()):
             dash_filters = [f["field"] for f in d.get("filters", []) or [] if f.get("field")]
+            if d.get("extends"):
+                unsupported.append(f"dashboard {d['dashboard']}: extends")
             elements = []
             for el in d.get("elements", []):
-                if not el.get("explore"):
-                    continue  # a text or button tile runs no query
-                elements.append(
-                    {
-                        "name": el["name"],
-                        "model": el.get("model"),
-                        "explore": el["explore"],
-                        "fields": el.get("fields", []),
-                        "refs": _element_refs(el),
-                    }
-                )
+                queries = [el] if el.get("explore") else []
+                # a merged-results tile runs one query per source; each is checked like a tile of its own
+                queries += [dict(q, name=f"{el['name']}[{i}]") for i, q in enumerate(el.get("merged_queries") or [])]
+                for q in queries:
+                    if not q.get("explore"):
+                        continue  # a text or button tile runs no query
+                    elements.append(
+                        {
+                            "name": q.get("name", el["name"]),
+                            "model": q.get("model"),
+                            "explore": q["explore"],
+                            "fields": q.get("fields", []),
+                            "refs": _element_refs(q),
+                        }
+                    )
             dashboards[d["dashboard"]] = {
                 "title": d.get("title", d["dashboard"]),
                 "elements": elements,

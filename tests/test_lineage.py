@@ -163,3 +163,66 @@ def test_unsupported_lookml_is_refused(tmp_path):
     )
     _, (findings, _, _) = pipeline.lineage(pipeline.load(), root, HISTORY)
     assert any(f.code == "UNSUPPORTED_LOOKML" for f in findings)
+
+
+@pytest.mark.parametrize(
+    "sql,ok",
+    [
+        ("{{ customers.msisdn._sql }}", False),
+        ("${TABLE}.{% parameter pick %}", False),
+        ("CONCAT(${TABLE}.country, MSISDN)", True),  # case-insensitive: resolves to msisdn and is judged
+        ("CONCAT(${TABLE}.country, imsi_new)", False),
+        ("CONCAT(${TABLE}.country, TO_JSON_STRING(${TABLE}))", False),
+    ],
+)
+def test_resolver_closure_cases(tmp_path, sql, ok):
+    root = _with_view(tmp_path, sql)
+    _, (findings, _, detail) = pipeline.lineage(pipeline.load(), root, HISTORY)
+    unresolved = ("UNRESOLVED_FIELD", "customer_overview/callers_with_most_tickets/customers.msisdn") in {
+        (f.code, f.target) for f in findings if f.blocking
+    }
+    assert unresolved is (not ok)
+    if ok:
+        row = next(r for r in detail["dashboards"]["customer_overview"] if r["field"] == "customers.msisdn")
+        assert "crm.customers.msisdn" in row["columns"]
+
+
+def test_merged_queries_listen_based_on_and_unscoped_filters(tmp_path):
+    root = tmp_path / "lookml"
+    shutil.copytree(io.REPO / "lookml", root)
+    d = root / "dashboards" / "legacy_churn.dashboard.lookml"
+    d.write_text(
+        d.read_text()
+        + "    listen: {Who: customers.ghost_listen}\n"
+        + "    dynamic_fields: [{table_calculation: x, based_on: customers.ghost_based}]\n"
+        + "  - name: merged\n    merged_queries:\n    - {model: steward, explore: customers, fields: [customers.ghost_merged]}\n"
+        + "  filters:\n  - {name: f, field: nosuchview.nosuchfield}\n"
+    )
+    _, (findings, _, _) = pipeline.lineage(pipeline.load(), root, HISTORY)
+    t = {f.target for f in findings if f.code == "UNRESOLVED_FIELD"}
+    assert {
+        "legacy_churn/tickets_by_segment/customers.ghost_listen",
+        "legacy_churn/tickets_by_segment/customers.ghost_based",
+        "legacy_churn/merged[0]/customers.ghost_merged",
+        "legacy_churn/filter/nosuchview.nosuchfield",
+    } <= t
+
+
+@pytest.mark.parametrize("created", [None, "2027-01-01T00:00:00Z"])
+def test_undated_or_future_history_is_refused(created):
+    jobs = [dict(j) for j in JOBS]
+    j = next(x for x in jobs if (x.get("labels") or {}).get("looker_dashboard") == "network_usage")
+    if created is None:
+        j.pop("creation_time")
+    else:
+        j["creation_time"] = created
+    _, (findings, _, _) = pipeline.lineage(pipeline.load(), io.REPO / "lookml", dict(HISTORY, jobs=jobs))
+    assert ("LINEAGE_HISTORY_INVALID", j["job_id"]) in {(f.code, f.target) for f in findings if f.blocking}
+
+
+def test_a_table_with_no_path_to_a_source_is_untraced():
+    jobs = [j for j in JOBS if j["job_id"] != "load-finance-billing"]
+    _, (findings, _, _) = pipeline.lineage(pipeline.load(), io.REPO / "lookml", dict(HISTORY, jobs=jobs))
+    assert ("LINEAGE_UNTRACED", "billing_health:finance.billing") in {
+        (f.code, f.target) for f in findings if f.blocking
+    }

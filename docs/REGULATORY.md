@@ -6,7 +6,7 @@ or the demo** (mark `verified: <date>` next to it). This is a reference build, n
 ## GDPR (Regulation (EU) 2016/679)
 - **Personal data** — Art. 4(1). MSISDN, IMSI, IMEI, email, IBAN, birth date, address, name.
 - **Pseudonymisation** — Art. 4(5): data that can be re-attributed with separately kept additional information **remains personal data**. Tokenised identifiers with a held key are pseudonymised, not anonymised.
-- **Anonymous data** — Recital 26: outside GDPR only if re-identification is not reasonably likely. k-anonymity over quasi-identifiers is the check the demo shows, not a legal guarantee.
+- **Anonymous data** — Recital 26: outside GDPR only if re-identification is not reasonably likely. The demo shows a minimum-frequency threshold (a cell-week is published only with at least 5 subscribers) — a necessary check, not a sufficient one, and not a legal guarantee: it does not stop dominance or differencing attacks.
 - **Data minimisation / storage limitation** — Art. 5(1)(c), 5(1)(e): basis for masking by default and for retention per dataset.
 - **Lawful basis** — Art. 6: each contract declares one per dataset.
 - **Special categories** — Art. 9: not expected in the synthetic data; the classification exists so it can be refused.
