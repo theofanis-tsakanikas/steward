@@ -16,7 +16,18 @@ roles:
   bi_service:
     description: The Looker connection's service identity. Masked identifiers, all rows.
   custodian:
-    description: Pipelines that write data and apply controls. Reads nothing it does not write; approves nothing.
+    description: Pipelines that write data and apply controls. Sees every row (it loads and deletes them), no tagged column in clear; approves nothing.
+
+# Ceilings: the most any contract may give a role on a tagged column. A role may see a tagged column
+# in `clear` only if every kind the column declares is in its `clear_kinds`; `special` data is never
+# clear for anyone. A contract that exceeds a ceiling fails the access gate — the contract author
+# cannot raise the ceiling in the same file that uses it.
+ceilings:
+  analyst: {clear_kinds: []}
+  steward: {clear_kinds: []}
+  bi_service: {clear_kinds: []}
+  custodian: {clear_kinds: []}
+  fraud_investigator: {clear_kinds: [msisdn, imsi, imei, customer_key, location]}
 
 # Who may approve a waiver (doctrine 6). Never the requester, never an owner of what is waived.
 waiver_approvers: group:privacy-office@halverra.example

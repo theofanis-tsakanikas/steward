@@ -34,11 +34,23 @@
   συνθήκη του verifier (a–e). Γνωστά όρια στο DECISIONS B6.
 - **Ανοιχτό:** τίποτα για το T002.
 
-### 2026-10-01 · T003 — claim 1, ανίχνευση PII από τιμές
-- **Έκλεισε:** ανιχνευτής που διαβάζει μόνο τιμές (7 είδη), πύλη `steward scan` (PII_UNTAGGED,
-  PII_UNDECLARED_COLUMN, KIND_UNDECLARED — χωρίς καμία είσοδο waiver), eval με n.
-- **Απόδειξη:** `make evals`: 18/18 ζεύγη στήλης×είδους (9/9 στις «αθώες» στήλες), ακρίβεια 1.000· τα
-  ευριστικά ονομάτων θα έπιαναν 1/9 από τις αθώες· 23/23 χειρόγραφες δύσκολες περιπτώσεις.
-- **Όριο που δηλώνεται:** ο γεννήτορας και ο ανιχνευτής έχουν τον ίδιο συγγραφέα — το T014 τα συγκρίνει
-  με το Google DLP.
-- **Ανοιχτό:** review (σε εξέλιξη), μετάλλαξη gate-proof (T008).
+### 2026-10-01 · T003 + T004 — claim 1 (ανίχνευση από τιμές) και claim 2 (μεταγλώττιση controls), ένα PR
+- **Γιατί μαζί (DECISIONS B7):** το review του T003 έδειξε ότι το PII του legacy πίνακα περνούσε ως
+  προειδοποίηση ενώ το μόνο blocking εύρημα ήταν waived — δηλαδή ένα waiver «ξεκλείδωνε» PII. Η πύλη
+  του claim 1 ελέγχει πλέον το tag στο **μεταγλωττισμένο** σχήμα· άρα ο compiler (T004) είναι μέρος της.
+- **Έκλεισε (T003):** ανιχνευτής μόνο από τιμές, ένα εύρημα αρκεί (doctrine 1), IMSI/IMEI ανεξάρτητα,
+  εθνικές μορφές τηλεφώνων, IBAN με κενά, IMEI με παύλες, ημερομηνίες με λέξεις, ελληνικές διευθύνσεις·
+  ημερομηνία σάρωσης = anchor των συνθετικών δεδομένων (το CI δεν «γερνάει»)· το manifest μετακόμισε
+  στο `evals/ground_truth/` και φυλάγεται με runtime audit hook (όχι grep).
+- **Έκλεισε (T004):** contracts → Terraform JSON (estate + governance): taxonomy, ένα policy tag ανά
+  (κατηγορία, προφίλ masking), `restricted` για πίνακες χωρίς contract, data policies + Masked Reader,
+  Fine-Grained Reader, dataset viewers, row access policies, Parameter Manager για τη μεταφορά μεταξύ
+  layers. Πύλη πρόσβασης: όρια ρόλων (`ROLE_CEILING_EXCEEDED`), κανόνας/τύπος (`MASKING_TYPE_INVALID`).
+  Contracts v2 (δηλωμένοι `readers`) — πέρασαν από την πύλη εκδόσεων.
+- **Απόδειξη:** `make check` (`steward scan`, `steward compile`, `generate --check`), `make evals`
+  (claim 1: 18/18, 42/42 δύσκολες περιπτώσεις· claim 2: 784 αποφάσεις θέσης×στήλης + 42 φίλτρα γραμμών
+  συμφωνούν, ο προσομοιωτής διαβάζει μόνο το Terraform), `make tf-validate` (2 layers), 83 τεστ.
+- **Review T003 (επίπεδο 2):** 10 ευρήματα, όλα διορθωμένα με τεστ (βλ. commit). **Εύρημα από την
+  τεκμηρίωση (B8):** το BigQuery masking θέλει το project σε **organization** — επηρεάζει το live
+  κομμάτι του claim 2· νέο βήμα DAY-ONE 1b.
+- **Ανοιχτό:** review του T004 και πέρασμα επαλήθευσης· μεταλλάξεις gate-proof (T008).

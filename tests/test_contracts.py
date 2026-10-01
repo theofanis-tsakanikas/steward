@@ -269,7 +269,7 @@ def test_quality_rule_must_fit_the_column_type(base):
 
 def test_version_without_changelog_is_refused(base):
     docs, *rest = base
-    docs["crm"]["version"] = 2
+    docs["crm"]["version"] += 1
     assert ("CONTRACT_INVALID", "crm") in blocking(run(docs, *rest))
 
 
@@ -314,8 +314,8 @@ def test_changed_contract_must_bump_version():
     new = copy.deepcopy(old)
     new["tables"]["support_tickets"]["columns"]["ref_2"]["classification"] = "internal"
     assert [f.code for f in compare("crm", old, new)] == ["VERSION_NOT_BUMPED"]
-    new["version"] = 2
-    new["changelog"].append({"version": 2, "date": "2026-10-02", "change": "x"})
+    new["version"] = old["version"] + 1
+    new["changelog"].append({"version": new["version"], "date": "2026-10-02", "change": "x"})
     assert compare("crm", old, new) == []
     new["changelog"][0]["change"] = "rewritten"
     assert [f.code for f in compare("crm", old, new)] == ["CHANGELOG_REWRITTEN"]

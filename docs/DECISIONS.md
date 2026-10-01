@@ -64,3 +64,22 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   *name* an instrument (regex on Art./Directive/Regulation/law/obligation) — "Art. nothing" passes;
   whether the cited basis is right is a privacy-office review, not a regex. Directory groups may not
   nest (refused, not expanded). Contracts are `contracts/*.yaml` only; any other placement is an error.
+- **B7 — Claim 1's gate checks the *compiled* tag, so T003 and T004 land as one PR.** The T003 review
+  found that PII in the uncontracted legacy table passed as a warning while the only blocking finding
+  (CONTRACT_MISSING) was waived — a waiver unlocking value-detected PII, doctrine 7 broken in practice.
+  The fix: a detected column passes only if the compiled schema carries its policy tag. For a table no
+  contract declares, the compiler tags every leaf `restricted` (no reader, no data policy); its PII is
+  then reported `PII_HELD_AT_SAFE_STATE` (info) — and only while W-001 lives; on expiry CONTRACT_MISSING
+  is red again. That makes the compiler part of claim 1's gate, so both atoms close together.
+- **B8 — Data masking needs the project to belong to an organization.** Read 2026-10-01 in the BigQuery
+  masking docs: "The project containing the policy tag taxonomy must belong to an organization."
+  Policy tags themselves (deny vs Fine-Grained Reader) and row access policies carry no such statement.
+  Consequence for claim 2 live (T012): with no organization, the three-role transcript can show
+  deny / clear / row-filtered, but not masked values. Options in docs/DAY-ONE.md step 1b. The offline
+  half of claim 2 is unaffected.
+- **B9 — Every partitioned table requires a partition filter.** A deterministic rule, not a contract
+  field: a query that would scan every partition is refused (cost control, `CLAUDE.md`).
+- **B10 — `readers` is a required contract field (contracts v2).** Standing access is declared per
+  dataset; marketplace grants exist only for roles that are not standing readers. The three-role query
+  on `crm.customers` therefore shows the fraud investigator through an approved grant — the bridge from
+  claim 2 to claim 6.

@@ -4,8 +4,9 @@
 Writes, under synthetic/data/:
   <dataset>.<table>.jsonl   newline-delimited JSON, the format BigQuery loads (nested + repeated)
   _schema.json              the BigQuery schema of every table (what INFORMATION_SCHEMA would say)
-and synthetic/_planted.json: the ground truth of where personal data and quality defects were
-planted. **No detector reads _planted.json.** Only the evals do.
+and evals/ground_truth/planted.json: the ground truth of where personal data and quality defects were
+planted. It lives under evals/ so that nothing shipped from src/ sits next to it; a runtime audit hook
+(tests/test_planted_isolation.py) fails if the detector, gates or compiler ever open it.
 
 Everything here is invented. Names come from short lists of common given names and surnames;
 e-mail domains are the reserved `example.*` domains (RFC 2606); IBANs carry valid check digits over
@@ -28,6 +29,8 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+REPO = HERE.parent
+PLANTED = "evals/ground_truth/planted.json"  # relative to the repository root
 SEED = 20261001
 ANCHOR = date(2026, 9, 30)  # "today" for the generator — fixed, so output never depends on the clock
 COUNTRIES = ("GR", "IT", "DE")
@@ -524,19 +527,24 @@ def build() -> dict[str, str]:
     out["data/_schema.json"] = json.dumps(schema, indent=2, sort_keys=True) + "\n"
     digests = {p: hashlib.sha256(c.encode()).hexdigest() for p, c in sorted(out.items())}
     out["data/_digests.json"] = json.dumps(digests, indent=2) + "\n"
-    out["_planted.json"] = json.dumps(planted.to_json(), indent=2) + "\n"
+    out["data/_meta.json"] = (
+        json.dumps({"seed": SEED, "anchor_date": ANCHOR.isoformat(), "generator": "synthetic/generate.py"}, indent=2)
+        + "\n"
+    )
+    out[PLANTED] = json.dumps(planted.to_json(), indent=2) + "\n"
     return out
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true", help="fail if committed output differs")
-    ap.add_argument("--out", type=Path, default=HERE)
+    ap.add_argument("--out", type=Path, default=None, help="write data/ and the ground truth under DIR instead")
     args = ap.parse_args(argv)
     files = build()
     stale = []
     for rel, content in files.items():
-        path = args.out / rel
+        root = args.out if args.out is not None else (REPO if rel == PLANTED else HERE)
+        path = root / rel
         if args.check:
             if not path.exists() or path.read_text() != content:
                 stale.append(rel)

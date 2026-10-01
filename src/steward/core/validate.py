@@ -108,9 +108,18 @@ def cross_check(contracts: list[Contract], roles: Roles) -> list[Finding]:
             f.append(
                 Finding("PRINCIPAL_UNKNOWN", GATE, f"{c.dataset}.marketplace", f"{c.marketplace.approvers} unknown")
             )
-        for r in c.marketplace.grantable_roles:
+        for r in [*c.marketplace.grantable_roles, *c.readers]:
             if r not in known_roles:
-                f.append(Finding("ROLE_UNKNOWN", GATE, f"{c.dataset}.marketplace", f"role {r!r} is not defined"))
+                f.append(Finding("ROLE_UNKNOWN", GATE, f"{c.dataset}", f"role {r!r} is not defined"))
+        for r in sorted(set(c.readers) & set(c.marketplace.grantable_roles)):
+            f.append(
+                Finding(
+                    "ROLE_BOTH_READER_AND_GRANTABLE",
+                    GATE,
+                    c.dataset,
+                    f"{r} has standing access; a marketplace grant would never expire anything",
+                )
+            )
 
         for tname, t in c.tables.items():
             tfq = f"{c.dataset}.{tname}"

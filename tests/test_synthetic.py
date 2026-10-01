@@ -46,7 +46,7 @@ def test_schema_matches_rows():
 
 
 def test_innocent_columns_do_not_announce_themselves():
-    planted = json.loads((ROOT / "synthetic/_planted.json").read_text())
+    planted = json.loads((ROOT / "evals/ground_truth/planted.json").read_text())
     innocent = [p["column"] for p in planted["pii"] if p["planted_in_innocent_column"]]
     assert "crm.support_tickets.ref_2" in innocent and "crm.support_tickets.notes_free_text" in innocent
     for col in innocent:
@@ -55,6 +55,6 @@ def test_innocent_columns_do_not_announce_themselves():
 
 
 def test_quality_defects_are_planted():
-    planted = json.loads((ROOT / "synthetic/_planted.json").read_text())
+    planted = json.loads((ROOT / "evals/ground_truth/planted.json").read_text())
     kinds = {(d["table"], d["kind"]) for d in planted["quality_defects"]}
     assert ("finance.billing", "uniqueness") in kinds and ("network.usage_events", "completeness") in kinds

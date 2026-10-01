@@ -19,14 +19,13 @@ from pathlib import Path
 
 import yaml
 
-from steward import io
+from steward import io, pipeline
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from _common import load_planted
 from steward.core.classify import detect, name_heuristics, scan_value
 from steward.core.findings import Finding, report
 from steward.core.gate_classification import gate
-from steward.core.validate import load_contract
 
 HERE = Path(__file__).resolve().parent
 
@@ -57,21 +56,27 @@ def evaluate() -> dict:
 
     cases = yaml.safe_load((HERE / "cases.yaml").read_text())
     case_results = []
+
+    def kinds_of(v):
+        return {k for k in scan_value(v, scan_date) if not k.startswith("_")}
+
     for c in cases["positives"]:
-        got = set(scan_value(c["value"], scan_date)) - {"_d15", "_luhn15", "_mcc15", "_mcc15_nonluhn"}
+        got = kinds_of(c["value"])
         case_results.append(
             {"value": c["value"], "expected": sorted(c["kinds"]), "got": sorted(got), "ok": got == set(c["kinds"])}
         )
     for c in cases["negatives"]:
-        got = set(scan_value(c["value"], scan_date)) - {"_d15", "_luhn15", "_mcc15", "_mcc15_nonluhn"}
+        got = kinds_of(c["value"])
         case_results.append({"value": c["value"], "expected": [], "got": sorted(got), "ok": not got})
     for c in cases["fifteen_digit"]:
-        sig = scan_value(c["value"], scan_date)
-        got = "imei" if sig.get("_luhn15") else "imsi" if sig.get("_mcc15_nonluhn") else "none"
+        sig = kinds_of(c["value"])
+        got = "imei" if "imei" in sig else "imsi" if "imsi" in sig else "none"
         case_results.append({"value": c["value"], "expected": [c["expect"]], "got": [got], "ok": got == c["expect"]})
 
-    contracts = [c for c in (load_contract(n, d)[0] for n, d in io.contract_docs().items()) if c]
-    findings = gate(detections, contracts)
+    e = pipeline.load()
+    findings = gate(detections, e.contracts, e.compiled_tags, e.broken)
+    flagged_innocent = {d.column for d in detections if d.kinds and d.column in innocent_cols}
+    held = {f.target for f in findings if f.code == "PII_HELD_AT_SAFE_STATE"}
 
     return {
         "scan_date": scan_date.isoformat(),
@@ -86,10 +91,16 @@ def evaluate() -> dict:
         "name_heuristics_innocent_columns": _score(
             {p for p in by_name if p[0] in innocent_cols}, {p for p in truth if p[0] in innocent_cols}
         ),
+        "innocent_columns": {
+            "n": len(innocent_cols),
+            "detected": len(flagged_innocent),
+            "tagged_by_contract": len(flagged_innocent - held),
+            "held_at_safe_state_no_contract": sorted(held & innocent_cols),
+        },
         "hard_cases": {"n": len(case_results), "passed": sum(r["ok"] for r in case_results), "results": case_results},
         "detections": [d.to_dict() for d in detections if d.kinds],
         "gate_findings": [f.to_dict() for f in findings],
-        "limit": "generator and detector share an author: part A proves the pipeline and gate, not detector quality in the wild (see T014)",
+        "limit": "generator and detector share an author: part A is a pipeline check (the planted PII reaches the gate), not a measure of detection in the wild; C is the independent part (see T014 for Google DLP on the same samples)",
     }
 
 
@@ -112,6 +123,11 @@ def main() -> int:
     )
     print(f"B name heuristics     precision {nm['precision']:.3f}  recall {nm['recall']:.3f}   — reported, not proof")
     print(f"  innocent-named only                    recall {nmi['recall']:.3f}   ← what a name-based scan misses")
+    ic = r["innocent_columns"]
+    print(
+        f"  innocent-named columns: {ic['detected']}/{ic['n']} detected; {ic['tagged_by_contract']} tagged by a contract, "
+        f"{len(ic['held_at_safe_state_no_contract'])} held at `restricted` with no contract (legacy, waiver W-001)"
+    )
     hc = r["hard_cases"]
     print(f"C hard cases          {hc['passed']}/{hc['n']} correct")
     for c in hc["results"]:

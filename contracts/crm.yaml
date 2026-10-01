@@ -1,7 +1,7 @@
 # The single source of truth for BigQuery dataset `crm`. Every control, catalog asset and quality
 # rule for these tables is generated from this file. Change it → bump `version`, add a changelog line.
 dataset: crm
-version: 1
+version: 2
 description: Customer master data and customer-service tickets of Halverra Telecom (fictional).
 owner: group:crm-owners@halverra.example
 steward: group:crm-stewards@halverra.example
@@ -10,13 +10,17 @@ lawful_basis: "GDPR Art. 6(1)(b) — performance of the subscription contract"
 retention:
   period_days: 2555
   legal_basis: "GDPR Art. 5(1)(e) storage limitation; 7 years after the last contract ends (illustrative, not a legal determination)"
+# Roles with standing read access. Every other role reaches this dataset only through an approved,
+# expiring marketplace grant (claim 6) — and a role in neither list never does.
+readers: [analyst, steward, bi_service]
 marketplace:
   listable: true
   approvers: group:crm-owners@halverra.example
   max_grant_days: 30
-  grantable_roles: [analyst, fraud_investigator]
+  grantable_roles: [fraud_investigator]
 changelog:
   - {version: 1, date: "2026-10-01", change: "first contract"}
+  - {version: 2, date: "2026-10-01", change: "declare standing readers; marketplace grants only roles that are not readers"}
 
 tables:
   customers:
