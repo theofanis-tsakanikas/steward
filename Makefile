@@ -42,6 +42,7 @@ check: ## every structural gate + every generator in --check mode
 	$(UV) run steward catalog
 	$(UV) run steward evidence-check
 	$(PY) scripts/check_demo_numbers.py
+	$(PY) scripts/check_oidc_subjects.py
 	$(PY) synthetic/generate.py --check
 	$(PY) scripts/generate.py --check
 

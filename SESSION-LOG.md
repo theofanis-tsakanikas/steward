@@ -217,3 +217,30 @@
   διαλέγει τον πίνακα με το μεγαλύτερο quarantine και ισχυρίζεται ότι είναι > 0 πριν το πειράξει.
 - **Ανοιχτό:** `stop_at` — ο συγγραφέας να κάνει click-through στις οκτώ σελίδες (`make demo`)· live mode (T017)·
   hosting (T030).
+
+### 2026-10-01 · T010 — bootstrap layer (γραμμένο και επικυρωμένο· ΔΕΝ εφαρμόστηκε)
+- **Έκλεισε:** `infra/bootstrap/` — APIs, state bucket (versioned, public access prevented), Workload Identity pool +
+  provider για το GitHub repo, δύο CI service accounts (deployer για `deploy`, destroyer για `destroy`), budget
+  €50 με alerts €30/€50 + stop level, cost guard και reaper (Cloud Run functions, Python 3.12). Το
+  `terraform validate` περνά· `terraform apply` δεν έτρεξε και δεν θα τρέξει χωρίς το «go» του συγγραφέα.
+- **Απόδειξη:** `scripts/check_oidc_subjects.py` (στο `make check`) με 9 μεταλλάξεις gate-proof που η καθεμία
+  απορρίπτεται από το ΟΝΟΜΑΤΙΣΜΕΝΟ gate· `tests/test_guard.py` (9 tests, με αλλοιωμένα μηνύματα, NaN, base64).
+- **Review (fresh-context, εχθρικό) — 13 ευρήματα, οι διορθώσεις:**
+  (1) ο έλεγχος του trust ήταν substring grep: περνούσε `||` αντί `&&`, `attribute_condition = "true"`, λάθος
+  μεταβλητή, extra principal σε άλλο αρχείο — ξαναγράφτηκε να συγκρίνει τις clauses μία-μία και να διαβάζει
+  όλα τα αρχεία του `infra/` (B33)· (2) το trust δεν καρφίτσωνε branch — προστέθηκε `ref == refs/heads/main` και
+  βήμα DAY-ONE 6b για reviewer/branches στα environments (B34)· (3) ο deployer είναι de facto owner και το
+  σχόλιο έλεγε ψέματα ότι το περιορίζει ο guard — διορθώθηκε το κείμενο, οι IAM Conditions μένουν deferred με
+  λόγο (B36)· (4) σχόλιο/ρόλοι χωρίς καταναλωτή — ξεκαθαρίστηκε, κάθε ρόλος έχει καταναλωτή σε layer·
+  (5) ο guard αποτύγχανε ανοιχτά σε μη αναγνώσιμο μήνυμα και σε NaN — τώρα κάθε αδιάβαστο = stop, με tests (B37)·
+  (6) το stop level έκλεινε τον δρόμο του destroy και δεν είχε περιθώριο — δεύτερος SA `steward-destroyer` που ο
+  guard δεν αγγίζει, και `stop_at=45` < 50 (B35, B37)· (7) ο guard SA ήταν υπερβολικός — custom role
+  get/enable/disable μόνο στον deployer, ξεχωριστός SA για τον reaper· (8) το `data.google_project` διαβαζόταν
+  πριν ενεργοποιηθεί το API — `depends_on`· (9) η εκκρεμότητα του Data Transfer service agent πάει στο
+  governance layer (ανοιχτό, βλ. παρακάτω)· (10) budget μηνιαίο — τεκμηριώθηκε (B38)· (11) περιγραφή
+  `expires_at` υπερέβαλλε — διορθώθηκε· (12) το budget ως προϋπόθεση του guard ήταν μόνο σχόλιο — `depends_on`·
+  (13) το tfvars example είχε πραγματικό GitHub login/ids και παραπλανητικό όνομα — placeholders και
+  `terraform.tfvars.example`.
+- **Ανοιχτό:** (α) ο agent του BigQuery Data Transfer χρειάζεται `serviceAccountShortTermTokenMinter` στο
+  governance layer πριν το πρώτο apply· (β) τα IAM Conditions (B36)· (γ) η πρώτη εφαρμογή θα δείξει αν το
+  `user_project_override` χρειάζεται δύο περάσματα — θα το πω στον συγγραφέα.

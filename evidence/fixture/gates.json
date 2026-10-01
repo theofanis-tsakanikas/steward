@@ -997,6 +997,132 @@
     "why": "a date or a count in prose is a figure too"
    },
    {
+    "claim": "6",
+    "detail": "ERROR OIDC_JOINER infra/bootstrap/wif.tf — clauses are joined by ' || ', not ' && '",
+    "expect": [
+     "OIDC_JOINER",
+     "infra/bootstrap/wif.tf"
+    ],
+    "file": "infra/bootstrap/wif.tf",
+    "gate": "oidc-subjects",
+    "n": 72,
+    "name": "the trust clauses joined by OR",
+    "status": "REFUSED",
+    "why": "with OR any one clause is enough: any repository with a deploy environment gets in"
+   },
+   {
+    "claim": "6",
+    "detail": "ERROR OIDC_UNWIRED infra/bootstrap/wif.tf — the provider's attribute_condition is not local.trust_condition",
+    "expect": [
+     "OIDC_UNWIRED",
+     "infra/bootstrap/wif.tf"
+    ],
+    "file": "infra/bootstrap/wif.tf",
+    "gate": "oidc-subjects",
+    "n": 73,
+    "name": "a trust that is written but not applied",
+    "status": "REFUSED",
+    "why": "the clauses only protect if the provider applies them"
+   },
+   {
+    "claim": "6",
+    "detail": "ERROR OIDC_CLAUSES infra/bootstrap/wif.tf — expected clause missing or reworded: assertion.repository_id == '${var.github_repository_id}'",
+    "expect": [
+     "OIDC_CLAUSES",
+     "infra/bootstrap/wif.tf"
+    ],
+    "file": "infra/bootstrap/wif.tf",
+    "gate": "oidc-subjects",
+    "n": 74,
+    "name": "the repository id pinned to the wrong variable",
+    "status": "REFUSED",
+    "why": "a clause that names the wrong value pins nothing, and a substring check would not notice"
+   },
+   {
+    "claim": "6",
+    "detail": "ERROR OIDC_ENVS infra/bootstrap/wif.tf — trusted_environments is ['deploy', 'destroy', 'dev'], expected ['deploy', 'destroy']",
+    "expect": [
+     "OIDC_ENVS",
+     "infra/bootstrap/wif.tf"
+    ],
+    "file": "infra/bootstrap/wif.tf",
+    "gate": "oidc-subjects",
+    "n": 75,
+    "name": "a third environment in the trust",
+    "status": "REFUSED",
+    "why": "an environment anyone can create is a door"
+   },
+   {
+    "claim": "6",
+    "detail": "ERROR OIDC_PATTERN infra/bootstrap/wif.tf:15 — an exact match is required, not a pattern: \"assertion.repository.startsWith('${var.github_owner}/')\",",
+    "expect": [
+     "OIDC_PATTERN",
+     "infra/bootstrap/wif.tf"
+    ],
+    "file": "infra/bootstrap/wif.tf",
+    "gate": "oidc-subjects",
+    "n": 76,
+    "name": "the repository matched by prefix",
+    "status": "REFUSED",
+    "why": "every value in the trust is an exact match, never a pattern"
+   },
+   {
+    "claim": "6",
+    "detail": "ERROR OIDC_CLAUSES infra/bootstrap/wif.tf — expected clause missing or reworded: assertion.ref == 'refs/heads/main'",
+    "expect": [
+     "OIDC_CLAUSES",
+     "infra/bootstrap/wif.tf"
+    ],
+    "file": "infra/bootstrap/wif.tf",
+    "gate": "oidc-subjects",
+    "n": 77,
+    "name": "the trust no longer pins the main branch",
+    "status": "REFUSED",
+    "why": "a branch someone pushes to must not be able to apply"
+   },
+   {
+    "claim": "6",
+    "detail": "ERROR OIDC_FEDERATION_OPEN infra/bootstrap/wif.tf — deployer_federation must bind deployer to attribute.environment/deploy only",
+    "expect": [
+     "OIDC_FEDERATION_OPEN",
+     "infra/bootstrap/wif.tf"
+    ],
+    "file": "infra/bootstrap/wif.tf",
+    "gate": "oidc-subjects",
+    "n": 78,
+    "name": "the deployer open to a whole owner",
+    "status": "REFUSED",
+    "why": "only a job in the deploy environment may become the deployer, not everything the owner has"
+   },
+   {
+    "claim": "6",
+    "detail": "ERROR OIDC_PUBLIC infra/bootstrap/deployer.tf — a public principal is granted something",
+    "expect": [
+     "OIDC_PUBLIC",
+     "infra/bootstrap/deployer.tf"
+    ],
+    "file": "infra/bootstrap/deployer.tf",
+    "gate": "oidc-subjects",
+    "n": 79,
+    "name": "a public principal granted on the state bucket",
+    "status": "REFUSED",
+    "why": "state holds every resource id; nobody outside the project reads it"
+   },
+   {
+    "claim": "6",
+    "detail": "ERROR KEY_FORBIDDEN infra/bootstrap/deployer.tf — no service-account key may exist",
+    "expect": [
+     "KEY_FORBIDDEN",
+     "infra/bootstrap/deployer.tf"
+    ],
+    "file": "infra/bootstrap/deployer.tf",
+    "gate": "oidc-subjects",
+    "n": 80,
+    "name": "a service-account key",
+    "status": "REFUSED",
+    "why": "no long-lived credential exists anywhere (CLAUDE.md)"
+   },
+   {
     "claim": "2",
     "detail": "GENERATED_STALE infra/estate/generated.tf.json",
     "expect": [
@@ -1005,7 +1131,7 @@
     ],
     "file": "infra/estate/generated.tf.json",
     "gate": "generated",
-    "n": 72,
+    "n": 81,
     "name": "generated Terraform edited by hand",
     "status": "REFUSED",
     "why": "every control is generated; a hand edit is drift"
@@ -1019,7 +1145,7 @@
     ],
     "file": "src/steward/core/compile.py",
     "gate": "core-purity",
-    "n": 73,
+    "n": 82,
     "name": "a cloud SDK in the core",
     "status": "REFUSED",
     "why": "the core is pure; claims are provable offline"
@@ -1035,7 +1161,7 @@
   "as_of": "2026-09-30",
   "claim": "all",
   "data": "synthetic",
-  "digest": "3eadfbe85ac3ed345e197d94885c96e98197b3a942f39ed1909b25f7b29cc235",
+  "digest": "ec0a57eb2944661d4c793b0210afbd2da6fa838709dcc1b6d1f287c48db586be",
   "mode": "fixture",
   "name": "gates",
   "operator": "fictional (Halverra Telecom)",

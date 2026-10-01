@@ -16,6 +16,8 @@ crash.log
 .terraform.lock.hcl.bak
 *.auto.tfvars
 terraform.tfvars
+*.tfvars.json
+infra/**/.build/
 # local, never committed
 linkedin/
 LinkedIn/
