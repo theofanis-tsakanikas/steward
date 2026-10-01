@@ -1,0 +1,47 @@
+[project]
+name = "steward"
+version = "0.1.0"
+description = "A governance layer for a telco's BigQuery estate: contracts compile to controls, drift is a failing build."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "MIT" }
+dependencies = [
+  "pydantic>=2.8",
+  "pyyaml>=6.0",
+  "lkml>=1.3.5",
+]
+
+[project.optional-dependencies]
+demo = ["streamlit>=1.38", "pandas>=2.2"]
+gcp = [
+  "google-cloud-bigquery>=3.25",
+  "google-cloud-dlp>=3.22",
+  "google-cloud-datacatalog-lineage>=0.3",
+  "requests>=2.32",
+]
+
+[project.scripts]
+steward = "steward.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8.3", "ruff>=0.6"]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/steward"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+src = ["src", "tests", "scripts", "evals", "synthetic", "app"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["E501", "RUF001", "RUF002", "RUF003"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
