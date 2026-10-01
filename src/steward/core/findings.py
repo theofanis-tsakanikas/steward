@@ -4,18 +4,8 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 
-# Findings that no waiver can suppress. Doctrine 7: a column in which personal data was found cannot
-# be declared non-sensitive by anyone — an approver would have nothing to approve *with*.
-UNWAIVABLE = frozenset(
-    {
-        "PII_UNTAGGED",
-        "PII_UNDECLARED_COLUMN",
-        "PII_IN_UNCONTRACTED_COLUMN_UNMASKED",
-        "ROLE_CEILING_EXCEEDED",
-        "SELF_APPROVAL",
-        "SERVICE_ACCOUNT_APPROVAL",
-    }
-)
+# Which findings a waiver may suppress is decided in one place: core/validate.py WAIVABLE (an
+# allowlist). Everything else — every finding about personal data above all (doctrine 7) — is not.
 
 
 @dataclass(frozen=True)

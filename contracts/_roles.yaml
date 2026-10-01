@@ -18,6 +18,9 @@ roles:
   custodian:
     description: Pipelines that write data and apply controls. Reads nothing it does not write; approves nothing.
 
+# Who may approve a waiver (doctrine 6). Never the requester, never an owner of what is waived.
+waiver_approvers: group:privacy-office@halverra.example
+
 # The fictional directory: who is in which group. Approvals are checked against it (doctrine 5).
 # Every address is under halverra.example (RFC 2606) — none can resolve to a real mailbox.
 directory:
@@ -30,3 +33,4 @@ directory:
   group:analytics-owners@halverra.example: [user:anna.christou@halverra.example]
   group:data-platform@halverra.example: [serviceAccount:steward-pipeline@halverra-data.example]
   group:privacy-office@halverra.example: [user:dimitris.nikolaou@halverra.example]
+  group:data-governance@halverra.example: [user:katerina.vasileiou@halverra.example]

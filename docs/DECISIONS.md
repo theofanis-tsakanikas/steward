@@ -49,3 +49,14 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
 - **B3 — The GitHub repository was created by the session (private), not by the author.** DAY-ONE step 6
   listed it as manual, but the autonomous build (P3) cannot open its first PR without it; `gh` was
   already authenticated as the author. The WIF half of step 6 stays with T010.
+- **B4 — Contract fields read by a later atom, named here so none is orphaned.** `lawful_basis` →
+  catalog attribute (T021) · `marketplace.listable`, `max_grant_days`, `grantable_roles`,
+  `approvers` → marketplace flow (T006) · `retention.mode/column/rule` → compiled partition expiration
+  and scheduled DELETE (T007) · `kinds` → role ceilings (T004) and the classification gate (T003) ·
+  `masking` → policy tags and data policies (T004) · `quality`, `freshness` → rules engine (T005) ·
+  `row_access` → row access policies (T004). T008 adds a check that every contract field is read by
+  at least one generator or gate; until then this list is the record.
+- **B5 — Only `CONTRACT_MISSING` and `TABLE_UNDECLARED` are waivable (allowlist), for at most 90 days,
+  approved by a member of `group:privacy-office` who is neither the requester nor an owner of the
+  waived dataset.** A waiver that could suppress a missing owner, retention or classification would be
+  doctrine 3 with a deadline attached. Found by the T002 hostile review (finding 1).

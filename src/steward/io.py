@@ -12,11 +12,32 @@ CONTRACTS = REPO / "contracts"
 SYNTHETIC = REPO / "synthetic"
 
 
+class DuplicateKeyError(ValueError):
+    pass
+
+
+class _StrictLoader(yaml.SafeLoader):
+    """safe_load keeps the LAST of two duplicate keys, silently. A contract declaring `ref_2:` twice
+    would show a reviewer one classification and load the other — so a duplicate key is an error."""
+
+    def construct_mapping(self, node, deep=False):
+        seen = set()
+        for key_node, _ in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            if key in seen:
+                raise DuplicateKeyError(f"duplicate key {key!r} at line {key_node.start_mark.line + 1}")
+            seen.add(key)
+        return super().construct_mapping(node, deep=deep)
+
+
 def load_yaml(path: Path) -> dict:
-    return yaml.safe_load(path.read_text()) or {}
+    return yaml.load(path.read_text(), Loader=_StrictLoader) or {}
 
 
 def contract_docs(root: Path = CONTRACTS) -> dict[str, dict]:
+    stray = sorted(p.name for p in root.glob("*.yml"))
+    if stray:
+        raise ValueError(f"contracts must be *.yaml; found {stray} (they would be silently ignored)")
     return {p.stem: load_yaml(p) for p in sorted(root.glob("*.yaml")) if not p.name.startswith("_")}
 
 
