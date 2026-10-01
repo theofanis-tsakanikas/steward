@@ -12,12 +12,19 @@ on:
         description: "Type destroy-steward to confirm"
         required: true
         type: string
+      publish_version:
+        description: "The publish_version the estate was deployed with (governance reads that parameter version at plan time, destroy included)"
+        required: true
+        default: "v1"
+        type: string
 
 permissions:
   contents: read
 
+# Its own group: GitHub keeps only one pending run per group, so a destroy that shared the deploy's group could be
+# silently replaced by a newer deploy. Terraform's state lock is what serialises two runs that do overlap.
 concurrency:
-  group: steward-estate
+  group: steward-destroy
   cancel-in-progress: false
 
 env:
@@ -35,7 +42,12 @@ jobs:
     env:
       PROJECT: ${{ vars.GCP_PROJECT_ID }}
       STATE_BUCKET: ${{ vars.GCP_PROJECT_ID }}-steward-tfstate
+      PUBLISH_VERSION: ${{ inputs.publish_version }}
     steps:
+      # Inputs reach a shell only through env, and only after they are checked: the identity below is strong.
+      - name: check the inputs
+        run: |
+          [[ "$PUBLISH_VERSION" =~ ^v[0-9]+$ ]] || { echo "publish_version must look like v1"; exit 1; }
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - uses: hashicorp/setup-terraform@v3
@@ -48,8 +60,10 @@ jobs:
           service_account: ${{ vars.GCP_DESTROYER_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v2
 
-      # The variables below only have to satisfy validation: destroy reads state, not these values.
+      # Every layer is attempted even if an earlier one failed (`if: always()`): one failure must not strand the rest,
+      # and the run is red if any step failed. expires_at is a placeholder: destroy reads state, not that value.
       - name: marketplace
+        if: ${{ always() }}
         working-directory: infra/marketplace
         run: |
           uv run python ../../scripts/tfvars.py --project "$PROJECT" --layer marketplace > grantees.auto.tfvars.json
@@ -57,25 +71,30 @@ jobs:
           terraform destroy -input=false -auto-approve -var "project_id=$PROJECT" -var "expires_at=2000-01-01"
 
       - name: assurance
+        if: ${{ always() }}
         working-directory: infra/assurance
         run: |
+          uv run python ../../scripts/tfvars.py --project "$PROJECT" --layer assurance > principals.auto.tfvars.json
           terraform init -input=false -backend-config="bucket=$STATE_BUCKET" -backend-config="prefix=assurance"
           terraform destroy -input=false -auto-approve -var "project_id=$PROJECT" -var "expires_at=2000-01-01"
 
       - name: governance
+        if: ${{ always() }}
         working-directory: infra/governance
         run: |
           uv run python ../../scripts/tfvars.py --project "$PROJECT" --layer governance > principals.auto.tfvars.json
           terraform init -input=false -backend-config="bucket=$STATE_BUCKET" -backend-config="prefix=governance"
           terraform destroy -input=false -auto-approve \
-            -var "project_id=$PROJECT" -var "expires_at=2000-01-01" -var "estate_version=v1"
+            -var "project_id=$PROJECT" -var "expires_at=2000-01-01" -var "estate_version=$PUBLISH_VERSION"
 
       - name: estate
+        if: ${{ always() }}
         working-directory: infra/estate
         run: |
           terraform init -input=false -backend-config="bucket=$STATE_BUCKET" -backend-config="prefix=estate"
           terraform destroy -input=false -auto-approve \
-            -var "project_id=$PROJECT" -var "expires_at=2000-01-01" -var "publish_version=v1"
+            -var "project_id=$PROJECT" -var "expires_at=2000-01-01" -var "publish_version=$PUBLISH_VERSION"
 
       - name: sweep (red if anything is left)
+        if: ${{ always() }}
         run: uv run python scripts/sweep.py --project "$PROJECT"

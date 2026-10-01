@@ -64,7 +64,9 @@ def load(
     active = active_grants(decide(parsed, contracts, roles), parsed.as_of) if parsed else []
     e.compiled |= compile_marketplace(contracts, active)
     e.compiled |= compile_seats(contracts, roles, active)
-    e.compiled |= compile_assurance(contracts, e.compiled["infra/estate/generated.tf.json"])
+    e.compiled |= compile_assurance(
+        contracts, e.compiled["infra/estate/generated.tf.json"], e.compiled["infra/governance/generated.tf.json"]
+    )
     return e
 
 

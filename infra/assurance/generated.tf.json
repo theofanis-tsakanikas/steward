@@ -60,6 +60,7 @@
               "column": "country",
               "description": "Contract rule Q-ANA-001 (validity)",
               "dimension": "VALIDITY",
+              "ignore_null": true,
               "name": "q-ana-001",
               "set_expectation": {
                 "values": [
@@ -74,6 +75,7 @@
               "column": "subscribers",
               "description": "Contract rule Q-ANA-002 (validity)",
               "dimension": "VALIDITY",
+              "ignore_null": true,
               "name": "q-ana-002",
               "range_expectation": {
                 "min_value": "5"
@@ -86,6 +88,11 @@
         "data_scan_id": "steward-dq-analytics-weekly-usage-by-cell",
         "description": "Rules from the analytics contract (version 2). On demand; small tables only.",
         "display_name": "steward data quality: analytics.weekly_usage_by_cell",
+        "execution_identity": {
+          "service_account": {
+            "email": "${trimprefix(var.principals[\"group:data-platform@halverra.example\"], \"serviceAccount:\")}"
+          }
+        },
         "execution_spec": {
           "trigger": {
             "on_demand": {}
@@ -107,6 +114,7 @@
               "column": "country",
               "description": "Contract rule Q-CRM-004 (validity)",
               "dimension": "VALIDITY",
+              "ignore_null": true,
               "name": "q-crm-004",
               "set_expectation": {
                 "values": [
@@ -121,6 +129,7 @@
               "column": "segment",
               "description": "Contract rule Q-CRM-005 (validity)",
               "dimension": "VALIDITY",
+              "ignore_null": true,
               "name": "q-crm-005",
               "set_expectation": {
                 "values": [
@@ -137,6 +146,11 @@
         "data_scan_id": "steward-dq-crm-customers",
         "description": "Rules from the crm contract (version 2). On demand; small tables only. Not scanned here: Q-CRM-001: customer_id is policy-tagged; Q-CRM-002: customer_id is policy-tagged; Q-CRM-003: msisdn is policy-tagged; Q-CRM-006: nested column contracts.status.",
         "display_name": "steward data quality: crm.customers",
+        "execution_identity": {
+          "service_account": {
+            "email": "${trimprefix(var.principals[\"group:data-platform@halverra.example\"], \"serviceAccount:\")}"
+          }
+        },
         "execution_spec": {
           "trigger": {
             "on_demand": {}
@@ -159,13 +173,16 @@
               "description": "Contract rule Q-CRM-010 (completeness)",
               "dimension": "COMPLETENESS",
               "name": "q-crm-010",
-              "non_null_expectation": {},
+              "row_condition_expectation": {
+                "sql_expression": "ticket_id IS NOT NULL AND ticket_id != ''"
+              },
               "threshold": 1
             },
             {
               "column": "ticket_id",
               "description": "Contract rule Q-CRM-011 (uniqueness)",
               "dimension": "UNIQUENESS",
+              "ignore_null": true,
               "name": "q-crm-011",
               "threshold": 1,
               "uniqueness_expectation": {}
@@ -174,6 +191,7 @@
               "column": "status",
               "description": "Contract rule Q-CRM-013 (validity)",
               "dimension": "VALIDITY",
+              "ignore_null": true,
               "name": "q-crm-013",
               "set_expectation": {
                 "values": [
@@ -189,6 +207,11 @@
         "data_scan_id": "steward-dq-crm-support-tickets",
         "description": "Rules from the crm contract (version 2). On demand; small tables only. Not scanned here: Q-CRM-012: customer_id is policy-tagged.",
         "display_name": "steward data quality: crm.support_tickets",
+        "execution_identity": {
+          "service_account": {
+            "email": "${trimprefix(var.principals[\"group:data-platform@halverra.example\"], \"serviceAccount:\")}"
+          }
+        },
         "execution_spec": {
           "trigger": {
             "on_demand": {}
@@ -212,13 +235,16 @@
               "description": "Contract rule Q-FIN-001 (completeness)",
               "dimension": "COMPLETENESS",
               "name": "q-fin-001",
-              "non_null_expectation": {},
+              "row_condition_expectation": {
+                "sql_expression": "invoice_id IS NOT NULL AND invoice_id != ''"
+              },
               "threshold": 1
             },
             {
               "column": "invoice_id",
               "description": "Contract rule Q-FIN-002 (uniqueness)",
               "dimension": "UNIQUENESS",
+              "ignore_null": true,
               "name": "q-fin-002",
               "threshold": 1,
               "uniqueness_expectation": {}
@@ -227,6 +253,7 @@
               "column": "amount",
               "description": "Contract rule Q-FIN-004 (validity)",
               "dimension": "VALIDITY",
+              "ignore_null": true,
               "name": "q-fin-004",
               "range_expectation": {
                 "min_value": "0"
@@ -237,6 +264,7 @@
               "column": "currency",
               "description": "Contract rule Q-FIN-005 (validity)",
               "dimension": "VALIDITY",
+              "ignore_null": true,
               "name": "q-fin-005",
               "set_expectation": {
                 "values": [
@@ -249,6 +277,7 @@
               "column": "status",
               "description": "Contract rule Q-FIN-006 (validity)",
               "dimension": "VALIDITY",
+              "ignore_null": true,
               "name": "q-fin-006",
               "set_expectation": {
                 "values": [
@@ -265,6 +294,11 @@
         "data_scan_id": "steward-dq-finance-billing",
         "description": "Rules from the finance contract (version 3). On demand; small tables only. Not scanned here: Q-FIN-003: customer_id is policy-tagged.",
         "display_name": "steward data quality: finance.billing",
+        "execution_identity": {
+          "service_account": {
+            "email": "${trimprefix(var.principals[\"group:data-platform@halverra.example\"], \"serviceAccount:\")}"
+          }
+        },
         "execution_spec": {
           "trigger": {
             "on_demand": {}
@@ -287,6 +321,7 @@
               "column": "attach_id",
               "description": "Contract rule Q-NET-010 (uniqueness)",
               "dimension": "UNIQUENESS",
+              "ignore_null": true,
               "name": "q-net-010",
               "threshold": 1,
               "uniqueness_expectation": {}
@@ -297,6 +332,11 @@
         "data_scan_id": "steward-dq-network-network-events",
         "description": "Rules from the network contract (version 2). On demand; small tables only.",
         "display_name": "steward data quality: network.network_events",
+        "execution_identity": {
+          "service_account": {
+            "email": "${trimprefix(var.principals[\"group:data-platform@halverra.example\"], \"serviceAccount:\")}"
+          }
+        },
         "execution_spec": {
           "trigger": {
             "on_demand": {}
@@ -320,13 +360,16 @@
               "description": "Contract rule Q-NET-002 (completeness)",
               "dimension": "COMPLETENESS",
               "name": "q-net-002",
-              "non_null_expectation": {},
+              "row_condition_expectation": {
+                "sql_expression": "event_id IS NOT NULL AND event_id != ''"
+              },
               "threshold": 1
             },
             {
               "column": "event_id",
               "description": "Contract rule Q-NET-003 (uniqueness)",
               "dimension": "UNIQUENESS",
+              "ignore_null": true,
               "name": "q-net-003",
               "threshold": 1,
               "uniqueness_expectation": {}
@@ -335,6 +378,7 @@
               "column": "country",
               "description": "Contract rule Q-NET-005 (validity)",
               "dimension": "VALIDITY",
+              "ignore_null": true,
               "name": "q-net-005",
               "set_expectation": {
                 "values": [
@@ -349,6 +393,7 @@
               "column": "event_type",
               "description": "Contract rule Q-NET-006 (validity)",
               "dimension": "VALIDITY",
+              "ignore_null": true,
               "name": "q-net-006",
               "set_expectation": {
                 "values": [
@@ -363,6 +408,7 @@
               "column": "volume_mb",
               "description": "Contract rule Q-NET-007 (validity)",
               "dimension": "VALIDITY",
+              "ignore_null": true,
               "name": "q-net-007",
               "range_expectation": {
                 "min_value": "0"
@@ -375,6 +421,11 @@
         "data_scan_id": "steward-dq-network-usage-events",
         "description": "Rules from the network contract (version 2). On demand; small tables only. Not scanned here: Q-NET-001: freshness is judged offline (needs a shared clock); Q-NET-004: msisdn is policy-tagged.",
         "display_name": "steward data quality: network.usage_events",
+        "execution_identity": {
+          "service_account": {
+            "email": "${trimprefix(var.principals[\"group:data-platform@halverra.example\"], \"serviceAccount:\")}"
+          }
+        },
         "execution_spec": {
           "trigger": {
             "on_demand": {}

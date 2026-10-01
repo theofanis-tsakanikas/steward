@@ -4,10 +4,15 @@
     python scripts/load_synthetic.py --project my-project            # load, then count
     python scripts/load_synthetic.py --project my-project --plan     # print the commands, touch nothing
 
-One `bq load --replace` per table (idempotent), then one COUNT(*) per table with maximum_bytes_billed set
-(CLAUDE.md: every query the code runs). A table whose count differs from its file's line count is a failure:
-the load is not done until the numbers agree (T011 stop_at). Needs the `bq` CLI and credentials; nothing here
-runs in CI.
+One `bq load --replace` per table, then the table's row count from its metadata (`bq show`: numRows). A table
+whose count differs from its file's line count is a failure: the load is not done until the numbers agree (T011
+stop_at). Needs the `bq` CLI and credentials; nothing here runs in CI.
+
+Why metadata and not SELECT COUNT(*): four tables have `require_partition_filter`, which refuses a count with no
+predicate; and once governance has applied row access policies the deployer matches none, so a COUNT(*) would
+read 0. numRows is neither filtered nor billed - no query is run, so there is nothing to cap.
+A re-run loads only the tables whose count is not already right: truncating a table that carries row access
+policies is a BigQuery restriction this script does not try to get around.
 """
 
 from __future__ import annotations
@@ -20,7 +25,6 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 DATA = REPO / "synthetic" / "data"
-MAX_BYTES = str(10 * 1024 * 1024)  # a COUNT(*) reads no columns; 10 MiB is a ceiling, not an estimate
 # Tables that exist in the estate because a contract declares them (the `legacy` dataset has none: it is
 # the undeclared one, held at the safe state, and is loaded too so the scan has something to find).
 
@@ -45,23 +49,28 @@ def load_command(project: str, dataset: str, table: str, path: Path) -> list[str
     ]
 
 
-def count_command(project: str, dataset: str, table: str) -> list[str]:
-    return [
-        "bq",
-        f"--project_id={project}",
-        "query",
-        "--use_legacy_sql=false",
-        "--format=json",
-        f"--maximum_bytes_billed={MAX_BYTES}",
-        f"SELECT COUNT(*) AS n FROM `{project}.{dataset}.{table}`",
-    ]
+def show_command(project: str, dataset: str, table: str) -> list[str]:
+    return ["bq", f"--project_id={project}", "show", "--format=json", f"{project}:{dataset}.{table}"]
+
+
+def rows_in(show_output: str) -> int | None:
+    """numRows from `bq show --format=json`; None when the table is missing or the output cannot be read."""
+    try:
+        return int(json.loads(show_output)["numRows"])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _rows(project: str, dataset: str, table: str) -> int | None:
+    r = subprocess.run(show_command(project, dataset, table), capture_output=True, text=True)
+    return rows_in(r.stdout) if r.returncode == 0 else None
 
 
 def expected(path: Path) -> int:
     return sum(1 for _ in path.open("rb"))
 
 
-def mismatches(counts: dict[str, int], want: dict[str, int]) -> list[str]:
+def mismatches(counts: dict[str, int | None], want: dict[str, int]) -> list[str]:
     return [f"{t}: loaded {counts.get(t)}, generator wrote {n}" for t, n in sorted(want.items()) if counts.get(t) != n]
 
 
@@ -74,17 +83,17 @@ def main(argv: list[str] | None = None) -> int:
     if args.plan:
         for d, t, p in tables():
             print(" ".join(load_command(args.project, d, t, p)))
-            print(" ".join(count_command(args.project, d, t)))
+            print(" ".join(show_command(args.project, d, t)))
         return 0
-    counts: dict[str, int] = {}
+    counts: dict[str, int | None] = {}
     for d, t, p in tables():
-        subprocess.run(load_command(args.project, d, t, p), check=True)
-        r = subprocess.run(count_command(args.project, d, t), check=True, capture_output=True, text=True)
-        counts[f"{d}.{t}"] = int(json.loads(r.stdout)[0]["n"])
+        if _rows(args.project, d, t) != want[f"{d}.{t}"]:
+            subprocess.run(load_command(args.project, d, t, p), check=True)
+        counts[f"{d}.{t}"] = _rows(args.project, d, t)
         print(f"{d}.{t}: {counts[f'{d}.{t}']} rows")
     bad = mismatches(counts, want)
     print("\n".join(f"MISMATCH {m}" for m in bad))
-    print(f"{'FAIL' if bad else 'ok'} load: {len(counts)} table(s), {sum(counts.values())} rows")
+    print(f"{'FAIL' if bad else 'ok'} load: {len(counts)} table(s), {sum(v or 0 for v in counts.values())} rows")
     return 1 if bad else 0
 
 

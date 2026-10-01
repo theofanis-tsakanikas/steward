@@ -272,3 +272,70 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   and cheap, and the first week is one month. `costAmount` includes credits (`INCLUDE_ALL_CREDITS`): the guard
   compares what would be billed. A custom period ending at `expires_at` is the stricter option if the
   estate ever stands across a boundary.
+- **B39 — Seats are service accounts, created by the estate layer.** A contract names seats (`analyst@GR`,
+  `group:crm-stewards@…`); the demo estate has no human identities to bind them to. `core/compile_seats.py`
+  derives one service account per seat (`seat-…`, or `person-…` for a named requester) into
+  `infra/estate/identities.tf.json`, and `infra/seats.json` lists them. The deployer impersonates them to capture
+  the three role transcripts (claim 2), so no human account and no key is involved. `scripts/tfvars.py` turns the
+  list into the `principals` (governance) and `grantees` (marketplace) variables. An id GCP would refuse is an
+  error, never a truncation (two seats cannot silently collapse into one account).
+- **B40 — Layers hand each other nothing but a published parameter.** Estate publishes the policy-tag ids as a
+  Parameter Manager version; governance reads that version; nothing reads another layer's state. Apply order:
+  estate → data load → governance → assurance → marketplace; destroy runs in reverse and ends with
+  `scripts/sweep.py`, which is red if anything labelled `project=steward` is left.
+- **B41 — The deploy and destroy workflows are gates, not scripts.** Both are `workflow_dispatch` only, each in
+  its own GitHub environment, keyless; `deploy.yml` runs the whole offline preflight before any step that holds
+  a credential. `scripts/check_workflows.py` refuses a push/PR trigger, an authenticating job outside its
+  environment, `cancel-in-progress`, a key, a layer that deploy applies and destroy does not (same state prefix),
+  and destroy running as the identity the budget guard switches off.
+- **B42 — The assurance layer asks only what the contracts let a scan answer.** The DLP inspect template asks
+  for exactly the kinds the value detector can find (`DETECTABLE_KINDS`); a kind with no mapping stops the
+  build, and `scripts/check_assurance.py` holds its own copy of the expected infoTypes (the generator's table is
+  the thing under test). IMSI is a custom regex (15 digits) and cannot be told from an IMEI by value alone: the
+  comparison with the core detector (T014 evidence) will show that as a disagreement, not hide it. A template
+  cannot limit rows; the sample size belongs to the inspection code (not written yet).
+- **B43 — A Dataplex scan runs as its dataset's custodian, and the build refuses a scan that would read nothing.**
+  Dataplex scans are generated from the contract rules, on demand. The custodian is the one role that sees every
+  row (it loads and deletes them) and no tagged column in clear (`contracts/_roles.yaml`). A scan as an identity
+  outside the row access policies reads zero rows, and zero rows pass completeness and uniqueness (a green that
+  means nothing — the failure claim 5 exists to prevent), so `compile_assurance` raises for a table whose row
+  policies leave the custodian out, and `check_assurance` re-judges it from the compiled governance. Rules are
+  generated **only for columns without a policy tag** (the custodian holds no Fine-Grained Reader; giving it one
+  so a quality rule could read personal data would be a grant no contract made). Freshness (needs a clock the
+  synthetic data does not share), referential checks and nested columns are left to the offline engine; each
+  scan's description says which rules it does not carry. The rules mean what `quality._check` means: completeness
+  fails null and empty, validity and uniqueness ignore null (`ignore_null`), a regex matches the whole value
+  (`^(?:…)$`), bounds keep every digit. A scan over a `require_partition_filter` table carries a constant lower
+  bound on the partition column; an unknown partition type stops the build (doctrine 3). *Not verified without
+  GCP:* that Dataplex accepts the service account as execution identity (GCP-CONSTRAINTS row 7).
+- **B44 — Values the assurance layer fixes, recorded (doctrine 3).** `sampling_percent = 100` (the tables are
+  small and synthetic), `threshold = 1` (a rule passes only if every row passes: the offline engine quarantines
+  a row on any failure), DLP `min_likelihood = POSSIBLE` (uncertainty is sensitive, doctrine 1),
+  `include_quote = false`, findings limits 100 per item and 1000 per request. Each is a constant in
+  `core/compile_assurance.py`, not a default hidden in a variable.
+- **B45 — The Data Transfer agent may mint tokens, on one account, and the model knows exactly that.** Scheduled
+  retention queries run as the custodian's service account, which needs `roles/iam.serviceAccountShortTermTokenMinter`
+  for the Data Transfer service agent. It is bound **on each custodian's service account** (not the project: a
+  project binding would let the agent mint tokens for every seat), and each scheduled query `depends_on` its grant.
+  The access simulator accepts that role only for that one derived member on a seat's own account and still
+  refuses every other unmodelled grant.
+- **B46 — The marketplace grantee is a different principal from the seat, and the evidence says so.** A
+  marketplace grant binds `dataViewer` with an IAM Condition expiry to the *requester* (`person-…`). The row access
+  policies and policy-tag grants are compiled for seats (`seat-…`), so live the requester sees the dataset, zero
+  rows, and denied tagged columns. Claim 6's live evidence is therefore the **binding and its expiry** (it exists,
+  carries the condition, and is gone or denied after the instant), not the data the requester sees; the three-role
+  transcripts of claim 2 are captured as seats. Giving the requester the seat's row and tag rights under the same
+  expiry is the stricter design and is deferred with its unlock condition: a project to test on.
+- **B47 — The data load is proved from table metadata, and the sweep looks everywhere it should.**
+  `load_synthetic.py` counts with `numRows` from `bq show`: a `SELECT COUNT(*)` is refused on a
+  `require_partition_filter` table, and once governance has applied row policies the deployer matches none and
+  reads 0. A re-run loads only tables whose count is not already right (truncating a table that carries row
+  policies is a BigQuery restriction, not worked around). `sweep.py` lists DLP templates, Analytics Hub
+  exchanges, Dataplex scans, taxonomies, Parameter Manager parameters and scheduled queries over REST (the gcloud
+  groups it first named do not exist), and refuses an inventory that did not look at every kind.
+- **B48 — The workflows treat their own inputs as hostile.** An input reaches a shell only through `env`, after a
+  regex check (`^v[0-9]+$`, `YYYY-MM-DD`): a `${{ inputs.* }}` inside `run:` would be code run as an identity that
+  is effectively the project owner (WORKFLOW_INJECTION). Destroy takes the `publish_version` the estate was
+  deployed with (governance reads that parameter version at plan time, destroy included), attempts every layer
+  even if an earlier one failed (`if: always()`), and has its own concurrency group because GitHub keeps one
+  pending run per group and a queued destroy must not be replaced by a newer deploy.

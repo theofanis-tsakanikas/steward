@@ -23,3 +23,8 @@ variable "expires_at" {
   description = "ISO date after which the reaper destroys the estate."
   type        = string
 }
+
+variable "principals" {
+  description = "Seat -> IAM member (serviceAccount:...), as in the governance layer (scripts/tfvars.py --layer assurance). A scan runs as its dataset's custodian seat. No default: a seat with no principal is a failed plan (doctrine 3)."
+  type        = map(string)
+}
