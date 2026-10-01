@@ -24,6 +24,21 @@
   },
   "resource": {
     "google_bigquery_dataset": {
+      "analytics": {
+        "dataset_id": "analytics",
+        "delete_contents_on_destroy": true,
+        "description": "Aggregated network usage for planning dashboards — no subscriber-level rows. Owner group:analytics-owners@halverra.example; steward group:data-governance@halverra.example; custodian group:data-platform@halverra.example. Lawful basis: ePrivacy Directive 2002/58/EC Art. 6 and 9 — traffic and location data processed only once aggregated (k >= 5 subscribers per cell-week). Retention: 400 days — GDPR Art. 5(1)(e) storage limitation — one year of weekly aggregates plus a month for year-on-year comparison (illustrative).",
+        "labels": {
+          "contract-version": "1",
+          "managed-by": "steward",
+          "owner": "analytics-owners",
+          "project": "steward",
+          "retention-days": "400",
+          "steward": "data-governance"
+        },
+        "location": "${var.location}",
+        "max_time_travel_hours": "48"
+      },
       "audit": {
         "dataset_id": "audit",
         "default_partition_expiration_ms": 7776000000,
@@ -99,6 +114,40 @@
       }
     },
     "google_bigquery_table": {
+      "analytics__weekly_usage_by_cell": {
+        "clustering": [
+          "country",
+          "cell_id"
+        ],
+        "dataset_id": "${google_bigquery_dataset.analytics.dataset_id}",
+        "deletion_protection": false,
+        "description": "Events, volume and distinct subscribers per ISO week, country and cell. A cell-week is published only if at least 5 distinct subscribers used it (k-anonymity on the cell × week quasi-identifier); the threshold is a quality rule below, so a smaller group is quarantined, never published.",
+        "labels": {
+          "contract-version": "1",
+          "managed-by": "steward",
+          "project": "steward"
+        },
+        "require_partition_filter": true,
+        "schema": "[{\"name\":\"week_start\",\"type\":\"DATE\",\"mode\":\"REQUIRED\"},{\"name\":\"country\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"cell_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"events\",\"type\":\"INTEGER\",\"mode\":\"NULLABLE\"},{\"name\":\"total_mb\",\"type\":\"FLOAT\",\"mode\":\"NULLABLE\"},{\"name\":\"subscribers\",\"type\":\"INTEGER\",\"mode\":\"NULLABLE\"}]",
+        "table_id": "weekly_usage_by_cell",
+        "time_partitioning": {
+          "expiration_ms": 34560000000,
+          "field": "week_start",
+          "type": "DAY"
+        }
+      },
+      "analytics__weekly_usage_by_cell__quarantine": {
+        "dataset_id": "${google_bigquery_dataset.analytics.dataset_id}",
+        "deletion_protection": false,
+        "description": "Quarantine for analytics.weekly_usage_by_cell: rows that failed a contract rule, with rule ids, row key, run id and owner.",
+        "labels": {
+          "managed-by": "steward",
+          "project": "steward",
+          "quarantine-of": "weekly_usage_by_cell"
+        },
+        "schema": "[{\"name\":\"week_start\",\"type\":\"DATE\",\"mode\":\"REQUIRED\"},{\"name\":\"country\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"cell_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"events\",\"type\":\"INTEGER\",\"mode\":\"NULLABLE\"},{\"name\":\"total_mb\",\"type\":\"FLOAT\",\"mode\":\"NULLABLE\"},{\"name\":\"subscribers\",\"type\":\"INTEGER\",\"mode\":\"NULLABLE\"},{\"name\":\"_run_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_rule_ids\",\"type\":\"STRING\",\"mode\":\"REPEATED\"},{\"name\":\"_row_key\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_routed_to\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_failures\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"_quarantined_at\",\"type\":\"TIMESTAMP\",\"mode\":\"REQUIRED\"}]",
+        "table_id": "weekly_usage_by_cell__quarantine"
+      },
       "crm__customers": {
         "dataset_id": "${google_bigquery_dataset.crm.dataset_id}",
         "deletion_protection": false,
@@ -366,6 +415,17 @@
           "project": "steward"
         },
         "lifecycle_rule": [
+          {
+            "action": {
+              "type": "Delete"
+            },
+            "condition": {
+              "age": 400,
+              "matches_prefix": [
+                "analytics/"
+              ]
+            }
+          },
           {
             "action": {
               "type": "Delete"

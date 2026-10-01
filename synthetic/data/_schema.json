@@ -1,4 +1,44 @@
 {
+  "analytics.weekly_usage_by_cell": {
+    "cluster": [
+      "country",
+      "cell_id"
+    ],
+    "fields": [
+      {
+        "mode": "REQUIRED",
+        "name": "week_start",
+        "type": "DATE"
+      },
+      {
+        "mode": "REQUIRED",
+        "name": "country",
+        "type": "STRING"
+      },
+      {
+        "mode": "REQUIRED",
+        "name": "cell_id",
+        "type": "STRING"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "events",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "total_mb",
+        "type": "FLOAT"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "subscribers",
+        "type": "INTEGER"
+      }
+    ],
+    "partition": "week_start",
+    "row_count": 570
+  },
   "crm.customers": {
     "fields": [
       {

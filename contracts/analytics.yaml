@@ -1,0 +1,43 @@
+# BigQuery dataset `analytics`: derived, aggregated tables the dashboards read. Built by an analytics
+# job from network.usage_events (lineage edge: usage_events → weekly_usage_by_cell).
+dataset: analytics
+version: 1
+description: Aggregated network usage for planning dashboards — no subscriber-level rows.
+owner: group:analytics-owners@halverra.example
+steward: group:data-governance@halverra.example
+custodian: group:data-platform@halverra.example
+lawful_basis: "ePrivacy Directive 2002/58/EC Art. 6 and 9 — traffic and location data processed only once aggregated (k >= 5 subscribers per cell-week)"
+retention:
+  period_days: 400
+  legal_basis: "GDPR Art. 5(1)(e) storage limitation — one year of weekly aggregates plus a month for year-on-year comparison (illustrative)"
+readers: [analyst, steward, bi_service]
+marketplace:
+  listable: false
+  approvers: group:analytics-owners@halverra.example
+  max_grant_days: 30
+  grantable_roles: []
+changelog:
+  - {version: 1, date: "2026-10-01", change: "first contract"}
+
+tables:
+  weekly_usage_by_cell:
+    description: >-
+      Events, volume and distinct subscribers per ISO week, country and cell. A cell-week is published only
+      if at least 5 distinct subscribers used it (k-anonymity on the cell × week quasi-identifier); the
+      threshold is a quality rule below, so a smaller group is quarantined, never published.
+    primary_key: [week_start, country, cell_id]
+    retention: {mode: partition, column: week_start}
+    row_access: {column: country}
+    columns:
+      week_start: {type: DATE, classification: internal, description: "Monday of the ISO week (partition column)."}
+      country:
+        {type: STRING, classification: internal, description: "Country of the network.",
+         quality: [{id: Q-ANA-001, kind: validity, allowed: [GR, IT, DE]}]}
+      cell_id:
+        {type: STRING, classification: internal,
+         description: "Serving cell. Location data at subscriber level (network.*.cell_id is sensitive-network); here only in groups of at least 5 subscribers."}
+      events: {type: INTEGER, classification: internal, description: "Number of events in the cell-week."}
+      total_mb: {type: FLOAT, classification: internal, description: "Data volume in the cell-week, MB."}
+      subscribers:
+        {type: INTEGER, classification: internal, description: "Distinct subscribers in the cell-week (the k of k-anonymity).",
+         quality: [{id: Q-ANA-002, kind: validity, min: 5}]}

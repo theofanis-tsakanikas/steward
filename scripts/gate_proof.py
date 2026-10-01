@@ -48,6 +48,8 @@ GATES: dict[str, list[str]] = {
     "classification-eval": [PY, "evals/run.py", "classification"],
     "quality-eval": [PY, "evals/run.py", "quality"],
     "synthetic-check": [PY, "synthetic/generate.py", "--check"],
+    "lineage": [PY, "-m", "steward.cli", "lineage"],
+    "lineage-eval": [PY, "evals/run.py", "lineage"],
 }
 
 
@@ -403,6 +405,36 @@ MUTATIONS: list[Mutation] = [
         ("CEILING_RAISED", "_roles.yaml:ceilings.bi_service"),
         "raising a ceiling is an approval by someone else, not an edit (doctrines 5 and 7)",
         "7",
+    ),
+    Mutation(
+        "a dashboard field renamed in LookML only",
+        "lineage",
+        "lookml/dashboards/billing_health.dashboard.lookml",
+        "fields: [billing.status, billing.total_amount]",
+        "fields: [billing.status, billing.total_amt]",
+        ("UNRESOLVED_FIELD", "billing_health/amount_by_status/billing.total_amt"),
+        "every dashboard field resolves to a catalogued column (claim 3)",
+        "3",
+    ),
+    Mutation(
+        "the job-history cross-check merged instead of compared",
+        "lineage-eval",
+        "src/steward/core/lineage.py",
+        "        if a != b:\n",
+        "        if False:\n",
+        ("NOT_DETECTED", "LINEAGE_DISAGREEMENT billing_health"),
+        "a disagreement between LookML and the job history is a finding, never a merge (claim 3 trap)",
+        "3",
+    ),
+    Mutation(
+        "a sensitive column on a dashboard judged without the role",
+        "lineage-eval",
+        "src/steward/core/lineage.py",
+        '                    elif seen == "clear" and col in access.tagged:\n',
+        "                    elif False:\n",
+        ("NOT_DETECTED", "SENSITIVE_UNMASKED_ON_DASHBOARD"),
+        "a tagged column reaches a dashboard only masked for the connection's role (claim 3)",
+        "3",
     ),
     Mutation(
         "generated Terraform edited by hand",
