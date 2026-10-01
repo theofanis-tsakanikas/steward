@@ -41,6 +41,8 @@ ALLOWED = {
     "google_parameter_manager_parameter_version": None,
     "google_bigquery_datapolicy_data_policy": None,
     "google_bigquery_row_access_policy": None,
+    "google_storage_bucket": None,
+    "google_bigquery_data_transfer_config": None,  # runs as the custodian (B12); grants nothing
     "google_bigquery_datapolicy_data_policy_iam_member": {"roles/bigquerydatapolicy.maskedReader"},
     "google_data_catalog_policy_tag_iam_member": {"roles/datacatalog.categoryFineGrainedReader"},
     "google_bigquery_dataset_iam_member": {"roles/bigquery.dataViewer", "roles/bigquery.dataEditor"},
@@ -72,6 +74,13 @@ def _iam_keys_anywhere(node, path: str = "") -> list[str]:
     return found
 
 
+# Keys that look like IAM but are not, by exact (resource type, path pattern). Narrow on purpose.
+_NOT_IAM = [
+    ("google_bigquery_row_access_policy", re.compile(r"^grantees$")),  # modelled: read into row_policies
+    ("google_storage_bucket", re.compile(r"^lifecycle_rule\[\d+\]\.condition$")),  # an object-age rule
+]
+
+
 def _allowlisted(doc: dict, layer: str) -> None:
     unknown_top = sorted(set(doc) - TOP_LEVEL)
     if unknown_top:
@@ -85,9 +94,7 @@ def _allowlisted(doc: dict, layer: str) -> None:
             where = f"{rtype}.{name}"
             if roles is None:
                 stray = [
-                    k
-                    for k in _iam_keys_anywhere(node)
-                    if not (rtype == "google_bigquery_row_access_policy" and k == "grantees")
+                    k for k in _iam_keys_anywhere(node) if not any(rtype == t and rx.match(k) for t, rx in _NOT_IAM)
                 ]
                 if stray:
                     raise Unmodelled(f"{where} carries IAM the model does not read: {stray}")
