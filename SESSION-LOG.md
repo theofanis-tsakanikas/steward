@@ -244,3 +244,32 @@
 - **Ανοιχτό:** (α) ο agent του BigQuery Data Transfer χρειάζεται `serviceAccountShortTermTokenMinter` στο
   governance layer πριν το πρώτο apply· (β) τα IAM Conditions (B36)· (γ) η πρώτη εφαρμογή θα δείξει αν το
   `user_project_override` χρειάζεται δύο περάσματα — θα το πω στον συγγραφέα.
+
+### 2026-10-01 · T011–T016 — Terraform των layers estate / governance / assurance / marketplace + workflows (γραμμένο και επικυρωμένο· ΔΕΝ εφαρμόστηκε)
+- **Έκλεισε (offline):** seat identities ως service accounts (`core/compile_seats.py`, B39), `scripts/tfvars.py`,
+  `scripts/load_synthetic.py`, `scripts/sweep.py`, workflows `deploy.yml` / `destroy.yml` (μόνο `workflow_dispatch`,
+  WIF, χωρίς κλειδιά), gate `workflows` (`check_workflows.py`) και layer `infra/assurance` (DLP inspect template +
+  Dataplex DQ scans από τα contracts, B42–B44). Τα `terraform validate` περνούν και στα τέσσερα layers.
+  Τίποτα δεν εφαρμόστηκε: τα live captures (T012 transcripts, T014 σύγκριση DLP, T015 lineage, T016 audit) περιμένουν το «go».
+- **Review (fresh-context, εχθρικό) — 10 ευρήματα, οι διορθώσεις:**
+  (1) το gates evidence ήταν stale → ξαναγράφεται σε κάθε αλλαγή μεταλλάξεων· (2) το `sweep.py` καλούσε gcloud groups
+  που δεν υπάρχουν (`dlp`, `bigquery analytics-hub`) και δεν κοιτούσε taxonomies/parameters/scheduled queries →
+  REST listing, και απόρριψη inventory που δεν κοίταξε κάθε είδος (B47)· (3) η μέτρηση γραμμών με `COUNT(*)` αποτυγχάνει
+  σε πίνακες με `require_partition_filter` και δίνει 0 μετά τα row policies → `numRows` από τα metadata (B47)·
+  (4) το `destroy.yml` είχε σκληρό `estate_version=v1` και κανένα `if: always()` → είσοδος `publish_version`, κάθε layer
+  δοκιμάζεται, ξεχωριστό concurrency group (B48)· (5) injection: `${{ inputs.* }}` μέσα σε `run:` → μόνο μέσω `env`
+  μετά από έλεγχο regex, και νέο gate `WORKFLOW_INJECTION` (B48)· (6) τα Dataplex scans θα διάβαζαν 0 γραμμές και θα
+  ήταν «πράσινα» → τρέχουν ως ο custodian του dataset, ο compiler αρνείται πίνακα όπου ο custodian δεν βλέπει όλες τις
+  γραμμές, και το νέο gate `assurance` το ξανακρίνει από το compiled governance (B43)· (7) ο αιτών του marketplace
+  (`person-…`) ≠ seat → το evidence του claim 6 είναι το binding και η λήξη του, όχι τα δεδομένα που βλέπει (B46)·
+  (8) το token-minter του Data Transfer agent δεν είχε `depends_on` και ήταν σε όλο το project → ανά custodian SA,
+  με `depends_on` (B45)· (9) σημασιολογία κανόνων Dataplex ≠ `quality._check` (null, κενό string, regex fullmatch,
+  στρογγυλοποίηση `%g`, επινοημένος τύπος partition) → διορθώθηκαν και υπάρχουν tests· (10) τρύπες στο
+  `check_workflows` (διαγραμμένο destroy step, id-token σε επίπεδο workflow, secret credentials, χωρίς confirm) →
+  νέοι έλεγχοι + 6 μεταλλάξεις· ψευδείς διατυπώσεις («row-limited samples») αφαιρέθηκαν.
+- **Απόδειξη:** `make preflight` · `scripts/check_assurance.py` (3 μεταλλάξεις) · `scripts/check_workflows.py` (13
+  μεταλλάξεις) · `tests/test_assurance.py`, `tests/test_sweep_and_load.py`, `tests/test_compile.py`.
+- **Ανοιχτό / δεν επαληθεύεται χωρίς GCP:** (α) αν το Dataplex δέχεται το service account ως execution identity και αν
+  ο agent χρειάζεται `serviceAccountTokenCreator`· (β) η διεύθυνση και ο ρόλος του Data Transfer agent
+  (GCP-CONSTRAINTS «First-apply risks»)· (γ) οι ζωντανοί adapters (`bigquery.py`, `dlp.py`, `dataplex.py`, capture
+  evidence) δεν είναι γραμμένοι — χρειάζονται το estate για να δοκιμαστούν· (δ) IAM Conditions στον deployer (B36).

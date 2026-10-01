@@ -6,6 +6,11 @@
         "parameter": "steward-estate",
         "parameter_version_id": "${var.estate_version}"
       }
+    },
+    "google_project": {
+      "this": {
+        "project_id": "${var.project_id}"
+      }
     }
   },
   "locals": {
@@ -15,6 +20,9 @@
     "google_bigquery_data_transfer_config": {
       "retention_analytics_weekly_usage_by_cell__quarantine": {
         "data_source_id": "scheduled_query",
+        "depends_on": [
+          "google_service_account_iam_member.dts_group_data_platform_halverra_example"
+        ],
         "display_name": "steward retention analytics.weekly_usage_by_cell__quarantine (400 d)",
         "location": "${var.location}",
         "params": {
@@ -25,6 +33,9 @@
       },
       "retention_crm_customers": {
         "data_source_id": "scheduled_query",
+        "depends_on": [
+          "google_service_account_iam_member.dts_group_data_platform_halverra_example"
+        ],
         "display_name": "steward retention crm.customers (2555 d)",
         "location": "${var.location}",
         "params": {
@@ -35,6 +46,9 @@
       },
       "retention_crm_customers__quarantine": {
         "data_source_id": "scheduled_query",
+        "depends_on": [
+          "google_service_account_iam_member.dts_group_data_platform_halverra_example"
+        ],
         "display_name": "steward retention crm.customers__quarantine (2555 d)",
         "location": "${var.location}",
         "params": {
@@ -45,6 +59,9 @@
       },
       "retention_crm_support_tickets": {
         "data_source_id": "scheduled_query",
+        "depends_on": [
+          "google_service_account_iam_member.dts_group_data_platform_halverra_example"
+        ],
         "display_name": "steward retention crm.support_tickets (730 d)",
         "location": "${var.location}",
         "params": {
@@ -55,6 +72,9 @@
       },
       "retention_crm_support_tickets__quarantine": {
         "data_source_id": "scheduled_query",
+        "depends_on": [
+          "google_service_account_iam_member.dts_group_data_platform_halverra_example"
+        ],
         "display_name": "steward retention crm.support_tickets__quarantine (730 d)",
         "location": "${var.location}",
         "params": {
@@ -65,6 +85,9 @@
       },
       "retention_finance_billing__quarantine": {
         "data_source_id": "scheduled_query",
+        "depends_on": [
+          "google_service_account_iam_member.dts_group_data_platform_halverra_example"
+        ],
         "display_name": "steward retention finance.billing__quarantine (3650 d)",
         "location": "${var.location}",
         "params": {
@@ -75,6 +98,9 @@
       },
       "retention_network_network_events__quarantine": {
         "data_source_id": "scheduled_query",
+        "depends_on": [
+          "google_service_account_iam_member.dts_group_data_platform_halverra_example"
+        ],
         "display_name": "steward retention network.network_events__quarantine (90 d)",
         "location": "${var.location}",
         "params": {
@@ -85,6 +111,9 @@
       },
       "retention_network_usage_events__quarantine": {
         "data_source_id": "scheduled_query",
+        "depends_on": [
+          "google_service_account_iam_member.dts_group_data_platform_halverra_example"
+        ],
         "display_name": "steward retention network.usage_events__quarantine (180 d)",
         "location": "${var.location}",
         "params": {
@@ -1185,6 +1214,13 @@
         "member": "${var.principals[\"group:network-stewards@halverra.example\"]}",
         "project": "${var.project_id}",
         "role": "roles/bigquery.jobUser"
+      }
+    },
+    "google_service_account_iam_member": {
+      "dts_group_data_platform_halverra_example": {
+        "member": "serviceAccount:service-${data.google_project.this.number}@gcp-sa-bigquerydatatransfer.iam.gserviceaccount.com",
+        "role": "roles/iam.serviceAccountShortTermTokenMinter",
+        "service_account_id": "projects/${var.project_id}/serviceAccounts/${trimprefix(var.principals[\"group:data-platform@halverra.example\"], \"serviceAccount:\")}"
       }
     }
   },

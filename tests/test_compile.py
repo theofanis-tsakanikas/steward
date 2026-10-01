@@ -106,6 +106,31 @@ def test_unmodelled_iam_is_refused():
         model(e.compiled["infra/estate/generated.tf.json"], gov)
 
 
+def test_the_token_minter_is_modelled_only_for_the_transfer_agent_on_a_seats_own_account():
+    from steward.core.simulate import Unmodelled
+
+    e = pipeline.load()
+    gov = e.compiled["infra/governance/generated.tf.json"]
+    minters = gov["resource"]["google_service_account_iam_member"]
+    configs = gov["resource"]["google_bigquery_data_transfer_config"]
+    assert minters and "google_project_iam_member" in gov["resource"]
+    assert not any("TokenMinter" in n["role"] for n in gov["resource"]["google_project_iam_member"].values())
+    for cfg in configs.values():  # a scheduled query waits for the grant that lets it run
+        assert all(dep.removeprefix("google_service_account_iam_member.") in minters for dep in cfg["depends_on"])
+    model(e.compiled["infra/estate/generated.tf.json"], gov)  # as generated: modelled
+    one = next(iter(minters))
+    for field, value in (
+        ("member", '${var.principals["analyst@GR"]}'),
+        ("member", "serviceAccount:somebody@example.iam.gserviceaccount.com"),
+        ("service_account_id", "projects/${var.project_id}"),
+        ("service_account_id", "projects/p/serviceAccounts/anybody@p.iam.gserviceaccount.com"),
+    ):
+        bad = copy.deepcopy(gov)
+        bad["resource"]["google_service_account_iam_member"][one][field] = value
+        with pytest.raises(Unmodelled):
+            model(e.compiled["infra/estate/generated.tf.json"], bad)
+
+
 def test_compiled_output_is_deterministic():
     assert pipeline.load().rendered() == pipeline.load().rendered()
 

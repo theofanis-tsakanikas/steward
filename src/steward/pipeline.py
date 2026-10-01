@@ -11,7 +11,9 @@ from datetime import date
 
 from steward import io
 from steward.core.compile import compile_controls, compiled_column_tags, render
+from steward.core.compile_assurance import compile_assurance
 from steward.core.compile_marketplace import compile_marketplace
+from steward.core.compile_seats import compile_seats
 from steward.core.contract import Contract, Roles
 from steward.core.marketplace import active_grants, decide, load_ledger
 from steward.core.validate import load_contract
@@ -61,6 +63,10 @@ def load(
     # an invalid ledger grants nothing (doctrine 1); the marketplace gate reports why
     active = active_grants(decide(parsed, contracts, roles), parsed.as_of) if parsed else []
     e.compiled |= compile_marketplace(contracts, active)
+    e.compiled |= compile_seats(contracts, roles, active)
+    e.compiled |= compile_assurance(
+        contracts, e.compiled["infra/estate/generated.tf.json"], e.compiled["infra/governance/generated.tf.json"]
+    )
     return e
 
 
