@@ -20,8 +20,13 @@ env:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    env:
+      # doctrine 4: a changed contract is compared with the version it replaces
+      STEWARD_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --group dev --all-extras
       - run: make lint

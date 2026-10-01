@@ -30,6 +30,8 @@ claims: evals ## alias of evals (portfolio Makefile contract)
 
 check: ## every structural gate + every generator in --check mode
 	$(PY) scripts/check_core_purity.py
+	$(PY) scripts/check_contract_versions.py
+	$(UV) run steward validate
 	$(PY) synthetic/generate.py --check
 	$(PY) scripts/generate.py --check
 
