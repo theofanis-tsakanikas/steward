@@ -2,8 +2,8 @@
 # roles per environment (config/principals.<env>.yaml), so a contract is the same text offline,
 # in a test project and in production.
 #
-# A "seat" is a role, optionally narrowed to one scope value. Row access policies are compiled per
-# seat; masking is compiled per role.
+# A "seat" is a role, narrowed to one scope value (analyst@GR) or bound to a contract field (the
+# steward seat on crm is crm's `steward` group). Every grant is compiled per seat.
 roles:
   analyst:
     description: Country analyst. Aggregates and masked identifiers, own country's rows only.
@@ -13,10 +13,23 @@ roles:
     description: Raw line and device identifiers across all countries; every read audited.
   steward:
     description: Metadata, descriptions, quality results and masked values. Never raw identifiers.
+    bound_from: steward   # the seat on each dataset is that contract's `steward` group
   bi_service:
     description: The Looker connection's service identity. Masked identifiers, all rows.
   custodian:
-    description: Pipelines that write data and apply controls. Reads nothing it does not write; approves nothing.
+    description: Pipelines that write data and apply controls. Sees every row (it loads and deletes them), no tagged column in clear; approves nothing.
+    bound_from: custodian # the seat on each dataset is that contract's `custodian`
+
+# Ceilings: the most any contract may give a role on a tagged column. A role may see a tagged column
+# in `clear` only if every kind the column declares is in its `clear_kinds`; `special` data is never
+# clear for anyone. A contract that exceeds a ceiling fails the access gate — the contract author
+# cannot raise the ceiling in the same file that uses it.
+ceilings:
+  analyst: {clear_kinds: []}
+  steward: {clear_kinds: []}
+  bi_service: {clear_kinds: []}
+  custodian: {clear_kinds: []}
+  fraud_investigator: {clear_kinds: [msisdn, imsi, imei, customer_key, location]}
 
 # Who may approve a waiver (doctrine 6). Never the requester, never an owner of what is waived.
 waiver_approvers: group:privacy-office@halverra.example

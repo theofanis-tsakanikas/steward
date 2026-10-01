@@ -11,8 +11,11 @@ REPO = Path(__file__).resolve().parent.parent
 
 
 def artefacts() -> dict[Path, str]:
-    """path -> expected content. Filled in as generators land."""
-    return {}
+    """path -> expected content, regenerated in memory from contracts/ + the harvest."""
+    sys.path.insert(0, str(REPO / "src"))
+    from steward import pipeline
+
+    return {REPO / rel: text for rel, text in pipeline.load().rendered().items()}
 
 
 def main(argv: list[str] | None = None) -> int:

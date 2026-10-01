@@ -64,3 +64,55 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   *name* an instrument (regex on Art./Directive/Regulation/law/obligation) — "Art. nothing" passes;
   whether the cited basis is right is a privacy-office review, not a regex. Directory groups may not
   nest (refused, not expanded). Contracts are `contracts/*.yaml` only; any other placement is an error.
+- **B7 — Claim 1's gate checks the *compiled* tag, so T003 and T004 land as one PR.** The T003 review
+  found that PII in the uncontracted legacy table passed as a warning while the only blocking finding
+  (CONTRACT_MISSING) was waived — a waiver unlocking value-detected PII, doctrine 7 broken in practice.
+  The fix: a detected column passes only if the compiled schema carries its policy tag. For a table no
+  contract declares, the compiler tags every leaf `restricted` (no reader, no data policy); its PII is
+  then reported `PII_HELD_AT_SAFE_STATE` (info) — and only while W-001 lives; on expiry CONTRACT_MISSING
+  is red again. That makes the compiler part of claim 1's gate, so both atoms close together.
+- **B8 — Data masking needs the project to belong to an organization.** Read 2026-10-01 in the BigQuery
+  masking docs: "The project containing the policy tag taxonomy must belong to an organization."
+  Policy tags themselves (deny vs Fine-Grained Reader) and row access policies carry no such statement.
+  Consequence for claim 2 live (T012): with no organization, the three-role transcript can show
+  deny / clear / row-filtered, but not masked values. Options in docs/DAY-ONE.md step 1b. The offline
+  half of claim 2 is unaffected.
+- **B9 — Every partitioned table requires a partition filter.** A deterministic rule, not a contract
+  field: a query that would scan every partition is refused (cost control, `CLAUDE.md`).
+- **B10 — `readers` is a required contract field (contracts v2).** Standing access is declared per
+  dataset; marketplace grants exist only for roles that are not standing readers. The three-role query
+  on `crm.customers` therefore shows the fraud investigator through an approved grant — the bridge from
+  claim 2 to claim 6.
+- **B11 — The `msisdn` kind means "a phone number", not only a mobile subscriber number.** Since the
+  T003 review the detector flags any E.164 number and the three markets' national mobile formats; a
+  person's landline is personal data too (GDPR Art. 4(1)), so the wider net follows doctrine 1. The
+  kind keeps its name because contracts and catalog already use it. Cost, measured in
+  `evals/classification/cases.yaml` → `known_over_flags` (printed by the eval, not failing): 10-digit
+  ids starting with 3, digit groups after `00`+country code, German words ending in -ring + number,
+  25-year-old dates in free text. **Known misses, accepted for this timebox:** Greek addresses written
+  without a street word ("Ερμού 15"), compact `YYYYMMDD` dates, dashed IBANs, and non-European IMSIs
+  (inbound roamers: a 15-digit number not starting with 2 is read as an IMEI if its Luhn digit passes).
+- **B12 — The custodian writes; it never reads a tag in clear.** Compiled: `roles/bigquery.dataEditor`
+  on each contracted dataset for that contract's `custodian`, a seat in every `all_rows` row policy
+  (it loads, quarantines and deletes rows), `jobUser`, and **no** Fine-Grained Reader or Masked Reader.
+  Quality rules run in the loader on the source before the load (claim 5), so no rule needs a tagged
+  column in clear inside BigQuery. gate-proof plants a Fine-Grained Reader for it and the access eval
+  refuses it. dataEditor does not include `bigquery.tables.setCategory` (only dataOwner and admin do;
+  BigQuery IAM docs, read 2026-10-01), so the custodian cannot untag a column to read it. **Open:** an
+  erasure keyed on a tagged column (a customer key) cannot run as the custodian; erasure by tagged key
+  needs its own decision before it is claimed (claim 7 does not claim it).
+- **B13 — Roles bound to a contract field; the reach rules the access eval checks.** `steward` and
+  `custodian` have no global seat: on each dataset their seat is that contract's own `steward` /
+  `custodian` principal, so crm's stewards read crm and nothing else. (At tag level a steward may hold a
+  Masked Reader on a tag another dataset's columns also carry — tags are shared by identical profiles —
+  but without dataset access that grant reaches nothing; the eval checks both levels.) The rules, stated here so the
+  eval does not copy them from the compiler: (1) dataset read = `readers` ∪ the custodian (B12) ∪ an
+  approved, unexpired marketplace grant for a `grantable_roles` seat; (2) a tagged column is clear only
+  with Fine-Grained Reader, masked only with that rule's Masked Reader, otherwise denied; (3) row
+  policies cover `readers` ∪ `grantable_roles` ∪ the custodian; a role scoped by the row-access column
+  gets one policy per scope, everyone else `TRUE`; (4) a column the estate has and the contract does
+  not, and every column of a table with no contract, is tagged `restricted` — no reader at all.
+- **B4 (extended) — values the code owns, deliberately not contract fields:** `jobUser` for every seat
+  (running a query is not reading data), `require_partition_filter` on partitioned tables (B9),
+  `max_time_travel_hours = 48` (the minimum; claim 7), `deletion_protection = false` and
+  `delete_contents_on_destroy = true` (deploy → capture → destroy, M4).
