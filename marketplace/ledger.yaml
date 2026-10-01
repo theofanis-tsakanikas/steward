@@ -1,0 +1,38 @@
+# The marketplace ledger: every access request and every decision, append-only.
+#
+# In production the decisions come from an authenticated workflow (a Collibra or ticketing approval);
+# here the ledger stands in for it, and steward checks every decision against the contracts and the
+# directory (core/marketplace.py). A grant exists only where a decision passes those checks.
+#
+# `as_of` is the moment this ledger was last written. The compiler drops grants that expired before it,
+# so compiling is deterministic and never reads a clock.
+as_of: "2026-09-30T18:00:00Z"
+requests:
+  - {id: R-001, requester: "user:eleni.kosta@halverra.example", seat: "analyst@GR", dataset: network, days: 14,
+     at: "2026-09-25T09:00:00Z", justification: "cell-level congestion study for the Athens rollout"}
+  - {id: R-002, requester: "user:paolo.marino@halverra.example", seat: fraud_investigator, dataset: crm, days: 7,
+     at: "2026-09-29T10:00:00Z", justification: "case FR-2291: SIM-swap pattern across three accounts"}
+  - {id: R-003, requester: "user:lena.fischer@halverra.example", seat: "analyst@DE", dataset: finance, days: 30,
+     at: "2026-09-26T08:00:00Z", justification: "quarterly revenue reconciliation"}
+  - {id: R-004, requester: "user:giorgos.ioannou@halverra.example", seat: "analyst@IT", dataset: network, days: 7,
+     at: "2026-09-27T11:00:00Z", justification: "roaming volume check"}
+  - {id: R-005, requester: "user:maria.romano@halverra.example", seat: "analyst@GR", dataset: finance, days: 7,
+     at: "2026-09-28T12:00:00Z", justification: "dunning analysis"}
+  - {id: R-006, requester: "user:luca.ricci@halverra.example", seat: "analyst@IT", dataset: crm, days: 7,
+     at: "2026-09-28T13:00:00Z", justification: "segment counts"}
+  - {id: R-007, requester: "user:jonas.becker@halverra.example", seat: "analyst@DE", dataset: network, days: 7,
+     at: "2026-09-29T14:00:00Z", justification: "5G attach rates"}
+  - {id: R-008, requester: "user:sara.greco@halverra.example", seat: "analyst@IT", dataset: network, days: 7,
+     at: "2026-09-29T15:00:00Z", justification: "churn vs. dropped calls"}
+  - {id: R-009, requester: "user:anna.pappas@halverra.example", seat: "analyst@GR", dataset: network, days: 14,
+     at: "2026-08-28T09:00:00Z", justification: "summer traffic peak study"}
+decisions:
+  - {request: R-001, decision: approve, by: "user:jonas.weber@halverra.example", at: "2026-09-25T15:00:00Z"}
+  - {request: R-002, decision: approve, by: "user:marco.ferri@halverra.example", at: "2026-09-29T16:00:00Z"}
+  - {request: R-003, decision: approve, by: "user:hannah.becker@halverra.example", at: "2026-09-26T09:00:00Z"}
+  - {request: R-004, decision: approve, by: "user:giorgos.ioannou@halverra.example", at: "2026-09-27T12:00:00Z"}
+  - {request: R-005, decision: approve, by: "serviceAccount:steward-pipeline@halverra-data.example", at: "2026-09-28T12:05:00Z"}
+  - {request: R-006, decision: approve, by: "user:eleni.papadaki@halverra.example", at: "2026-09-28T14:00:00Z"}
+  # R-007: no decision yet — denied until a human decides (doctrine 1)
+  - {request: R-008, decision: approve, by: "user:chiara.greco@halverra.example", at: "2026-09-29T16:00:00Z"}
+  - {request: R-009, decision: approve, by: "user:giorgos.ioannou@halverra.example", at: "2026-08-28T15:00:00Z"}

@@ -11,7 +11,9 @@ from datetime import date
 
 from steward import io
 from steward.core.compile import compile_controls, compiled_column_tags, render
+from steward.core.compile_marketplace import compile_marketplace
 from steward.core.contract import Contract, Roles
+from steward.core.marketplace import active_grants, decide
 from steward.core.validate import load_contract
 
 
@@ -21,6 +23,7 @@ class Estate:
     broken: frozenset[str]
     roles: Roles
     harvest: dict
+    ledger: dict = field(default_factory=dict)
     compiled: dict[str, dict] = field(default_factory=dict)
 
     @property
@@ -31,7 +34,12 @@ class Estate:
         return render(self.compiled)
 
 
-def load(contract_docs: dict | None = None, roles_doc: dict | None = None, harvest: dict | None = None) -> Estate:
+def load(
+    contract_docs: dict | None = None,
+    roles_doc: dict | None = None,
+    harvest: dict | None = None,
+    ledger: dict | None = None,
+) -> Estate:
     docs = io.contract_docs() if contract_docs is None else contract_docs
     contracts, names = [], set()
     for name, doc in sorted(docs.items()):
@@ -45,8 +53,10 @@ def load(contract_docs: dict | None = None, roles_doc: dict | None = None, harve
     broken = (frozenset(docs) | frozenset(claimed)) - names
     roles = Roles.model_validate(io.roles_doc() if roles_doc is None else roles_doc)
     hv = io.harvest() if harvest is None else harvest
-    e = Estate(contracts, broken, roles, hv)
+    lg = io.load_yaml(io.REPO / "marketplace" / "ledger.yaml") if ledger is None else ledger
+    e = Estate(contracts, broken, roles, hv, lg)
     e.compiled = compile_controls(contracts, roles, hv)
+    e.compiled |= compile_marketplace(contracts, active_grants(decide(lg, contracts, roles), lg["as_of"]))
     return e
 
 
@@ -54,3 +64,30 @@ def synthetic_anchor() -> date:
     """The synthetic data's "today" — what an offline scan judges ages against, so CI does not drift
     as the calendar moves. A live scan uses the capture timestamp instead."""
     return date.fromisoformat(json.loads((io.SYNTHETIC / "data" / "_meta.json").read_text())["anchor_date"])
+
+
+def iam_snapshot(e: Estate, captured_at: str) -> dict:
+    """What the estate's dataset IAM would hold if exactly the compiled Terraform were applied — the
+    offline stand-in for a live getIamPolicy capture (T016), which has the same shape."""
+    import re
+
+    seat = re.compile(r'^\$\{var\.principals\["([^"]+)"\]\}$')
+    bindings = []
+    for layer in ("infra/governance/generated.tf.json", "infra/marketplace/generated.tf.json"):
+        for node in e.compiled[layer]["resource"].get("google_bigquery_dataset_iam_member", {}).values():
+            m = seat.match(node["member"])
+            if not m:
+                continue  # e.g. the audit sink's writer identity
+            bindings.append(
+                {
+                    "dataset": node["dataset_id"],
+                    "seat": m.group(1),
+                    "role": node["role"],
+                    "condition": node.get("condition"),
+                }
+            )
+    return {
+        "captured_at": captured_at,
+        "source": "compiled Terraform (offline)",
+        "bindings": sorted(bindings, key=lambda b: (b["dataset"], b["seat"], b["role"])),
+    }
