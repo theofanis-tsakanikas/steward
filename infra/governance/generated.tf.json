@@ -550,6 +550,16 @@
       }
     },
     "google_bigquery_dataset_iam_member": {
+      "audit__group_data_governance_halverra_example__viewer": {
+        "dataset_id": "audit",
+        "member": "${var.principals[\"group:data-governance@halverra.example\"]}",
+        "role": "roles/bigquery.dataViewer"
+      },
+      "audit__group_data_platform_halverra_example__editor": {
+        "dataset_id": "audit",
+        "member": "${var.principals[\"group:data-platform@halverra.example\"]}",
+        "role": "roles/bigquery.dataEditor"
+      },
       "crm__analyst_de__viewer": {
         "dataset_id": "crm",
         "member": "${var.principals[\"analyst@DE\"]}",
@@ -784,33 +794,6 @@
         "policy_id": "all_rows",
         "table_id": "billing"
       },
-      "finance__billing__analyst_de": {
-        "dataset_id": "finance",
-        "filter_predicate": "country = \"DE\"",
-        "grantees": [
-          "${var.principals[\"analyst@DE\"]}"
-        ],
-        "policy_id": "analyst_de",
-        "table_id": "billing"
-      },
-      "finance__billing__analyst_gr": {
-        "dataset_id": "finance",
-        "filter_predicate": "country = \"GR\"",
-        "grantees": [
-          "${var.principals[\"analyst@GR\"]}"
-        ],
-        "policy_id": "analyst_gr",
-        "table_id": "billing"
-      },
-      "finance__billing__analyst_it": {
-        "dataset_id": "finance",
-        "filter_predicate": "country = \"IT\"",
-        "grantees": [
-          "${var.principals[\"analyst@IT\"]}"
-        ],
-        "policy_id": "analyst_it",
-        "table_id": "billing"
-      },
       "finance__billing__quarantine__all_rows": {
         "dataset_id": "finance",
         "filter_predicate": "TRUE",
@@ -820,33 +803,6 @@
           "${var.principals[\"group:finance-stewards@halverra.example\"]}"
         ],
         "policy_id": "all_rows",
-        "table_id": "billing__quarantine"
-      },
-      "finance__billing__quarantine__analyst_de": {
-        "dataset_id": "finance",
-        "filter_predicate": "country = \"DE\"",
-        "grantees": [
-          "${var.principals[\"analyst@DE\"]}"
-        ],
-        "policy_id": "analyst_de",
-        "table_id": "billing__quarantine"
-      },
-      "finance__billing__quarantine__analyst_gr": {
-        "dataset_id": "finance",
-        "filter_predicate": "country = \"GR\"",
-        "grantees": [
-          "${var.principals[\"analyst@GR\"]}"
-        ],
-        "policy_id": "analyst_gr",
-        "table_id": "billing__quarantine"
-      },
-      "finance__billing__quarantine__analyst_it": {
-        "dataset_id": "finance",
-        "filter_predicate": "country = \"IT\"",
-        "grantees": [
-          "${var.principals[\"analyst@IT\"]}"
-        ],
-        "policy_id": "analyst_it",
         "table_id": "billing__quarantine"
       },
       "network__network_events__all_rows": {
@@ -1064,6 +1020,11 @@
         "project": "${var.project_id}",
         "role": "roles/bigquery.jobUser"
       },
+      "group_data_governance_halverra_example": {
+        "member": "${var.principals[\"group:data-governance@halverra.example\"]}",
+        "project": "${var.project_id}",
+        "role": "roles/bigquery.jobUser"
+      },
       "group_data_platform_halverra_example": {
         "member": "${var.principals[\"group:data-platform@halverra.example\"]}",
         "project": "${var.project_id}",
@@ -1087,8 +1048,8 @@
       "type": "map(string)",
       "validation": [
         {
-          "condition": "${alltrue([for k in [\"analyst@DE\", \"analyst@GR\", \"analyst@IT\", \"bi_service\", \"fraud_investigator\", \"group:crm-stewards@halverra.example\", \"group:data-platform@halverra.example\", \"group:finance-stewards@halverra.example\", \"group:network-stewards@halverra.example\"] : contains(keys(var.principals), k)])}",
-          "error_message": "principals must bind every seat: analyst@DE, analyst@GR, analyst@IT, bi_service, fraud_investigator, group:crm-stewards@halverra.example, group:data-platform@halverra.example, group:finance-stewards@halverra.example, group:network-stewards@halverra.example."
+          "condition": "${alltrue([for k in [\"analyst@DE\", \"analyst@GR\", \"analyst@IT\", \"bi_service\", \"fraud_investigator\", \"group:crm-stewards@halverra.example\", \"group:data-governance@halverra.example\", \"group:data-platform@halverra.example\", \"group:finance-stewards@halverra.example\", \"group:network-stewards@halverra.example\"] : contains(keys(var.principals), k)])}",
+          "error_message": "principals must bind every seat: analyst@DE, analyst@GR, analyst@IT, bi_service, fraud_investigator, group:crm-stewards@halverra.example, group:data-governance@halverra.example, group:data-platform@halverra.example, group:finance-stewards@halverra.example, group:network-stewards@halverra.example."
         },
         {
           "condition": "${alltrue([for v in values(var.principals) : can(regex(\"^(user|group|serviceAccount):\", v))])}",

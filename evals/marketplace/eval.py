@@ -28,12 +28,17 @@ EXPECTED = {
     "R-001": ("granted", []),
     "R-002": ("granted", []),
     "R-003": ("refused", ["DURATION_EXCEEDS_MAX"]),
-    "R-004": ("refused", ["SELF_APPROVAL"]),
+    "R-004": (
+        "refused",
+        ["SELF_APPROVAL"],
+    ),  # the approver owns network and sits in analyst@IT: only this check stops it
     "R-005": ("refused", ["SERVICE_ACCOUNT_APPROVAL"]),
     "R-006": ("refused", ["ROLE_NOT_GRANTABLE"]),
     "R-007": ("denied-no-decision", []),
     "R-008": ("refused", ["APPROVER_NOT_AUTHORISED"]),
     "R-009": ("granted", []),  # approved properly — and expired by as_of, so not compiled
+    "R-010": ("refused", ["DATASET_NOT_LISTED"]),
+    "R-011": ("refused", ["REQUESTER_NOT_IN_SEAT"]),
 }
 
 
@@ -46,6 +51,12 @@ def evaluate() -> dict:
         for rid, exp in EXPECTED.items()
         if got.get(rid) != (exp[0], sorted(exp[1]))
     }
+    # a grant is bound to the person who asked — read back from the compiled Terraform, not from Outcome
+    compiled = e.compiled["infra/marketplace/generated.tf.json"]["resource"].get("google_bigquery_dataset_iam_member", {})
+    for o in outcomes:
+        node = compiled.get(o.request["id"].lower().replace("-", "_"))
+        if node is not None and node["member"] != f'${{var.principals["{o.request["requester"]}"]}}':
+            wrong[o.request["id"]] = {"expected": f"member {o.request['requester']}", "got": f"member {node['member']}"}
 
     clean = pipeline.iam_snapshot(e, CAPTURED)
     clean_findings = gate(clean, outcomes, e.contracts, e.roles)
@@ -53,10 +64,14 @@ def evaluate() -> dict:
     drift = copy.deepcopy(clean)
     drift["bindings"] += [{k: v for k, v in b.items() if k not in ("expect", "why")} for b in planted]
     drift_findings = gate(drift, outcomes, e.contracts, e.roles)
-    expect = sorted((b["expect"], f"{b['dataset']}:{b['seat']}") for b in planted)
+    expect = sorted((b["expect"], f"{b['dataset']}:{b['member']}") for b in planted)
     got_drift = sorted((f.code, f.target) for f in drift_findings if f.blocking)
     early = dict(drift, captured_at="2026-09-10T00:00:00Z")
-    early_codes = {f.code for f in gate(early, outcomes, e.contracts, e.roles) if f.target == "network:analyst@GR"}
+    early_codes = {
+        f.code
+        for f in gate(early, outcomes, e.contracts, e.roles)
+        if f.target == "network:user:anna.pappas@halverra.example"
+    }
 
     usage = json.loads((HERE / "looker_usage.json").read_text())
     return {

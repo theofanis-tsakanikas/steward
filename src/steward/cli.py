@@ -87,11 +87,16 @@ def cmd_marketplace(args: argparse.Namespace) -> int:
 
     from steward import pipeline
     from steward.core.findings import report
-    from steward.core.marketplace import decide, gate
+    from steward.core.marketplace import decide, gate, load_ledger
 
     e = pipeline.load()
-    outcomes = decide(e.ledger, e.contracts, e.roles)
-    snap = json.loads(Path(args.snapshot).read_text()) if args.snapshot else pipeline.iam_snapshot(e, e.ledger["as_of"])
+    ledger, ledger_findings = load_ledger(e.ledger)
+    if ledger is None:
+        code, lines = report("marketplace", ledger_findings)
+        print("\n".join(lines))
+        return code
+    outcomes = decide(ledger, e.contracts, e.roles)
+    snap = json.loads(Path(args.snapshot).read_text()) if args.snapshot else pipeline.iam_snapshot(e, ledger.as_of)
     print(
         f"snapshot: {snap.get('source', args.snapshot)}, captured {snap['captured_at']}, {len(snap['bindings'])} bindings"
     )

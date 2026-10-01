@@ -265,10 +265,7 @@ def compile_controls(contracts: list[Contract], roles: Roles, harvest: dict) -> 
 
     # ── datasets and tables ────────────────────────────────────────────────────────────────────
     datasets: dict = {}
-    for table in sorted(estate_cols):
-        ds = table.split(".")[0]
-        if ds in datasets:
-            continue
+    for ds in sorted({t.split(".")[0] for t in estate_cols} | set(by_dataset)):
         c = by_dataset.get(ds)
         labels = {"project": "steward", "managed-by": "steward"}
         if c:
@@ -290,6 +287,9 @@ def compile_controls(contracts: list[Contract], roles: Roles, harvest: dict) -> 
             "max_time_travel_hours": TIME_TRAVEL_HOURS,
             "delete_contents_on_destroy": True,
         }
+        if c and c.log_sink:
+            # Logging writes partitioned tables here; retention is the dataset's default partition expiry.
+            datasets[ds]["default_partition_expiration_ms"] = c.retention.period_days * DAY_MS
     R["google_bigquery_dataset"] = datasets
 
     tables: dict = {}

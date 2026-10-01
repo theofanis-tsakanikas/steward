@@ -13,7 +13,7 @@ from steward import io
 from steward.core.compile import compile_controls, compiled_column_tags, render
 from steward.core.compile_marketplace import compile_marketplace
 from steward.core.contract import Contract, Roles
-from steward.core.marketplace import active_grants, decide
+from steward.core.marketplace import active_grants, decide, load_ledger
 from steward.core.validate import load_contract
 
 
@@ -24,6 +24,7 @@ class Estate:
     roles: Roles
     harvest: dict
     ledger: dict = field(default_factory=dict)
+    ledger_findings: list = field(default_factory=list)
     compiled: dict[str, dict] = field(default_factory=dict)
 
     @property
@@ -56,7 +57,10 @@ def load(
     lg = io.load_yaml(io.REPO / "marketplace" / "ledger.yaml") if ledger is None else ledger
     e = Estate(contracts, broken, roles, hv, lg)
     e.compiled = compile_controls(contracts, roles, hv)
-    e.compiled |= compile_marketplace(contracts, active_grants(decide(lg, contracts, roles), lg["as_of"]))
+    parsed, e.ledger_findings = load_ledger(lg)
+    # an invalid ledger grants nothing (doctrine 1); the marketplace gate reports why
+    active = active_grants(decide(parsed, contracts, roles), parsed.as_of) if parsed else []
+    e.compiled |= compile_marketplace(contracts, active)
     return e
 
 
@@ -81,13 +85,13 @@ def iam_snapshot(e: Estate, captured_at: str) -> dict:
             bindings.append(
                 {
                     "dataset": node["dataset_id"],
-                    "seat": m.group(1),
+                    "member": m.group(1),
                     "role": node["role"],
                     "condition": node.get("condition"),
                 }
             )
     return {
         "captured_at": captured_at,
-        "source": "compiled Terraform (offline)",
-        "bindings": sorted(bindings, key=lambda b: (b["dataset"], b["seat"], b["role"])),
+        "source": "compiled Terraform (offline) — not evidence; a live getIamPolicy capture replaces it in T016",
+        "bindings": sorted(bindings, key=lambda b: (b["dataset"], b["member"], b["role"])),
     }

@@ -19,7 +19,7 @@
         "display_name": "crm",
         "listing_id": "steward_crm",
         "location": "${lower(var.location)}",
-        "request_access": "Open a marketplace request; group:crm-owners@halverra.example decides."
+        "request_access": "mailto:crm-owners@halverra.example"
       },
       "network": {
         "bigquery_dataset": {
@@ -30,47 +30,33 @@
         "display_name": "network",
         "listing_id": "steward_network",
         "location": "${lower(var.location)}",
-        "request_access": "Open a marketplace request; group:network-owners@halverra.example decides."
-      }
-    },
-    "google_bigquery_dataset": {
-      "audit": {
-        "dataset_id": "audit",
-        "default_partition_expiration_ms": 7776000000,
-        "delete_contents_on_destroy": true,
-        "description": "Data Access audit logs for BigQuery (sink steward-data-access). Holds principals' e-mail addresses.",
-        "labels": {
-          "managed-by": "steward",
-          "project": "steward"
-        },
-        "location": "${var.location}",
-        "max_time_travel_hours": "48"
+        "request_access": "mailto:network-owners@halverra.example"
       }
     },
     "google_bigquery_dataset_iam_member": {
       "audit_sink_writer": {
-        "dataset_id": "${google_bigquery_dataset.audit.dataset_id}",
+        "dataset_id": "audit",
         "member": "${google_logging_project_sink.data_access.writer_identity}",
         "role": "roles/bigquery.dataEditor"
       },
       "r_001": {
         "condition": {
-          "description": "R-001: requested by user:eleni.kosta@halverra.example, approved by user:jonas.weber@halverra.example at 2026-09-25T15:00:00Z; expires 2026-10-09T15:00:00Z",
+          "description": "R-001: user:eleni.kosta@halverra.example as analyst@GR, approved by user:jonas.weber@halverra.example at 2026-09-25T15:00:00Z; expires 2026-10-09T15:00:00Z",
           "expression": "request.time < timestamp(\"2026-10-09T15:00:00Z\")",
           "title": "steward-R-001"
         },
         "dataset_id": "network",
-        "member": "${var.principals[\"analyst@GR\"]}",
+        "member": "${var.principals[\"user:eleni.kosta@halverra.example\"]}",
         "role": "roles/bigquery.dataViewer"
       },
       "r_002": {
         "condition": {
-          "description": "R-002: requested by user:paolo.marino@halverra.example, approved by user:marco.ferri@halverra.example at 2026-09-29T16:00:00Z; expires 2026-10-06T16:00:00Z",
+          "description": "R-002: user:paolo.marino@halverra.example as fraud_investigator, approved by user:marco.ferri@halverra.example at 2026-09-29T16:00:00Z; expires 2026-10-06T16:00:00Z",
           "expression": "request.time < timestamp(\"2026-10-06T16:00:00Z\")",
           "title": "steward-R-002"
         },
         "dataset_id": "crm",
-        "member": "${var.principals[\"fraud_investigator\"]}",
+        "member": "${var.principals[\"user:paolo.marino@halverra.example\"]}",
         "role": "roles/bigquery.dataViewer"
       }
     },
@@ -79,7 +65,7 @@
         "bigquery_options": {
           "use_partitioned_tables": true
         },
-        "destination": "bigquery.googleapis.com/projects/${var.project_id}/datasets/${google_bigquery_dataset.audit.dataset_id}",
+        "destination": "bigquery.googleapis.com/projects/${var.project_id}/datasets/audit",
         "filter": "logName:\"cloudaudit.googleapis.com%2Fdata_access\" AND protoPayload.serviceName=\"bigquery.googleapis.com\"",
         "name": "steward-data-access",
         "unique_writer_identity": true
@@ -88,12 +74,12 @@
   },
   "variable": {
     "principals": {
-      "description": "Seat -> IAM member for every seat holding a live grant.",
+      "description": "Requester -> IAM member for every person holding a live grant (the grant goes to the person, not the seat).",
       "type": "map(string)",
       "validation": [
         {
-          "condition": "${alltrue([for k in [\"analyst@GR\", \"fraud_investigator\"] : contains(keys(var.principals), k)])}",
-          "error_message": "principals must bind every granted seat: analyst@GR, fraud_investigator."
+          "condition": "${alltrue([for k in [\"user:eleni.kosta@halverra.example\", \"user:paolo.marino@halverra.example\"] : contains(keys(var.principals), k)])}",
+          "error_message": "principals must bind every grantee: user:eleni.kosta@halverra.example, user:paolo.marino@halverra.example."
         }
       ]
     }

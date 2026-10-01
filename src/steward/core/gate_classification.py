@@ -31,6 +31,7 @@ def gate(
 ) -> list[Finding]:
     declared: dict[str, object] = {}
     tables: set[str] = set()
+    sinks = {c.dataset: c.log_sink for c in contracts if c.log_sink}
     for c in contracts:
         for fqn, _, _, col in c.iter_columns():
             declared[fqn] = col
@@ -55,6 +56,29 @@ def gate(
                     evidence=ev,
                 )
             )
+        elif dataset in sinks:
+            extra = sorted(set(d.kinds) - set(sinks[dataset].personal_kinds))
+            if extra:
+                out.append(
+                    Finding(
+                        "PII_UNDECLARED_COLUMN",
+                        GATE,
+                        d.column,
+                        f"{', '.join(extra)} found in a log-sink dataset that declares only {sinks[dataset].personal_kinds}",
+                        evidence=ev,
+                    )
+                )
+            else:
+                out.append(
+                    Finding(
+                        "PII_IN_LOG_SINK",
+                        GATE,
+                        d.column,
+                        f"{kinds} in Cloud Logging's table, as the contract declares; dataset-level readers only",
+                        severity="info",
+                        evidence=ev,
+                    )
+                )
         elif UNSCHEMED in d.column:
             out.append(
                 Finding(

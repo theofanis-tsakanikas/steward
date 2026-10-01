@@ -25,6 +25,8 @@ def states(usage: dict) -> list[dict]:
         last = ts(d["last_viewed"]) if d.get("last_viewed") else None
         idle = (now - last).days if last else None
         notified = ts(d["notified_at"]) if d.get("notified_at") else None
+        if notified and last and notified < last:
+            notified = None  # a notice from an earlier idle spell; the dashboard was opened since
         if idle is not None and idle < NOTIFY_AFTER:
             state, action = "active", "none"
         elif notified and (now - notified).days >= GRACE:

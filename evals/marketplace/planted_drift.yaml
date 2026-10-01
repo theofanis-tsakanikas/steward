@@ -1,11 +1,18 @@
 # Bindings added to the clean snapshot to make the drift snapshot — the estate after someone granted by
-# hand and nobody cleaned up. Each line names the finding the gate must raise for it, and only it.
+# hand and nobody cleaned up. Each names the one finding the gate must raise for it.
 bindings:
-  - {dataset: network, seat: "analyst@GR", role: roles/bigquery.dataViewer,
+  - {dataset: network, member: "user:anna.pappas@halverra.example", role: roles/bigquery.dataViewer,
      condition: {title: steward-R-009, expression: 'request.time < timestamp("2026-09-11T15:00:00Z")'},
      expect: GRANT_EXPIRED_PRESENT, why: "R-009 was approved for 14 days from 2026-08-28; it lapsed and is still bound"}
-  - {dataset: finance, seat: "analyst@IT", role: roles/bigquery.dataViewer,
+  - {dataset: crm, member: "user:luca.ricci@halverra.example", role: roles/bigquery.dataViewer,
      condition: {title: hand-made, expression: 'request.time < timestamp("2026-12-31T00:00:00Z")'},
      expect: GRANT_UNAPPROVED, why: "an expiring grant with no request behind it"}
-  - {dataset: crm, seat: fraud_investigator, role: roles/bigquery.dataViewer, condition: null,
+  - {dataset: crm, member: fraud_investigator, role: roles/bigquery.dataViewer, condition: null,
      expect: GRANT_WITHOUT_EXPIRY, why: "a permanent grant to a seat that is not a standing reader of crm"}
+  - {dataset: network, member: "user:eleni.kosta@halverra.example", role: roles/bigquery.dataViewer,
+     condition: {title: steward-R-001, expression: 'request.time < timestamp("2026-10-09T15:00:00Z") || true'},
+     expect: GRANT_CONDITION_UNRECOGNISED, why: "R-001's expiry with `|| true` appended never expires"}
+  - {dataset: finance, member: "analyst@IT", role: roles/bigquery.dataOwner, condition: null,
+     expect: GRANT_ROLE_UNEXPECTED, why: "dataOwner can re-tag columns; no contract grants it"}
+  - {dataset: legacy, member: "analyst@GR", role: roles/bigquery.dataViewer, condition: null,
+     expect: GRANT_ON_UNCONTRACTED, why: "a grant on the table no contract declares"}
