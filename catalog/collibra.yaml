@@ -1,0 +1,54 @@
+# The Collibra operating model Steward writes into, and the rules the validating mock enforces.
+#
+# Shapes follow the Import API guide (developer.collibra.com/api/guides/import-api, read 2026-10-01; the
+# exact points are recorded in docs/COLLIBRA.md). Types, attributes and statuses are given by NAME, which the
+# Import API accepts; ids differ per instance and operating model, so REAL mode maps these names to the
+# instance's ids in catalog/collibra.instance.yaml (not committed; written when a trial exists — DAY-ONE
+# step 7). MOCK mode uses this file as the truth and REJECTS anything outside it: unknown types, missing
+# required attributes, relations that are not in the fully qualified form or point at assets that do not
+# exist, responsibilities that name a group instead of an id.
+community: Halverra Data
+domain_types: [Physical Data Dictionary, Glossary, BI Catalog]
+asset_types:
+  Schema: {domain_type: Physical Data Dictionary, required_attributes: [Description, Lawful Basis, Retention Period, Retention Legal Basis, Contract Version]}
+  Table: {domain_type: Physical Data Dictionary, required_attributes: [Description, Contract Version]}
+  Column:
+    domain_type: Physical Data Dictionary
+    required_attributes: [Description, Personal Data Classification, Personal Data Kinds, Masking, Technical Data Type, Proposed Classification, Proposed Description]
+  Report: {domain_type: BI Catalog, required_attributes: [Description, Lifecycle State]}
+  Business Term: {domain_type: Glossary, required_attributes: [Definition]}
+attribute_types: [Description, Definition, Lawful Basis, Retention Period, Retention Legal Basis, Contract Version,
+                  Personal Data Classification, Personal Data Kinds, Masking, Technical Data Type, Lifecycle State,
+                  Proposed Classification, Proposed Description, Last Changed]
+statuses: [Accepted, Candidate, Under Review]
+# Fully qualified relation types — "<Source type>:<source role>:<target role>:<Target type>", the form the guide
+# gives as `Column:is part of:contains:Table`. Names may not contain colons. Steward's own vocabulary: an
+# instance maps these to its relation types (or custom ones) in the instance file.
+relation_types:
+  - {source: Column, source_role: is part of, target_role: contains, target: Table}
+  - {source: Table, source_role: is part of, target_role: contains, target: Schema}
+  - {source: Report, source_role: uses, target_role: is used by, target: Column}
+  - {source: Business Term, source_role: is represented by, target_role: represents, target: Report}
+# Responsibilities name a role and a user group (or user) by ID. Ownership is declared on the DOMAIN of each
+# dataset. Asset-level responsibilities are off by default ("Asset responsibilities support", Collibra
+# Console) and an import that sets them errors; the mock behaves like the default.
+responsibility_roles: [Owner, Steward, Custodian]
+asset_responsibilities: false
+# The directory the mock knows: contract group -> user group id. Derived (uuid5 over the group name, namespace
+# DNS "steward.halverra.example"), fictional, and replaced by real ids in the instance file. A group a contract
+# names that is not listed here stops the build — there is no default owner (doctrine 3).
+user_groups:
+  group:analytics-owners@halverra.example: f6dc49b7-1e32-5918-ae1b-ca2e4b83ddf4
+  group:crm-owners@halverra.example: 3509027d-fe70-5fa7-95d6-2709ccd4d84f
+  group:crm-stewards@halverra.example: 0efed542-6277-5003-844c-b22e01727ae6
+  group:data-governance@halverra.example: f4a7001b-1cab-591c-9bf0-7df0634c2e77
+  group:data-platform@halverra.example: 2afb6f0d-34b0-52c2-9d03-2a212e09a2e9
+  group:finance-owners@halverra.example: 038c3104-ac60-50a6-8e81-28d51fbab47d
+  group:finance-stewards@halverra.example: 3a48cd3b-b961-5f91-bdc7-c2dfa5261611
+  group:network-owners@halverra.example: 8a285663-7481-52a1-90ef-b554a415b6ad
+  group:network-stewards@halverra.example: 7d648dbf-d4d9-55dd-b202-cfde977303ea
+  group:privacy-office@halverra.example: 59c619f4-2db2-5bda-9d1c-1fe6fb40fbdf
+# A dataset whose tables a log sink creates on first write (DECISIONS B15) is catalogued before they exist and
+# listed by the reconciliation as `pending_first_write` instead of drift — until this date (doctrine 6: an
+# exception expires). Afterwards it is "in the catalog, not in GCP" and the gate is red.
+pending_first_write_until: "2026-10-31"
