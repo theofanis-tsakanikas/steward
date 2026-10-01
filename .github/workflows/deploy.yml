@@ -87,6 +87,13 @@ jobs:
           terraform apply -input=false -auto-approve \
             -var "project_id=$PROJECT" -var "expires_at=$EXPIRES_AT" -var "estate_version=${{ inputs.publish_version }}"
 
+      - name: assurance (DLP inspect template, Dataplex quality scans)
+        working-directory: infra/assurance
+        run: |
+          terraform init -input=false -backend-config="bucket=$STATE_BUCKET" -backend-config="prefix=assurance"
+          terraform apply -input=false -auto-approve \
+            -var "project_id=$PROJECT" -var "expires_at=$EXPIRES_AT"
+
       - name: marketplace
         working-directory: infra/marketplace
         run: |
