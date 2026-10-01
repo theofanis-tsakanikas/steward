@@ -1,0 +1,28 @@
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+# terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+.terraform.lock.hcl.bak
+*.auto.tfvars
+terraform.tfvars
+# local, never committed
+linkedin/
+LinkedIn/
+.env
+.env.*
+local/
+.streamlit/secrets.toml
+# run outputs (evidence/ is committed on purpose; scratch is not)
+out/
+.DS_Store
