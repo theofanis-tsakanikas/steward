@@ -1,0 +1,197 @@
+{
+ "data": {
+  "checked_column_decisions": 3200,
+  "checked_row_filters": 120,
+  "checked_tags": 10,
+  "gate_findings": [],
+  "mismatches": [],
+  "query": {
+   "answers": [
+    {
+     "access": {
+      "birth_date": "DATE_YEAR_MASK",
+      "country": "clear",
+      "customer_id": "SHA256",
+      "email": "EMAIL_MASK",
+      "msisdn": "SHA256",
+      "segment": "clear"
+     },
+     "row_filter": "country = \"GR\"",
+     "rows": [
+      {
+       "birth_date": "1961-01-01",
+       "country": "GR",
+       "customer_id": "YC3PAdJstbwj9hMdwCr0V1UTH+lzeSCulPvHSGeoeTM=",
+       "email": "XXXXX@example.com",
+       "msisdn": "LpBjnIeEyThwERanM3c0Q7XXjfFPEBcj30LNTvYr6AE=",
+       "segment": "consumer"
+      },
+      {
+       "birth_date": "1996-01-01",
+       "country": "GR",
+       "customer_id": "M1HnIy/khDpDKpcYBgXiMFU16UGfGuJv5fntXRqduQ0=",
+       "email": "XXXXX@example.net",
+       "msisdn": "QrJAzsrCWJJgtbDihnbjVhs9RcqyCyB/bFx5yEDSVYM=",
+       "segment": "consumer"
+      },
+      {
+       "birth_date": "1994-01-01",
+       "country": "GR",
+       "customer_id": "B1wbEvwSIbm0wC75+RHC69YyX3IrknK38oHLLPaxUJ4=",
+       "email": "XXXXX@example.org",
+       "msisdn": "MjzI+SRjceYVHL5cT2ZL4sACmxlxdmW+YNSWB3RJ7lU=",
+       "segment": "consumer"
+      },
+      {
+       "birth_date": "1963-01-01",
+       "country": "GR",
+       "customer_id": "fNnSuBeqaI6saMxdpFxSisDas05v4mCipTuApPkkbWc=",
+       "email": "XXXXX@example.org",
+       "msisdn": "FRy8IrGDLBTcI0wCkN2W6dgPZXZjfhIKtCgTbhBhnTg=",
+       "segment": "business"
+      },
+      {
+       "birth_date": "1996-01-01",
+       "country": "GR",
+       "customer_id": "Ub33mJa2WqQx620/2PKVvlgmKfa6RnxdWBaMwa/sHNE=",
+       "email": "XXXXX@example.net",
+       "msisdn": "yleCby0Dm0+NM2oGSTEADIhPRSBBkxohLB16LOG02es=",
+       "segment": "consumer"
+      }
+     ],
+     "rows_total": 600,
+     "rows_visible": 200,
+     "seat": "analyst@GR"
+    },
+    {
+     "access": {
+      "birth_date": "ALWAYS_NULL",
+      "country": "clear",
+      "customer_id": "clear",
+      "email": "ALWAYS_NULL",
+      "msisdn": "clear",
+      "segment": "clear"
+     },
+     "row_filter": "TRUE",
+     "rows": [
+      {
+       "birth_date": null,
+       "country": "GR",
+       "customer_id": "C000001",
+       "email": null,
+       "msisdn": "+306976353944",
+       "segment": "consumer"
+      },
+      {
+       "birth_date": null,
+       "country": "IT",
+       "customer_id": "C000002",
+       "email": null,
+       "msisdn": "+393709379872",
+       "segment": "consumer"
+      },
+      {
+       "birth_date": null,
+       "country": "DE",
+       "customer_id": "C000003",
+       "email": null,
+       "msisdn": "+4915778574882",
+       "segment": "business"
+      },
+      {
+       "birth_date": null,
+       "country": "GR",
+       "customer_id": "C000004",
+       "email": null,
+       "msisdn": "+306943238559",
+       "segment": "consumer"
+      },
+      {
+       "birth_date": null,
+       "country": "IT",
+       "customer_id": "C000005",
+       "email": null,
+       "msisdn": "+393603982728",
+       "segment": "business"
+      }
+     ],
+     "rows_total": 600,
+     "rows_visible": 600,
+     "seat": "fraud_investigator"
+    },
+    {
+     "access": {
+      "birth_date": "DATE_YEAR_MASK",
+      "country": "clear",
+      "customer_id": "SHA256",
+      "email": "EMAIL_MASK",
+      "msisdn": "LAST_FOUR_CHARACTERS",
+      "segment": "clear"
+     },
+     "row_filter": "TRUE",
+     "rows": [
+      {
+       "birth_date": "1961-01-01",
+       "country": "GR",
+       "customer_id": "YC3PAdJstbwj9hMdwCr0V1UTH+lzeSCulPvHSGeoeTM=",
+       "email": "XXXXX@example.com",
+       "msisdn": "XXXXX3944",
+       "segment": "consumer"
+      },
+      {
+       "birth_date": "1963-01-01",
+       "country": "IT",
+       "customer_id": "xcwr8IsyOzx7RHZPnluXti0xMXXJUFwJmO2fVB6Y/o4=",
+       "email": "XXXXX@example.org",
+       "msisdn": "XXXXX9872",
+       "segment": "consumer"
+      },
+      {
+       "birth_date": "1975-01-01",
+       "country": "DE",
+       "customer_id": "WGOdsAk/vbl0aSCtj1DVd+PZXCDMoGLiT0LNYDSnGn8=",
+       "email": "XXXXX@example.org",
+       "msisdn": "XXXXX4882",
+       "segment": "business"
+      },
+      {
+       "birth_date": "1996-01-01",
+       "country": "GR",
+       "customer_id": "M1HnIy/khDpDKpcYBgXiMFU16UGfGuJv5fntXRqduQ0=",
+       "email": "XXXXX@example.net",
+       "msisdn": "XXXXX8559",
+       "segment": "consumer"
+      },
+      {
+       "birth_date": "1972-01-01",
+       "country": "IT",
+       "customer_id": "h8/r0z8kogXa82W4M/kzwOTZ8jvkXbpLNudmbrMXC9Y=",
+       "email": "XXXXX@example.net",
+       "msisdn": "XXXXX2728",
+       "segment": "business"
+      }
+     ],
+     "rows_total": 600,
+     "rows_visible": 600,
+     "seat": "group:crm-stewards@halverra.example"
+    }
+   ],
+   "mode": "SIMULATED from compiled Terraform",
+   "note": "fraud_investigator reads crm through an approved marketplace grant (claim 6); the steward seat is crm's steward group",
+   "sql": "SELECT customer_id, msisdn, email, birth_date, country, segment FROM crm.customers ORDER BY customer_id LIMIT 5"
+  },
+  "uncontracted_columns": 8,
+  "uncontracted_leaks": []
+ },
+ "meta": {
+  "as_of": "2026-09-30",
+  "claim": "2",
+  "data": "synthetic",
+  "digest": "e40963cf5fa1bbe3a44976dc005e88ae2f127edd22503e02f8858462d1f23678",
+  "mode": "fixture",
+  "name": "access",
+  "operator": "fictional (Halverra Telecom)",
+  "origin": "evals/access/eval.py evaluate()",
+  "schema": 1
+ }
+}

@@ -186,7 +186,7 @@ closes        `make demo` opens the eight pages in KICKOFF.md from fixtures with
 out_of_scope  hosting
 stop_at       author clicks through all eight pages
 review        no
-status        open
+status        closed (2026-10-01) — author click-through of the eight pages still pending (stop_at)
 ```
 
 ```

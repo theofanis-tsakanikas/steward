@@ -1,0 +1,631 @@
+{
+ "data": {
+  "captured_at": "2026-09-30T18:00:00Z",
+  "clean_findings": [],
+  "clean_snapshot": {
+   "bindings": [
+    {
+     "condition": null,
+     "dataset": "analytics",
+     "member": "analyst@DE",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": null,
+     "dataset": "analytics",
+     "member": "analyst@GR",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": null,
+     "dataset": "analytics",
+     "member": "analyst@IT",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": null,
+     "dataset": "analytics",
+     "member": "bi_service",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": null,
+     "dataset": "analytics",
+     "member": "group:data-governance@halverra.example",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": null,
+     "dataset": "analytics",
+     "member": "group:data-platform@halverra.example",
+     "role": "roles/bigquery.dataEditor"
+    },
+    {
+     "condition": null,
+     "dataset": "audit",
+     "member": "group:data-governance@halverra.example",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": null,
+     "dataset": "audit",
+     "member": "group:data-platform@halverra.example",
+     "role": "roles/bigquery.dataEditor"
+    },
+    {
+     "condition": null,
+     "dataset": "crm",
+     "member": "analyst@DE",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": null,
+     "dataset": "crm",
+     "member": "analyst@GR",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": null,
+     "dataset": "crm",
+     "member": "analyst@IT",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": null,
+     "dataset": "crm",
+     "member": "bi_service",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": null,
+     "dataset": "crm",
+     "member": "group:crm-stewards@halverra.example",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": null,
+     "dataset": "crm",
+     "member": "group:data-platform@halverra.example",
+     "role": "roles/bigquery.dataEditor"
+    },
+    {
+     "condition": {
+      "description": "R-002: user:paolo.marino@halverra.example as fraud_investigator, approved by user:marco.ferri@halverra.example at 2026-09-29T16:00:00Z; expires 2026-10-06T16:00:00Z",
+      "expression": "request.time < timestamp(\"2026-10-06T16:00:00Z\")",
+      "title": "steward-R-002"
+     },
+     "dataset": "crm",
+     "member": "user:paolo.marino@halverra.example",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": null,
+     "dataset": "finance",
+     "member": "bi_service",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": null,
+     "dataset": "finance",
+     "member": "group:data-platform@halverra.example",
+     "role": "roles/bigquery.dataEditor"
+    },
+    {
+     "condition": null,
+     "dataset": "finance",
+     "member": "group:finance-stewards@halverra.example",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": null,
+     "dataset": "network",
+     "member": "bi_service",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": null,
+     "dataset": "network",
+     "member": "fraud_investigator",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": null,
+     "dataset": "network",
+     "member": "group:data-platform@halverra.example",
+     "role": "roles/bigquery.dataEditor"
+    },
+    {
+     "condition": null,
+     "dataset": "network",
+     "member": "group:network-stewards@halverra.example",
+     "role": "roles/bigquery.dataViewer"
+    },
+    {
+     "condition": {
+      "description": "R-001: user:eleni.kosta@halverra.example as analyst@GR, approved by user:jonas.weber@halverra.example at 2026-09-25T15:00:00Z; expires 2026-10-09T15:00:00Z",
+      "expression": "request.time < timestamp(\"2026-10-09T15:00:00Z\")",
+      "title": "steward-R-001"
+     },
+     "dataset": "network",
+     "member": "user:eleni.kosta@halverra.example",
+     "role": "roles/bigquery.dataViewer"
+    }
+   ],
+   "captured_at": "2026-09-30T18:00:00Z",
+   "source": "compiled Terraform (offline) — not evidence; a live getIamPolicy capture replaces it in T016"
+  },
+  "drift_expected": [
+   [
+    "GRANT_CONDITION_UNRECOGNISED",
+    "network:user:eleni.kosta@halverra.example"
+   ],
+   [
+    "GRANT_EXPIRED_PRESENT",
+    "network:user:anna.pappas@halverra.example"
+   ],
+   [
+    "GRANT_ON_UNCONTRACTED",
+    "legacy:analyst@GR"
+   ],
+   [
+    "GRANT_ROLE_UNEXPECTED",
+    "finance:analyst@IT"
+   ],
+   [
+    "GRANT_UNAPPROVED",
+    "crm:user:luca.ricci@halverra.example"
+   ],
+   [
+    "GRANT_WITHOUT_EXPIRY",
+    "crm:fraud_investigator"
+   ]
+  ],
+  "drift_got": [
+   [
+    "GRANT_CONDITION_UNRECOGNISED",
+    "network:user:eleni.kosta@halverra.example"
+   ],
+   [
+    "GRANT_EXPIRED_PRESENT",
+    "network:user:anna.pappas@halverra.example"
+   ],
+   [
+    "GRANT_ON_UNCONTRACTED",
+    "legacy:analyst@GR"
+   ],
+   [
+    "GRANT_ROLE_UNEXPECTED",
+    "finance:analyst@IT"
+   ],
+   [
+    "GRANT_UNAPPROVED",
+    "crm:user:luca.ricci@halverra.example"
+   ],
+   [
+    "GRANT_WITHOUT_EXPIRY",
+    "crm:fraud_investigator"
+   ]
+  ],
+  "drift_planted": [
+   {
+    "condition": {
+     "expression": "request.time < timestamp(\"2026-09-11T15:00:00Z\")",
+     "title": "steward-R-009"
+    },
+    "dataset": "network",
+    "expect": "GRANT_EXPIRED_PRESENT",
+    "member": "user:anna.pappas@halverra.example",
+    "role": "roles/bigquery.dataViewer",
+    "why": "R-009 was approved for 14 days from 2026-08-28; it lapsed and is still bound"
+   },
+   {
+    "condition": {
+     "expression": "request.time < timestamp(\"2026-12-31T00:00:00Z\")",
+     "title": "hand-made"
+    },
+    "dataset": "crm",
+    "expect": "GRANT_UNAPPROVED",
+    "member": "user:luca.ricci@halverra.example",
+    "role": "roles/bigquery.dataViewer",
+    "why": "an expiring grant with no request behind it"
+   },
+   {
+    "condition": null,
+    "dataset": "crm",
+    "expect": "GRANT_WITHOUT_EXPIRY",
+    "member": "fraud_investigator",
+    "role": "roles/bigquery.dataViewer",
+    "why": "a permanent grant to a seat that is not a standing reader of crm"
+   },
+   {
+    "condition": {
+     "expression": "request.time < timestamp(\"2026-10-09T15:00:00Z\") || true",
+     "title": "steward-R-001"
+    },
+    "dataset": "network",
+    "expect": "GRANT_CONDITION_UNRECOGNISED",
+    "member": "user:eleni.kosta@halverra.example",
+    "role": "roles/bigquery.dataViewer",
+    "why": "R-001's expiry with `|| true` appended never expires"
+   },
+   {
+    "condition": null,
+    "dataset": "finance",
+    "expect": "GRANT_ROLE_UNEXPECTED",
+    "member": "analyst@IT",
+    "role": "roles/bigquery.dataOwner",
+    "why": "dataOwner can re-tag columns; no contract grants it"
+   },
+   {
+    "condition": null,
+    "dataset": "legacy",
+    "expect": "GRANT_ON_UNCONTRACTED",
+    "member": "analyst@GR",
+    "role": "roles/bigquery.dataViewer",
+    "why": "a grant on the table no contract declares"
+   }
+  ],
+  "lifecycle": {
+   "captured_at": "2026-09-30T18:00:00Z",
+   "dashboards": [
+    {
+     "action": "none",
+     "dashboard": "customer_overview",
+     "idle_days": 1,
+     "last_viewed": "2026-09-29T08:12:00Z",
+     "owner": "group:crm-owners@halverra.example",
+     "state": "active"
+    },
+    {
+     "action": "none",
+     "dashboard": "network_usage",
+     "idle_days": 0,
+     "last_viewed": "2026-09-30T07:40:00Z",
+     "owner": "group:network-owners@halverra.example",
+     "state": "active"
+    },
+    {
+     "action": "none",
+     "dashboard": "billing_health",
+     "idle_days": 12,
+     "last_viewed": "2026-09-18T10:05:00Z",
+     "owner": "group:finance-owners@halverra.example",
+     "state": "active"
+    },
+    {
+     "action": "archive (reversible); owner group:crm-owners@halverra.example was notified 2026-09-10T09:00:00Z",
+     "dashboard": "legacy_churn",
+     "idle_days": 149,
+     "last_viewed": "2026-05-04T16:20:00Z",
+     "owner": "group:crm-owners@halverra.example",
+     "state": "archive-due"
+    }
+   ],
+   "mode": "FIXTURE — no Looker instance (DECISIONS D3). In REAL mode this is Looker System Activity."
+  },
+  "now_from_evidence": {
+   "early_capture": "2026-09-10T00:00:00Z",
+   "expired_flagged_early": false
+  },
+  "outcome_mismatches": {},
+  "outcomes": [
+   {
+    "decision": {
+     "at": "2026-09-25T15:00:00Z",
+     "by": "user:jonas.weber@halverra.example",
+     "decision": "approve",
+     "request": "R-001"
+    },
+    "expires_at": "2026-10-09T15:00:00Z",
+    "member": "user:eleni.kosta@halverra.example",
+    "reasons": [],
+    "request": {
+     "at": "2026-09-25T09:00:00Z",
+     "dataset": "network",
+     "days": 14,
+     "id": "R-001",
+     "justification": "cell-level congestion study for the Athens rollout",
+     "requester": "user:eleni.kosta@halverra.example",
+     "seat": "analyst@GR"
+    },
+    "status": "granted"
+   },
+   {
+    "decision": {
+     "at": "2026-09-29T16:00:00Z",
+     "by": "user:marco.ferri@halverra.example",
+     "decision": "approve",
+     "request": "R-002"
+    },
+    "expires_at": "2026-10-06T16:00:00Z",
+    "member": "user:paolo.marino@halverra.example",
+    "reasons": [],
+    "request": {
+     "at": "2026-09-29T10:00:00Z",
+     "dataset": "crm",
+     "days": 7,
+     "id": "R-002",
+     "justification": "case FR-2291: SIM-swap pattern across three accounts",
+     "requester": "user:paolo.marino@halverra.example",
+     "seat": "fraud_investigator"
+    },
+    "status": "granted"
+   },
+   {
+    "decision": {
+     "at": "2026-09-26T09:00:00Z",
+     "by": "user:jonas.weber@halverra.example",
+     "decision": "approve",
+     "request": "R-003"
+    },
+    "expires_at": null,
+    "member": null,
+    "reasons": [
+     {
+      "code": "DURATION_EXCEEDS_MAX",
+      "evidence": {},
+      "gate": "marketplace",
+      "message": "30 days > 14 allowed by network's contract",
+      "severity": "error",
+      "target": "R-003",
+      "waived_by": null
+     }
+    ],
+    "request": {
+     "at": "2026-09-26T08:00:00Z",
+     "dataset": "network",
+     "days": 30,
+     "id": "R-003",
+     "justification": "quarterly 5G attach-rate review",
+     "requester": "user:lena.fischer@halverra.example",
+     "seat": "analyst@DE"
+    },
+    "status": "refused"
+   },
+   {
+    "decision": {
+     "at": "2026-09-27T12:00:00Z",
+     "by": "user:giorgos.ioannou@halverra.example",
+     "decision": "approve",
+     "request": "R-004"
+    },
+    "expires_at": null,
+    "member": null,
+    "reasons": [
+     {
+      "code": "SELF_APPROVAL",
+      "evidence": {},
+      "gate": "marketplace",
+      "message": "user:giorgos.ioannou@halverra.example approved their own request (doctrine 5)",
+      "severity": "error",
+      "target": "R-004",
+      "waived_by": null
+     }
+    ],
+    "request": {
+     "at": "2026-09-27T11:00:00Z",
+     "dataset": "network",
+     "days": 7,
+     "id": "R-004",
+     "justification": "roaming volume check",
+     "requester": "user:giorgos.ioannou@halverra.example",
+     "seat": "analyst@IT"
+    },
+    "status": "refused"
+   },
+   {
+    "decision": {
+     "at": "2026-09-28T12:05:00Z",
+     "by": "serviceAccount:steward-pipeline@halverra-data.example",
+     "decision": "approve",
+     "request": "R-005"
+    },
+    "expires_at": null,
+    "member": null,
+    "reasons": [
+     {
+      "code": "SERVICE_ACCOUNT_APPROVAL",
+      "evidence": {},
+      "gate": "marketplace",
+      "message": "approved by serviceAccount:steward-pipeline@halverra-data.example: no pipeline approves access (doctrine 5)",
+      "severity": "error",
+      "target": "R-005",
+      "waived_by": null
+     }
+    ],
+    "request": {
+     "at": "2026-09-28T12:00:00Z",
+     "dataset": "network",
+     "days": 7,
+     "id": "R-005",
+     "justification": "dropped-call hotspots",
+     "requester": "user:maria.romano@halverra.example",
+     "seat": "analyst@GR"
+    },
+    "status": "refused"
+   },
+   {
+    "decision": {
+     "at": "2026-09-28T14:00:00Z",
+     "by": "user:eleni.papadaki@halverra.example",
+     "decision": "approve",
+     "request": "R-006"
+    },
+    "expires_at": null,
+    "member": null,
+    "reasons": [
+     {
+      "code": "ROLE_NOT_GRANTABLE",
+      "evidence": {},
+      "gate": "marketplace",
+      "message": "analyst already reads crm standing; a grant would expire nothing",
+      "severity": "error",
+      "target": "R-006",
+      "waived_by": null
+     }
+    ],
+    "request": {
+     "at": "2026-09-28T13:00:00Z",
+     "dataset": "crm",
+     "days": 7,
+     "id": "R-006",
+     "justification": "segment counts",
+     "requester": "user:luca.ricci@halverra.example",
+     "seat": "analyst@IT"
+    },
+    "status": "refused"
+   },
+   {
+    "decision": null,
+    "expires_at": null,
+    "member": null,
+    "reasons": [
+     {
+      "code": "NO_DECISION",
+      "evidence": {},
+      "gate": "marketplace",
+      "message": "no human has decided; denied until one does (doctrine 1)",
+      "severity": "info",
+      "target": "R-007",
+      "waived_by": null
+     }
+    ],
+    "request": {
+     "at": "2026-09-29T14:00:00Z",
+     "dataset": "network",
+     "days": 7,
+     "id": "R-007",
+     "justification": "5G attach rates",
+     "requester": "user:jonas.becker@halverra.example",
+     "seat": "analyst@DE"
+    },
+    "status": "denied-no-decision"
+   },
+   {
+    "decision": {
+     "at": "2026-09-29T16:00:00Z",
+     "by": "user:chiara.greco@halverra.example",
+     "decision": "approve",
+     "request": "R-008"
+    },
+    "expires_at": null,
+    "member": null,
+    "reasons": [
+     {
+      "code": "APPROVER_NOT_AUTHORISED",
+      "evidence": {},
+      "gate": "marketplace",
+      "message": "user:chiara.greco@halverra.example is not in group:network-owners@halverra.example, the approvers network's contract names",
+      "severity": "error",
+      "target": "R-008",
+      "waived_by": null
+     }
+    ],
+    "request": {
+     "at": "2026-09-29T15:00:00Z",
+     "dataset": "network",
+     "days": 7,
+     "id": "R-008",
+     "justification": "churn vs. dropped calls",
+     "requester": "user:sara.greco@halverra.example",
+     "seat": "analyst@IT"
+    },
+    "status": "refused"
+   },
+   {
+    "decision": {
+     "at": "2026-08-28T15:00:00Z",
+     "by": "user:giorgos.ioannou@halverra.example",
+     "decision": "approve",
+     "request": "R-009"
+    },
+    "expires_at": "2026-09-11T15:00:00Z",
+    "member": "user:anna.pappas@halverra.example",
+    "reasons": [],
+    "request": {
+     "at": "2026-08-28T09:00:00Z",
+     "dataset": "network",
+     "days": 14,
+     "id": "R-009",
+     "justification": "summer traffic peak study",
+     "requester": "user:anna.pappas@halverra.example",
+     "seat": "analyst@GR"
+    },
+    "status": "granted"
+   },
+   {
+    "decision": {
+     "at": "2026-09-26T10:00:00Z",
+     "by": "user:hannah.becker@halverra.example",
+     "decision": "approve",
+     "request": "R-010"
+    },
+    "expires_at": null,
+    "member": null,
+    "reasons": [
+     {
+      "code": "DATASET_NOT_LISTED",
+      "evidence": {},
+      "gate": "marketplace",
+      "message": "finance is not listed in the marketplace; it is reached by standing readers only",
+      "severity": "error",
+      "target": "R-010",
+      "waived_by": null
+     }
+    ],
+    "request": {
+     "at": "2026-09-26T08:30:00Z",
+     "dataset": "finance",
+     "days": 7,
+     "id": "R-010",
+     "justification": "quarterly revenue reconciliation",
+     "requester": "user:lena.fischer@halverra.example",
+     "seat": "analyst@DE"
+    },
+    "status": "refused"
+   },
+   {
+    "decision": {
+     "at": "2026-09-29T16:30:00Z",
+     "by": "user:marco.ferri@halverra.example",
+     "decision": "approve",
+     "request": "R-011"
+    },
+    "expires_at": null,
+    "member": null,
+    "reasons": [
+     {
+      "code": "REQUESTER_NOT_IN_SEAT",
+      "evidence": {},
+      "gate": "marketplace",
+      "message": "user:sara.greco@halverra.example is not in group:fraud-investigators@halverra.example, so cannot ask for fraud_investigator's access",
+      "severity": "error",
+      "target": "R-011",
+      "waived_by": null
+     }
+    ],
+    "request": {
+     "at": "2026-09-29T15:30:00Z",
+     "dataset": "crm",
+     "days": 7,
+     "id": "R-011",
+     "justification": "want to look at a customer",
+     "requester": "user:sara.greco@halverra.example",
+     "seat": "fraud_investigator"
+    },
+    "status": "refused"
+   }
+  ]
+ },
+ "meta": {
+  "as_of": "2026-09-30",
+  "claim": "6",
+  "data": "synthetic",
+  "digest": "9881981df9a0906bca7724033e3d12090d70d8281114dd093d1475be2e3f68e1",
+  "mode": "fixture",
+  "name": "marketplace",
+  "operator": "fictional (Halverra Telecom)",
+  "origin": "evals/marketplace/eval.py evaluate()",
+  "schema": 1
+ }
+}

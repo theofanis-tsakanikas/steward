@@ -205,6 +205,31 @@ def cmd_reconcile(args: argparse.Namespace) -> int:
     return 0 if not (rep["in_gcp_not_in_catalog"] or rep["in_catalog_not_in_gcp"] or rep["in_both_differing"]) else 1
 
 
+def cmd_evidence(args: argparse.Namespace) -> int:
+    """Rebuild the offline fixture evidence the demo reads (or wrap a gate-proof run as evidence)."""
+    from pathlib import Path
+
+    from steward import evidence
+
+    if args.gates:
+        evidence.record_gates(Path(args.gates))
+        print(f"recorded {args.gates} as evidence/{evidence.FIXTURE}/{evidence.GATES_FILE}.json")
+        return 0
+    names = evidence.write_fixture()
+    print(f"evidence/{evidence.FIXTURE}: wrote {len(names)} file(s): {', '.join(names)}")
+    return 0
+
+
+def cmd_evidence_check(args: argparse.Namespace) -> int:
+    """Re-verify every evidence file against its digest and the repository, offline."""
+    from steward import evidence
+    from steward.core.findings import report
+
+    code, lines = report("evidence", evidence.check())
+    print("\n".join(lines))
+    return code
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="steward", description=__doc__)
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -238,6 +263,12 @@ def main(argv: list[str] | None = None) -> int:
     rc = sub.add_parser("reconcile", help="claim 4: in GCP not in the catalog · in the catalog not in GCP · differing")
     rc.add_argument("--state", default="out/collibra-mock.json", help="the mock's state file")
     rc.add_argument("--at", default=None, help="ISO timestamp of the run (default: now, UTC)")
+    ev = sub.add_parser("evidence", help="rebuild the offline fixture evidence the demo reads")
+    ev.add_argument("--mode", choices=["fixture"], default="fixture", help="fixture (offline); live is captured, T012+")
+    ev.add_argument("--gates", help="record this `gate_proof.py --json` file as evidence/fixture/gates.json instead")
+    sub.add_parser(
+        "evidence-check", help="every evidence file matches its digest and the repository; gate-proof recorded"
+    )
     args = parser.parse_args(argv)
     if getattr(args, "at", "x") is None:
         from datetime import UTC, datetime
@@ -259,6 +290,8 @@ def main(argv: list[str] | None = None) -> int:
         "catalog": cmd_catalog,
         "sync": cmd_sync,
         "reconcile": cmd_reconcile,
+        "evidence": cmd_evidence,
+        "evidence-check": cmd_evidence_check,
     }[args.cmd](args)
 
 

@@ -1,0 +1,814 @@
+{
+ "data": {
+  "clean_findings": [
+   {
+    "code": "PSEUDONYMISED_ID_ON_DASHBOARD",
+    "evidence": {},
+    "gate": "lineage",
+    "message": "crm.customers.msisdn is shown hashed: an unsalted hash of an enumerable identifier is pseudonymised, still personal data (GDPR Art. 4(5)) — fine as a join key, not as a display value",
+    "severity": "warn",
+    "target": "customer_overview/callers_with_most_tickets/customers.msisdn",
+    "waived_by": null
+   },
+   {
+    "code": "GLOSSARY_CONFLICT",
+    "evidence": {},
+    "gate": "lineage",
+    "message": "billing.active_customers = count_distinct(${customer_id}) where ['status']; customers.active_customers = count_distinct(${customer_id}) where ['has_active_contract']",
+    "severity": "warn",
+    "target": "active_customer",
+    "waived_by": null
+   }
+  ],
+  "connections": {
+   "steward": "bi_service"
+  },
+  "counts": {
+   "dashboards": 4,
+   "edges": 35,
+   "explores": 2,
+   "nodes": 37,
+   "views": 4
+  },
+  "detail": {
+   "dashboards": {
+    "billing_health": [
+     {
+      "as_seen": {
+       "finance.billing.status": "clear"
+      },
+      "columns": [
+       "finance.billing.status"
+      ],
+      "element": "amount_by_status",
+      "field": "billing.status",
+      "role": "bi_service"
+     },
+     {
+      "as_seen": {
+       "finance.billing.amount": "clear"
+      },
+      "columns": [
+       "finance.billing.amount"
+      ],
+      "element": "amount_by_status",
+      "field": "billing.total_amount",
+      "role": "bi_service"
+     },
+     {
+      "as_seen": {
+       "finance.billing.customer_id": "SHA256",
+       "finance.billing.status": "clear"
+      },
+      "columns": [
+       "finance.billing.customer_id",
+       "finance.billing.status"
+      ],
+      "element": "paying_customers",
+      "field": "billing.active_customers",
+      "role": "bi_service"
+     }
+    ],
+    "customer_overview": [
+     {
+      "as_seen": {
+       "crm.customers.country": "clear"
+      },
+      "columns": [
+       "crm.customers.country"
+      ],
+      "element": "customers_by_country",
+      "field": "customers.country",
+      "role": "bi_service"
+     },
+     {
+      "as_seen": {},
+      "columns": [
+       "crm.customers.*"
+      ],
+      "element": "customers_by_country",
+      "field": "customers.count",
+      "role": "bi_service"
+     },
+     {
+      "as_seen": {
+       "crm.customers.segment": "clear"
+      },
+      "columns": [
+       "crm.customers.segment"
+      ],
+      "element": "active_by_segment",
+      "field": "customers.segment",
+      "role": "bi_service"
+     },
+     {
+      "as_seen": {
+       "crm.customers.contracts.contract_id": "clear",
+       "crm.customers.contracts.end_date": "clear",
+       "crm.customers.contracts.monthly_fee": "clear",
+       "crm.customers.contracts.plan": "clear",
+       "crm.customers.contracts.start_date": "clear",
+       "crm.customers.contracts.status": "clear",
+       "crm.customers.customer_id": "SHA256"
+      },
+      "columns": [
+       "crm.customers.contracts",
+       "crm.customers.customer_id"
+      ],
+      "element": "active_by_segment",
+      "field": "customers.active_customers",
+      "role": "bi_service"
+     },
+     {
+      "as_seen": {
+       "crm.support_tickets.category": "clear"
+      },
+      "columns": [
+       "crm.support_tickets.category"
+      ],
+      "element": "tickets_by_category",
+      "field": "support_tickets.category",
+      "role": "bi_service"
+     },
+     {
+      "as_seen": {},
+      "columns": [
+       "crm.support_tickets.*"
+      ],
+      "element": "tickets_by_category",
+      "field": "support_tickets.count",
+      "role": "bi_service"
+     },
+     {
+      "as_seen": {
+       "crm.customers.msisdn": "SHA256"
+      },
+      "columns": [
+       "crm.customers.msisdn"
+      ],
+      "element": "callers_with_most_tickets",
+      "field": "customers.msisdn",
+      "role": "bi_service"
+     },
+     {
+      "as_seen": {},
+      "columns": [
+       "crm.support_tickets.*"
+      ],
+      "element": "callers_with_most_tickets",
+      "field": "support_tickets.count",
+      "role": "bi_service"
+     }
+    ],
+    "legacy_churn": [
+     {
+      "as_seen": {
+       "crm.customers.segment": "clear"
+      },
+      "columns": [
+       "crm.customers.segment"
+      ],
+      "element": "tickets_by_segment",
+      "field": "customers.segment",
+      "role": "bi_service"
+     },
+     {
+      "as_seen": {
+       "crm.customers.birth_date": "DATE_YEAR_MASK"
+      },
+      "columns": [
+       "crm.customers.birth_date"
+      ],
+      "element": "tickets_by_segment",
+      "field": "customers.birth_year",
+      "role": "bi_service"
+     },
+     {
+      "as_seen": {},
+      "columns": [
+       "crm.support_tickets.*"
+      ],
+      "element": "tickets_by_segment",
+      "field": "support_tickets.count",
+      "role": "bi_service"
+     }
+    ],
+    "network_usage": [
+     {
+      "as_seen": {
+       "analytics.weekly_usage_by_cell.week_start": "clear"
+      },
+      "columns": [
+       "analytics.weekly_usage_by_cell.week_start"
+      ],
+      "element": "volume_by_week",
+      "field": "weekly_usage.week_start",
+      "role": "bi_service"
+     },
+     {
+      "as_seen": {
+       "analytics.weekly_usage_by_cell.total_mb": "clear"
+      },
+      "columns": [
+       "analytics.weekly_usage_by_cell.total_mb"
+      ],
+      "element": "volume_by_week",
+      "field": "weekly_usage.total_volume_mb",
+      "role": "bi_service"
+     },
+     {
+      "as_seen": {
+       "analytics.weekly_usage_by_cell.country": "clear"
+      },
+      "columns": [
+       "analytics.weekly_usage_by_cell.country"
+      ],
+      "element": "busiest_cells",
+      "field": "weekly_usage.country",
+      "role": "bi_service"
+     },
+     {
+      "as_seen": {
+       "analytics.weekly_usage_by_cell.cell_id": "clear"
+      },
+      "columns": [
+       "analytics.weekly_usage_by_cell.cell_id"
+      ],
+      "element": "busiest_cells",
+      "field": "weekly_usage.cell_id",
+      "role": "bi_service"
+     },
+     {
+      "as_seen": {
+       "analytics.weekly_usage_by_cell.events": "clear"
+      },
+      "columns": [
+       "analytics.weekly_usage_by_cell.events"
+      ],
+      "element": "busiest_cells",
+      "field": "weekly_usage.total_events",
+      "role": "bi_service"
+     },
+     {
+      "as_seen": {
+       "analytics.weekly_usage_by_cell.subscribers": "clear"
+      },
+      "columns": [
+       "analytics.weekly_usage_by_cell.subscribers"
+      ],
+      "element": "busiest_cells",
+      "field": "weekly_usage.subscriber_weeks",
+      "role": "bi_service"
+     }
+    ]
+   },
+   "history_tables": {
+    "billing_health": [
+     "crm.customers",
+     "finance.billing"
+    ],
+    "customer_overview": [
+     "crm.customers",
+     "crm.support_tickets"
+    ],
+    "legacy_churn": [
+     "crm.customers",
+     "crm.support_tickets"
+    ],
+    "network_usage": [
+     "analytics.weekly_usage_by_cell"
+    ]
+   },
+   "lookml_tables": {
+    "billing_health": [
+     "crm.customers",
+     "finance.billing"
+    ],
+    "customer_overview": [
+     "crm.customers",
+     "crm.support_tickets"
+    ],
+    "legacy_churn": [
+     "crm.customers",
+     "crm.support_tickets"
+    ],
+    "network_usage": [
+     "analytics.weekly_usage_by_cell"
+    ]
+   },
+   "paths": {
+    "billing_health": {
+     "crm.customers": [
+      "source:gs://landing/crm/customers/*.jsonl"
+     ],
+     "finance.billing": [
+      "source:gs://landing/finance/billing/*.jsonl"
+     ]
+    },
+    "customer_overview": {
+     "crm.customers": [
+      "source:gs://landing/crm/customers/*.jsonl"
+     ],
+     "crm.support_tickets": [
+      "source:gs://landing/crm/support_tickets/*.jsonl"
+     ]
+    },
+    "legacy_churn": {
+     "crm.customers": [
+      "source:gs://landing/crm/customers/*.jsonl"
+     ],
+     "crm.support_tickets": [
+      "source:gs://landing/crm/support_tickets/*.jsonl"
+     ]
+    },
+    "network_usage": {
+     "analytics.weekly_usage_by_cell": [
+      "source:gs://landing/network/usage_events/*.jsonl",
+      "table:network.usage_events"
+     ]
+    }
+   }
+  },
+  "drift_expected": [
+   [
+    "LINEAGE_DISAGREEMENT",
+    "billing_health"
+   ],
+   [
+    "LINEAGE_UNMODELLED_DASHBOARD",
+    "my_quick_numbers"
+   ],
+   [
+    "SENSITIVE_UNMASKED_ON_DASHBOARD",
+    "customer_overview/callers_with_most_tickets/customers.msisdn"
+   ],
+   [
+    "UNRESOLVED_FIELD",
+    "churn_risk/at_risk/customers.churn_score"
+   ]
+  ],
+  "drift_findings": [
+   {
+    "code": "UNRESOLVED_FIELD",
+    "evidence": {},
+    "gate": "lineage",
+    "message": "customers.churn_score: no such field in view customers",
+    "severity": "error",
+    "target": "churn_risk/at_risk/customers.churn_score",
+    "waived_by": null
+   },
+   {
+    "code": "SENSITIVE_UNMASKED_ON_DASHBOARD",
+    "evidence": {},
+    "gate": "lineage",
+    "message": "crm.customers.msisdn is tagged and reaches the dashboard in clear for bi_service",
+    "severity": "error",
+    "target": "customer_overview/callers_with_most_tickets/customers.msisdn",
+    "waived_by": null
+   },
+   {
+    "code": "LINEAGE_UNMODELLED_DASHBOARD",
+    "evidence": {},
+    "gate": "lineage",
+    "message": "queries ran for 'my_quick_numbers' reading ['crm.customers'], but no LookML dashboard of that name exists — a user-defined dashboard the catalog cannot describe",
+    "severity": "error",
+    "target": "my_quick_numbers",
+    "waived_by": null
+   },
+   {
+    "code": "LINEAGE_DISAGREEMENT",
+    "evidence": {
+     "history": [
+      "crm.customers",
+      "finance.billing",
+      "network.usage_events"
+     ],
+     "lookml": [
+      "crm.customers",
+      "finance.billing"
+     ]
+    },
+    "gate": "lineage",
+    "message": "LookML says ['crm.customers', 'finance.billing']; its queries referenced ['crm.customers', 'finance.billing', 'network.usage_events']. Not merged: a hand-written SQL tile, a PDT or a missing view is reading something the model does not show",
+    "severity": "error",
+    "target": "billing_health",
+    "waived_by": null
+   },
+   {
+    "code": "LINEAGE_UNOBSERVED",
+    "evidence": {},
+    "gate": "lineage",
+    "message": "no query in the last 30 days ran for this dashboard — lineage rests on LookML alone",
+    "severity": "warn",
+    "target": "churn_risk",
+    "waived_by": null
+   },
+   {
+    "code": "GLOSSARY_CONFLICT",
+    "evidence": {},
+    "gate": "lineage",
+    "message": "billing.active_customers = count_distinct(${customer_id}) where ['status']; customers.active_customers = count_distinct(${customer_id}) where ['has_active_contract']",
+    "severity": "warn",
+    "target": "active_customer",
+    "waived_by": null
+   }
+  ],
+  "drift_got": [
+   [
+    "LINEAGE_DISAGREEMENT",
+    "billing_health"
+   ],
+   [
+    "LINEAGE_UNMODELLED_DASHBOARD",
+    "my_quick_numbers"
+   ],
+   [
+    "SENSITIVE_UNMASKED_ON_DASHBOARD",
+    "customer_overview/callers_with_most_tickets/customers.msisdn"
+   ],
+   [
+    "UNRESOLVED_FIELD",
+    "churn_risk/at_risk/customers.churn_score"
+   ]
+  ],
+  "graph": {
+   "edges": [
+    {
+     "from": "column:analytics.weekly_usage_by_cell.cell_id",
+     "origin": "lookml",
+     "to": "dashboard:network_usage"
+    },
+    {
+     "from": "column:analytics.weekly_usage_by_cell.country",
+     "origin": "lookml",
+     "to": "dashboard:network_usage"
+    },
+    {
+     "from": "column:analytics.weekly_usage_by_cell.events",
+     "origin": "lookml",
+     "to": "dashboard:network_usage"
+    },
+    {
+     "from": "column:analytics.weekly_usage_by_cell.subscribers",
+     "origin": "lookml",
+     "to": "dashboard:network_usage"
+    },
+    {
+     "from": "column:analytics.weekly_usage_by_cell.total_mb",
+     "origin": "lookml",
+     "to": "dashboard:network_usage"
+    },
+    {
+     "from": "column:analytics.weekly_usage_by_cell.week_start",
+     "origin": "lookml",
+     "to": "dashboard:network_usage"
+    },
+    {
+     "from": "column:crm.customers.birth_date",
+     "origin": "lookml",
+     "to": "dashboard:legacy_churn"
+    },
+    {
+     "from": "column:crm.customers.contracts",
+     "origin": "lookml",
+     "to": "dashboard:customer_overview"
+    },
+    {
+     "from": "column:crm.customers.country",
+     "origin": "lookml",
+     "to": "dashboard:customer_overview"
+    },
+    {
+     "from": "column:crm.customers.customer_id",
+     "origin": "lookml",
+     "to": "dashboard:customer_overview"
+    },
+    {
+     "from": "column:crm.customers.msisdn",
+     "origin": "lookml",
+     "to": "dashboard:customer_overview"
+    },
+    {
+     "from": "column:crm.customers.segment",
+     "origin": "lookml",
+     "to": "dashboard:customer_overview"
+    },
+    {
+     "from": "column:crm.customers.segment",
+     "origin": "lookml",
+     "to": "dashboard:legacy_churn"
+    },
+    {
+     "from": "column:crm.support_tickets.category",
+     "origin": "lookml",
+     "to": "dashboard:customer_overview"
+    },
+    {
+     "from": "column:finance.billing.amount",
+     "origin": "lookml",
+     "to": "dashboard:billing_health"
+    },
+    {
+     "from": "column:finance.billing.customer_id",
+     "origin": "lookml",
+     "to": "dashboard:billing_health"
+    },
+    {
+     "from": "column:finance.billing.status",
+     "origin": "lookml",
+     "to": "dashboard:billing_health"
+    },
+    {
+     "from": "explore:customers",
+     "origin": "lookml",
+     "to": "dashboard:billing_health"
+    },
+    {
+     "from": "explore:customers",
+     "origin": "lookml",
+     "to": "dashboard:customer_overview"
+    },
+    {
+     "from": "explore:customers",
+     "origin": "lookml",
+     "to": "dashboard:legacy_churn"
+    },
+    {
+     "from": "explore:weekly_usage",
+     "origin": "lookml",
+     "to": "dashboard:network_usage"
+    },
+    {
+     "from": "source:gs://landing/crm/customers/*.jsonl",
+     "origin": "bigquery-jobs",
+     "to": "table:crm.customers"
+    },
+    {
+     "from": "source:gs://landing/crm/support_tickets/*.jsonl",
+     "origin": "bigquery-jobs",
+     "to": "table:crm.support_tickets"
+    },
+    {
+     "from": "source:gs://landing/finance/billing/*.jsonl",
+     "origin": "bigquery-jobs",
+     "to": "table:finance.billing"
+    },
+    {
+     "from": "source:gs://landing/network/network_events/*.jsonl",
+     "origin": "bigquery-jobs",
+     "to": "table:network.network_events"
+    },
+    {
+     "from": "source:gs://landing/network/usage_events/*.jsonl",
+     "origin": "bigquery-jobs",
+     "to": "table:network.usage_events"
+    },
+    {
+     "from": "table:analytics.weekly_usage_by_cell",
+     "origin": "lookml",
+     "to": "view:weekly_usage"
+    },
+    {
+     "from": "table:crm.customers",
+     "origin": "lookml",
+     "to": "view:customers"
+    },
+    {
+     "from": "table:crm.support_tickets",
+     "origin": "lookml",
+     "to": "view:support_tickets"
+    },
+    {
+     "from": "table:finance.billing",
+     "origin": "lookml",
+     "to": "view:billing"
+    },
+    {
+     "from": "table:network.usage_events",
+     "origin": "bigquery-jobs",
+     "to": "table:analytics.weekly_usage_by_cell"
+    },
+    {
+     "from": "view:billing",
+     "origin": "lookml",
+     "to": "explore:customers"
+    },
+    {
+     "from": "view:customers",
+     "origin": "lookml",
+     "to": "explore:customers"
+    },
+    {
+     "from": "view:support_tickets",
+     "origin": "lookml",
+     "to": "explore:customers"
+    },
+    {
+     "from": "view:weekly_usage",
+     "origin": "lookml",
+     "to": "explore:weekly_usage"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "column:analytics.weekly_usage_by_cell.cell_id",
+     "kind": "column",
+     "label": "analytics.weekly_usage_by_cell.cell_id"
+    },
+    {
+     "id": "column:analytics.weekly_usage_by_cell.country",
+     "kind": "column",
+     "label": "analytics.weekly_usage_by_cell.country"
+    },
+    {
+     "id": "column:analytics.weekly_usage_by_cell.events",
+     "kind": "column",
+     "label": "analytics.weekly_usage_by_cell.events"
+    },
+    {
+     "id": "column:analytics.weekly_usage_by_cell.subscribers",
+     "kind": "column",
+     "label": "analytics.weekly_usage_by_cell.subscribers"
+    },
+    {
+     "id": "column:analytics.weekly_usage_by_cell.total_mb",
+     "kind": "column",
+     "label": "analytics.weekly_usage_by_cell.total_mb"
+    },
+    {
+     "id": "column:analytics.weekly_usage_by_cell.week_start",
+     "kind": "column",
+     "label": "analytics.weekly_usage_by_cell.week_start"
+    },
+    {
+     "id": "column:crm.customers.birth_date",
+     "kind": "column",
+     "label": "crm.customers.birth_date"
+    },
+    {
+     "id": "column:crm.customers.contracts",
+     "kind": "column",
+     "label": "crm.customers.contracts"
+    },
+    {
+     "id": "column:crm.customers.country",
+     "kind": "column",
+     "label": "crm.customers.country"
+    },
+    {
+     "id": "column:crm.customers.customer_id",
+     "kind": "column",
+     "label": "crm.customers.customer_id"
+    },
+    {
+     "id": "column:crm.customers.msisdn",
+     "kind": "column",
+     "label": "crm.customers.msisdn"
+    },
+    {
+     "id": "column:crm.customers.segment",
+     "kind": "column",
+     "label": "crm.customers.segment"
+    },
+    {
+     "id": "column:crm.support_tickets.category",
+     "kind": "column",
+     "label": "crm.support_tickets.category"
+    },
+    {
+     "id": "column:finance.billing.amount",
+     "kind": "column",
+     "label": "finance.billing.amount"
+    },
+    {
+     "id": "column:finance.billing.customer_id",
+     "kind": "column",
+     "label": "finance.billing.customer_id"
+    },
+    {
+     "id": "column:finance.billing.status",
+     "kind": "column",
+     "label": "finance.billing.status"
+    },
+    {
+     "id": "dashboard:billing_health",
+     "kind": "dashboard",
+     "label": "billing_health"
+    },
+    {
+     "id": "dashboard:customer_overview",
+     "kind": "dashboard",
+     "label": "customer_overview"
+    },
+    {
+     "id": "dashboard:legacy_churn",
+     "kind": "dashboard",
+     "label": "legacy_churn"
+    },
+    {
+     "id": "dashboard:network_usage",
+     "kind": "dashboard",
+     "label": "network_usage"
+    },
+    {
+     "id": "explore:customers",
+     "kind": "explore",
+     "label": "customers"
+    },
+    {
+     "id": "explore:weekly_usage",
+     "kind": "explore",
+     "label": "weekly_usage"
+    },
+    {
+     "id": "source:gs://landing/crm/customers/*.jsonl",
+     "kind": "source",
+     "label": "gs://landing/crm/customers/*.jsonl"
+    },
+    {
+     "id": "source:gs://landing/crm/support_tickets/*.jsonl",
+     "kind": "source",
+     "label": "gs://landing/crm/support_tickets/*.jsonl"
+    },
+    {
+     "id": "source:gs://landing/finance/billing/*.jsonl",
+     "kind": "source",
+     "label": "gs://landing/finance/billing/*.jsonl"
+    },
+    {
+     "id": "source:gs://landing/network/network_events/*.jsonl",
+     "kind": "source",
+     "label": "gs://landing/network/network_events/*.jsonl"
+    },
+    {
+     "id": "source:gs://landing/network/usage_events/*.jsonl",
+     "kind": "source",
+     "label": "gs://landing/network/usage_events/*.jsonl"
+    },
+    {
+     "id": "table:analytics.weekly_usage_by_cell",
+     "kind": "table",
+     "label": "analytics.weekly_usage_by_cell"
+    },
+    {
+     "id": "table:crm.customers",
+     "kind": "table",
+     "label": "crm.customers"
+    },
+    {
+     "id": "table:crm.support_tickets",
+     "kind": "table",
+     "label": "crm.support_tickets"
+    },
+    {
+     "id": "table:finance.billing",
+     "kind": "table",
+     "label": "finance.billing"
+    },
+    {
+     "id": "table:network.network_events",
+     "kind": "table",
+     "label": "network.network_events"
+    },
+    {
+     "id": "table:network.usage_events",
+     "kind": "table",
+     "label": "network.usage_events"
+    },
+    {
+     "id": "view:billing",
+     "kind": "view",
+     "label": "billing"
+    },
+    {
+     "id": "view:customers",
+     "kind": "view",
+     "label": "customers"
+    },
+    {
+     "id": "view:support_tickets",
+     "kind": "view",
+     "label": "support_tickets"
+    },
+    {
+     "id": "view:weekly_usage",
+     "kind": "view",
+     "label": "weekly_usage"
+    }
+   ]
+  },
+  "history_mode": "FIXTURE — written by hand after the LookML, standing in for INFORMATION_SCHEMA.JOBS. Its clean agreement with LookML is therefore constructed; only the planted drift tests the cross-check. Independence needs real Looker query jobs, i.e. a Looker instance (D3). The `looker_dashboard` label is Steward's convention for this fixture, not a label Looker is known to write (unverified, B18).",
+  "lookml_mode": "PARSED"
+ },
+ "meta": {
+  "as_of": "2026-09-30",
+  "claim": "3",
+  "data": "synthetic",
+  "digest": "4da43e551d0979f92fdc5e4cd558db67bc8daf0bc6723a7d30492131c136e51f",
+  "mode": "fixture",
+  "name": "lineage",
+  "operator": "fictional (Halverra Telecom)",
+  "origin": "evals/lineage/eval.py evaluate()",
+  "schema": 1
+ }
+}
