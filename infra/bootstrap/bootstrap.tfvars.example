@@ -1,0 +1,10 @@
+# Copy to terraform.tfvars (git-ignored) and fill in. Nothing here is a secret, but the project and billing
+# ids stay out of the public history (docs/DECISIONS.md P1).
+project_id           = "CHANGE-ME"
+billing_account_id   = "000000-000000-000000"
+expires_at           = "2026-10-12"
+alert_emails         = ["you@example.com"]
+github_owner         = "theofanis-tsakanikas"
+github_repo          = "steward"
+github_owner_id      = "218610429"
+github_repository_id = "1399710558"
