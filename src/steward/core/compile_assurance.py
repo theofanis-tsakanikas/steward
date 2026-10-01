@@ -5,11 +5,15 @@ DLP     the template asks for exactly the kinds the value detector can find (DET
         mapping stops the build, so a new detectable kind cannot be added to the vocabulary and quietly left
         out of the live scan. Kinds stewards declare from meaning (customer_key, person_name...) cannot be found
         by value and are not asked for.
-Dataplex one on-demand scan per table that has rules. A quality rule is emitted only for a column that is NOT
-        policy-tagged: the scan runs as the Dataplex service agent, which holds no Fine-Grained Reader, so a rule
-        on a tagged column could only fail with an access error. It is left out, and the scan says so (doctrine
-        1: nothing gets access to personal data by default). Left out too: freshness (it needs a clock the
-        synthetic data does not share) and rules on nested columns. The offline engine (claim 5) still judges all.
+Dataplex one on-demand scan per table that has rules, run AS THE DATASET'S CUSTODIAN seat (an execution identity).
+        The custodian is the one role that sees every row (it loads and deletes them) and no tagged column in
+        clear (contracts/_roles.yaml): a scan as any identity outside the row access policies reads zero rows, and
+        zero rows pass completeness and uniqueness. So the compiler REFUSES to emit a scan over a table whose row
+        policies leave the custodian out. A quality rule is emitted only for a column that is NOT policy-tagged:
+        the custodian holds no Fine-Grained Reader, so a rule on a tagged column could only fail with an access
+        error. It is left out, and the scan says so (doctrine 1: nothing gets access to personal data by
+        default). Left out too: freshness (it needs a clock the synthetic data does not share), referential
+        checks and rules on nested columns. The offline engine (claim 5) still judges all.
 """
 
 from __future__ import annotations
@@ -61,7 +65,7 @@ def inspect_template() -> dict:
             "display_name": "steward-inspect",
             "description": "Kinds of personal data the contracts can declare and a value scan can find: "
             + ", ".join(DETECTABLE_KINDS)
-            + ". Run on row-limited samples only (CLAUDE.md cost controls).",
+            + ". A template cannot limit rows: the sample size belongs to the code that runs an inspection.",
             "inspect_config": {
                 "info_types": [{"name": n} for n in builtin],
                 "custom_info_types": custom,
@@ -76,21 +80,33 @@ def inspect_template() -> dict:
     }
 
 
+def _num(x: float) -> str:
+    """A bound as Terraform wants it, without the rounding of `%g` (1234567.5 must stay 1234567.5)."""
+    return str(int(x)) if float(x).is_integer() else repr(float(x))
+
+
 def _rule(r: QualityRule, column: str, col_type: str) -> dict:
+    """One contract rule as a Dataplex rule, with the offline engine's semantics (core/quality.py `_check`):
+    completeness fails a null AND an empty string (not a blank one); uniqueness and validity pass a null or
+    empty value (that is completeness's business) - so `ignore_null`; a regex must match the WHOLE value."""
     base = {"name": r.id.lower(), "column": column, "description": f"Contract rule {r.id} ({r.kind})", "threshold": 1}
     if r.kind == "completeness":
+        if col_type == "STRING":
+            expr = f"{column} IS NOT NULL AND {column} != ''"
+            return {**base, "dimension": "COMPLETENESS", "row_condition_expectation": {"sql_expression": expr}}
         return {**base, "dimension": "COMPLETENESS", "non_null_expectation": {}}
     if r.kind == "uniqueness":
-        return {**base, "dimension": "UNIQUENESS", "uniqueness_expectation": {}}
+        return {**base, "dimension": "UNIQUENESS", "ignore_null": True, "uniqueness_expectation": {}}
+    base["ignore_null"] = True
     if r.allowed is not None:
-        return {**base, "dimension": "VALIDITY", "set_expectation": {"values": list(r.allowed)}}
+        return {**base, "dimension": "VALIDITY", "set_expectation": {"values": [str(v) for v in r.allowed]}}
     if r.regex is not None:
-        return {**base, "dimension": "VALIDITY", "regex_expectation": {"regex": r.regex}}
+        return {**base, "dimension": "VALIDITY", "regex_expectation": {"regex": f"^(?:{r.regex})$"}}
     rng: dict = {}
     if r.min is not None:
-        rng["min_value"] = f"{r.min:g}"
+        rng["min_value"] = _num(r.min)
     if r.max is not None:
-        rng["max_value"] = f"{r.max:g}"
+        rng["max_value"] = _num(r.max)
     return {**base, "dimension": "VALIDITY", "range_expectation": rng}
 
 
@@ -101,12 +117,27 @@ def _partition_filter(estate_doc: dict, dataset: str, table: str, col_type: dict
     if not node or not node.get("require_partition_filter"):
         return None
     field = node["time_partitioning"]["field"]
-    kind = col_type.get(field, "DATE")
+    kind = col_type.get(field)
+    if kind not in ("DATE", "TIMESTAMP"):  # doctrine 3: no invented type
+        raise ValueError(f"{dataset}.{table}: partition column {field!r} has no DATE/TIMESTAMP type in the contract")
     literal = "TIMESTAMP '1970-01-01'" if kind == "TIMESTAMP" else "DATE '1970-01-01'"
+    # a constant lower bound, so the predicate is accepted as a partition filter; a row whose partition column is
+    # NULL falls outside it (the partition column is a contract-required, non-null field)
     return f"{field} >= {literal}"
 
 
-def compile_assurance(contracts: list[Contract], estate_doc: dict) -> dict[str, dict]:
+def _custodian_sees_every_row(governance_doc: dict, dataset: str, table: str, custodian: str) -> bool:
+    """True when the table has no row access policy at all, or the custodian is a grantee of an unfiltered one."""
+    policies = [
+        n
+        for n in governance_doc["resource"].get("google_bigquery_row_access_policy", {}).values()
+        if n["dataset_id"] == dataset and n["table_id"] == table
+    ]
+    ref = f'${{var.principals["{custodian}"]}}'
+    return not policies or any(n["filter_predicate"] == "TRUE" and ref in n["grantees"] for n in policies)
+
+
+def compile_assurance(contracts: list[Contract], estate_doc: dict, governance_doc: dict) -> dict[str, dict]:
     scans: dict = {}
     for c in sorted(contracts, key=lambda c: c.dataset):
         for tname, tbl in sorted(c.tables.items()):
@@ -125,6 +156,11 @@ def compile_assurance(contracts: list[Contract], estate_doc: dict) -> dict[str, 
                 left_out.append(f"{tbl.freshness.id}: freshness is judged offline (needs a shared clock)")
             if not rules:
                 continue
+            if not _custodian_sees_every_row(governance_doc, c.dataset, tname, c.custodian):
+                raise ValueError(
+                    f"{c.dataset}.{tname}: its row access policies leave the custodian {c.custodian} out; a scan "
+                    f"as the custodian would read no rows and pass"
+                )
             spec: dict = {"sampling_percent": 100, "rules": sorted(rules, key=lambda x: x["name"])}
             flt = _partition_filter(estate_doc, c.dataset, tname, {p: col.type for p, col in tbl.columns.items()})
             if flt:
@@ -143,6 +179,9 @@ def compile_assurance(contracts: list[Contract], estate_doc: dict) -> dict[str, 
                     "resource": f"//bigquery.googleapis.com/projects/${{var.project_id}}/datasets/{c.dataset}/tables/{tname}"
                 },
                 "execution_spec": {"trigger": {"on_demand": {}}},
+                "execution_identity": {
+                    "service_account": {"email": f'${{trimprefix(var.principals["{c.custodian}"], "serviceAccount:")}}'}
+                },
                 "data_quality_spec": spec,
             }
     doc = {

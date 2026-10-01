@@ -7,7 +7,14 @@ WORKFLOW_NO_ENVIRONMENT a job that authenticates to Google must run in the `depl
 WORKFLOW_CANCELS_APPLY  no cancel-in-progress on an apply or a destroy (a cancelled apply leaves a lock)
 WORKFLOW_IDENTITY       deploy.yml runs as the deployer and destroy.yml as the destroyer, each only as its own: the budget
                         guard switches the deployer off, and the way to take the estate down must stay open
-WORKFLOW_KEY            no credentials_json, no secret holding a key: federation only
+WORKFLOW_KEY            no credentials_json, no secret at all (but GITHUB_TOKEN): federation only
+WORKFLOW_INJECTION      no `${{ inputs.* }}` / event data inside a `run:` script (it would be code, run as the
+                        deployer); inputs reach a shell through `env`
+WORKFLOW_LAYER_STEP     for every layer with a remote state, a step that uses its state prefix must also run the verb
+                        (`terraform apply` in deploy, `terraform destroy` in destroy): the prefix alone is not a step
+WORKFLOW_NO_CONFIRM     destroy.yml's job runs only when the confirmation phrase was typed
+WORKFLOW_STRANDS        in destroy.yml every layer step and the sweep run `if: always()` (one failure must not strand
+                        the rest of the estate)
 WORKFLOW_LAYER_MISSING  every infra layer with a remote state must be applied by deploy.yml and destroyed by destroy.yml
                         under the same state prefix (a layer left out of destroy outlives the estate)
 CI_HAS_CREDENTIALS      ci.yml has no id-token permission and no Google auth step: CI is offline by construction
@@ -35,6 +42,10 @@ def _uses_auth(job: dict) -> bool:
     return any("google-github-actions/auth" in str(s.get("uses", "")) for s in job.get("steps", []))
 
 
+VERB = {"deploy.yml": "terraform apply", "destroy.yml": "terraform destroy"}
+INJECTION = re.compile(r"\$\{\{\s*(inputs\.|github\.event\.|github\.head_ref)")
+
+
 def problems(root: Path = REPO) -> list[str]:
     out: list[str] = []
     wf = root / ".github" / "workflows"
@@ -53,8 +64,24 @@ def problems(root: Path = REPO) -> list[str]:
             )
         if re.search(r"cancel-in-progress:\s*true", text):
             out.append(f"ERROR WORKFLOW_CANCELS_APPLY {rel} — cancel-in-progress must be false")
-        if re.search(r"credentials_json|secrets\.[A-Z_]*(KEY|CREDENTIAL|JSON)", text):
-            out.append(f"ERROR WORKFLOW_KEY {rel} — a key or credential file is referenced; use federation")
+        if re.search(r"credentials_json|secrets\.(?!GITHUB_TOKEN\b)", text):
+            out.append(f"ERROR WORKFLOW_KEY {rel} — a key, credential file or secret is referenced; use federation")
+        if (doc.get("permissions") or {}).get("id-token") == "write":
+            out.append(f"ERROR WORKFLOW_NO_ENVIRONMENT {rel} — id-token: write at workflow level reaches every job")
+        for jname, job in doc["jobs"].items():
+            for step in job.get("steps", []):
+                if INJECTION.search(str(step.get("run", ""))):
+                    out.append(
+                        f"ERROR WORKFLOW_INJECTION {rel} — job {jname}: an input or event field is expanded inside a run script"
+                    )
+                run = str(step.get("run", ""))
+                strands = name == "destroy.yml" and ("terraform destroy" in run or "sweep.py" in run)
+                if strands and "always()" not in str(step.get("if", "")):
+                    out.append(f"ERROR WORKFLOW_STRANDS {rel} — step {step.get('name')!r} must run `if: always()`")
+        if name == "destroy.yml" and not any(
+            "inputs.confirm == 'destroy-steward'" in str(j.get("if", "")) for j in doc["jobs"].values()
+        ):
+            out.append(f"ERROR WORKFLOW_NO_CONFIRM {rel} — no job is guarded by the confirmation phrase")
         mine = IDENTITY[name]
         other = next(v for v in IDENTITY.values() if v != mine)
         if f"vars.{mine}" not in text or f"vars.{other}" in text:
@@ -71,10 +98,20 @@ def problems(root: Path = REPO) -> list[str]:
         layer = versions.parent.name
         for name in GATED:
             path = wf / name
-            if path.exists() and f'prefix={layer}"' not in path.read_text():
+            if not path.exists():
+                continue
+            if f'prefix={layer}"' not in path.read_text():
                 out.append(
                     f"ERROR WORKFLOW_LAYER_MISSING {path.relative_to(root)} — layer {layer!r} has a remote state "
                     f"but this workflow never uses its state prefix"
+                )
+                continue
+            steps = [st for j in yaml.safe_load(path.read_text())["jobs"].values() for st in j.get("steps", [])]
+            if not any(
+                f'prefix={layer}"' in str(st.get("run", "")) and VERB[name] in str(st.get("run", "")) for st in steps
+            ):
+                out.append(
+                    f"ERROR WORKFLOW_LAYER_STEP {path.relative_to(root)} — no step runs `{VERB[name]}` for layer {layer!r}"
                 )
     ci = wf / "ci.yml"
     if ci.exists():

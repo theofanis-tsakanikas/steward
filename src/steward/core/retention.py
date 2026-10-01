@@ -16,6 +16,8 @@ configurable, recoverable only via Cloud Customer Care). The retention report sa
 
 from __future__ import annotations
 
+import re
+
 from .contract import Contract
 from .findings import Finding
 from .schema import harvest_columns
@@ -135,12 +137,24 @@ def terraform(contracts: list[Contract], harvest: dict) -> tuple[dict, dict]:
         }
     }
     configs = {}
+    minters: dict[str, dict] = {}
     for c in sorted(contracts, key=lambda c: c.dataset):
         for row in plan([c], harvest):
             if row["mechanism"]["kind"] != "scheduled_delete":
                 continue
             name = f"retention_{c.dataset}_{row['table']}"
+            # A scheduled query runs as the custodian's service account. For that, the BigQuery Data Transfer
+            # service agent must be allowed to mint short-lived tokens for THAT account (the provider's
+            # documented example for google_bigquery_data_transfer_config, scoped here to the one account
+            # instead of the project). The agent's address is derived, not looked up; verify at first apply.
+            ident = re.sub(r"[^a-z0-9_]", "_", c.custodian.lower())
+            minters[f"dts_{ident}"] = {
+                "service_account_id": f'projects/${{var.project_id}}/serviceAccounts/${{trimprefix(var.principals["{c.custodian}"], "serviceAccount:")}}',
+                "role": "roles/iam.serviceAccountShortTermTokenMinter",
+                "member": "serviceAccount:service-${data.google_project.this.number}@gcp-sa-bigquerydatatransfer.iam.gserviceaccount.com",
+            }
             configs[name] = {
+                "depends_on": [f"google_service_account_iam_member.dts_{ident}"],
                 "display_name": f"steward retention {c.dataset}.{row['table']} ({row['period_days']} d)",
                 "location": "${var.location}",
                 "data_source_id": "scheduled_query",
@@ -148,7 +162,12 @@ def terraform(contracts: list[Contract], harvest: dict) -> tuple[dict, dict]:
                 "service_account_name": f'${{trimprefix(var.principals["{c.custodian}"], "serviceAccount:")}}',
                 "params": {"query": row["mechanism"]["sql"]},
             }
-    return estate, {"google_bigquery_data_transfer_config": configs} if configs else {}
+    if not configs:
+        return estate, {}
+    return estate, {
+        "google_bigquery_data_transfer_config": configs,
+        "google_service_account_iam_member": minters,
+    }
 
 
 def gate(contracts: list[Contract], compiled_estate: dict, compiled_governance: dict, harvest: dict) -> list[Finding]:

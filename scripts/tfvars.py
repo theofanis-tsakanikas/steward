@@ -2,6 +2,7 @@
 """Write the Terraform variables a layer needs that depend on the project id.
 
     python scripts/tfvars.py --project my-project --layer governance   > governance.tfvars.json
+    python scripts/tfvars.py --project my-project --layer assurance    > assurance.tfvars.json
     python scripts/tfvars.py --project my-project --layer marketplace  > marketplace.tfvars.json
 
 Seats and requesters are stood in for by service accounts that the estate layer creates (infra/seats.json is
@@ -28,7 +29,7 @@ def member(account: str, project: str) -> str:
 def variables(layer: str, project: str, seats: dict) -> dict:
     if not PROJECT.match(project):
         raise ValueError(f"{project!r} is not a GCP project id")
-    if layer == "governance":
+    if layer in ("governance", "assurance"):
         return {"principals": {k: member(v, project) for k, v in seats["seats"].items()}}
     if layer == "marketplace":
         return {"grantees": {k: member(v, project) for k, v in seats["people"].items()}}
@@ -38,7 +39,7 @@ def variables(layer: str, project: str, seats: dict) -> dict:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", required=True)
-    ap.add_argument("--layer", required=True, choices=["governance", "marketplace"])
+    ap.add_argument("--layer", required=True, choices=["governance", "assurance", "marketplace"])
     args = ap.parse_args(argv)
     print(json.dumps(variables(args.layer, args.project, json.loads(SEATS.read_text())), indent=2, sort_keys=True))
     return 0
