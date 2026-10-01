@@ -458,6 +458,16 @@ def compile_controls(contracts: list[Contract], roles: Roles, harvest: dict) -> 
             "role": "roles/bigquery.jobUser",
             "member": f'${{var.principals["{seat}"]}}',
         }
+    # Scheduled retention queries run as the custodian's service account. For that, the BigQuery Data Transfer
+    # service agent must be allowed to mint short-lived tokens for it (provider documentation example for
+    # google_bigquery_data_transfer_config). The agent's address is derived, not looked up; the API is enabled in
+    # bootstrap. Verify at the first apply (docs/GCP-CONSTRAINTS.md).
+    gov["data"]["google_project"] = {"this": {"project_id": "${var.project_id}"}}
+    jobusers["data_transfer_agent"] = {
+        "project": "${var.project_id}",
+        "role": "roles/iam.serviceAccountShortTermTokenMinter",
+        "member": "serviceAccount:service-${data.google_project.this.number}@gcp-sa-bigquerydatatransfer.iam.gserviceaccount.com",
+    }
     G["google_bigquery_dataset_iam_member"] = dataset_iam
     G["google_project_iam_member"] = jobusers
 

@@ -106,6 +106,20 @@ def test_unmodelled_iam_is_refused():
         model(e.compiled["infra/estate/generated.tf.json"], gov)
 
 
+def test_the_token_minter_is_modelled_only_for_the_transfer_agent():
+    from steward.core.simulate import Unmodelled
+
+    e = pipeline.load()
+    gov = e.compiled["infra/governance/generated.tf.json"]
+    assert "data_transfer_agent" in gov["resource"]["google_project_iam_member"]
+    model(e.compiled["infra/estate/generated.tf.json"], gov)  # as generated: modelled
+    for member in ('${var.principals["analyst@GR"]}', "serviceAccount:somebody@example.iam.gserviceaccount.com"):
+        bad = copy.deepcopy(gov)
+        bad["resource"]["google_project_iam_member"]["data_transfer_agent"]["member"] = member
+        with pytest.raises(Unmodelled):
+            model(e.compiled["infra/estate/generated.tf.json"], bad)
+
+
 def test_compiled_output_is_deterministic():
     assert pipeline.load().rendered() == pipeline.load().rendered()
 
