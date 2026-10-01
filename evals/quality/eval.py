@@ -59,8 +59,10 @@ def main() -> int:
         mark = "=" if c["source"] == c["loaded"] + c["quarantined"] else "≠"
         print(f"  {t:30} source {c['source']:5} {mark} loaded {c['loaded']:5} + quarantined {c['quarantined']:2}")
     print(f"planted defects {r['planted']}: missed {len(r['missed'])}, unexpected {len(r['unexpected'])}")
-    for m in r["missed"] + r["unexpected"]:
-        print(f"    {m}")
+    for m in r["missed"]:
+        print(f"  MISSED {m[0]} offset {m[1]} {m[2]} — a planted defect that was not quarantined")
+    for m in r["unexpected"]:
+        print(f"  UNEXPECTED {m[0]} offset {m[1]} {m[2]} — quarantined, but nothing was planted there")
     print(f"routed to: {r['routed_to']}")
     print(f"by rule:   {r['by_rule']}")
     code, lines = report("quality", [Finding(**f) for f in r["findings"]])

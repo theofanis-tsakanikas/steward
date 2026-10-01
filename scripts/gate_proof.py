@@ -55,9 +55,12 @@ GATES: dict[str, list[str]] = {
 EXCLUDED = {
     "pytest": "the unit tests are themselves assertions; a mutation would test pytest",
     "ruff": "style, not a governance gate",
-    "tf_validate": "Terraform's own validator; generated Terraform is covered by the `generated` gate",
-    "gitleaks": "an external scanner with its own test suite",
+    "scripts/tf_validate.py": "Terraform's own validator; generated Terraform is covered by the `generated` gate",
+    "steward": "never matched: every steward subcommand must be a gate (listed so the rule is explicit)",
 }
+EXCLUDED.pop("steward")  # see above — present only as documentation of the rule
+# CI also runs `uv sync` (installation) and gitleaks inline (an external scanner with its own test suite);
+# neither is a make target, so neither is in scope here.
 
 
 @dataclass
@@ -257,7 +260,7 @@ MUTATIONS: list[Mutation] = [
         "src/steward/core/marketplace.py",
         "        if approver == requester:\n",
         "        if False:\n",
-        ("MISMATCH", "R-004"),
+        ("MISMATCH", "R-004:"),
         "R-004's approver owns network and sits in analyst@IT — only the self-approval check stops it (doctrine 5)",
         "6",
     ),
@@ -267,7 +270,7 @@ MUTATIONS: list[Mutation] = [
         "src/steward/core/marketplace.py",
         '        if approver.startswith("serviceaccount:"):\n',
         "        if False:\n",
-        ("MISMATCH", "R-005"),
+        ("MISMATCH", "R-005:"),
         "no pipeline approves access (doctrine 5); the refusal still holds as APPROVER_NOT_HUMAN — this proves the eval checks the reason",
         "6",
     ),
@@ -277,7 +280,7 @@ MUTATIONS: list[Mutation] = [
         "src/steward/core/marketplace.py",
         '        return self.request["requester"]\n',
         '        return self.request["seat"]\n',
-        ("MISMATCH", "R-001"),
+        ("MISMATCH", "R-001:"),
         "the grant goes to the person who asked, never to their whole seat",
         "6",
     ),
@@ -357,7 +360,7 @@ MUTATIONS: list[Mutation] = [
         "src/steward/core/quality.py",
         "            if v in bucket:\n",
         "            if False:\n",
-        ("planted defects", "missed 2"),
+        ("MISSED", "finance.billing"),
         "the two planted duplicate invoices must be quarantined by Q-FIN-002, not loaded",
         "5",
     ),
@@ -380,6 +383,16 @@ MUTATIONS: list[Mutation] = [
         ("CONTRACT_MISSING", "legacy.legacy_crm_export"),
         "exceptions expire; on expiry the finding returns and CI goes red (doctrine 6)",
         "4",
+    ),
+    Mutation(
+        "the type-drift check dropped",
+        "contract-fields",
+        "src/steward/core/validate.py",
+        '            elif col.type != info.type:\n                f.append(\n                    Finding(\n                        "TYPE_MISMATCH", GATE, f"{table}.{path}", f"contract says {col.type}, estate has {info.type}"\n                    )\n                )\n',
+        "",
+        ("READER_STALE", "Column.type"),
+        "a field whose only reader is removed is a promise nobody keeps",
+        "all",
     ),
     Mutation(
         "generated Terraform edited by hand",
@@ -414,6 +427,18 @@ def _copy(src: Path, dst: Path) -> Path:
     return dst
 
 
+def _snapshot(dst: Path, worktree: bool) -> Path:
+    """The pristine tree every mutation is cloned from: git HEAD by default — what is committed is what is
+    proven — or the working tree with --worktree, for local iteration."""
+    if worktree:
+        return _copy(REPO, dst)
+    dst.mkdir(parents=True)
+    archive = subprocess.run(["git", "archive", "--format=tar", "HEAD"], cwd=REPO, capture_output=True, check=True)
+    subprocess.run(["tar", "-x", "-C", str(dst)], input=archive.stdout, check=True)
+    shutil.copytree(REPO / ".git", dst / ".git")  # the contract-versions gate compares with HEAD
+    return dst
+
+
 def _run(root: Path, gate: str) -> tuple[int | None, str]:
     env = {**os.environ, "PYTHONPATH": str(root / "src"), "STEWARD_BASE_REF": ""}
     try:
@@ -436,32 +461,70 @@ def _finding_line(output: str, code: str, target: str) -> str | None:
     return None
 
 
+def _argv(cmd: str) -> tuple[str, ...]:
+    """Normalise a command to compare argv token-exactly: `uv run python X a` → (X, a); `uv run steward v`
+    and `python -m steward.cli v` → (steward, v)."""
+    import shlex
+
+    t = shlex.split(cmd)
+    while t and (
+        Path(t[0]).name in ("uv", "python", "python3")
+        or t[0] in ("run", PY, "-q")
+        or Path(t[0]).name.startswith("python3.")
+    ):
+        t = t[1:]
+    if t[:2] == ["-m", "steward.cli"]:
+        t = ["steward", *t[2:]]
+    if t[:1] == ["-m"]:
+        t = t[1:]
+    return tuple(t)
+
+
+def _commands(target: str) -> list[str]:
+    """What `make <target>` would run — prerequisites and variables expanded — split into single commands."""
+    import re as _re
+
+    r = subprocess.run(["make", "-n", target], cwd=REPO, capture_output=True, text=True)
+    if r.returncode:
+        raise SystemExit(f"UNGATED cannot expand `make {target}`: {r.stderr.strip()}")
+    return [c.strip() for line in r.stdout.splitlines() for c in _re.split(r"&&|;|\|", line) if c.strip()]
+
+
+def _ci_make_targets() -> list[str]:
+    import yaml as _yaml
+
+    wf = _yaml.safe_load((REPO / ".github/workflows/ci.yml").read_text())
+    targets = []
+    for job in wf["jobs"].values():
+        for step in job.get("steps", []):
+            for line in str(step.get("run", "")).splitlines():
+                if line.strip().startswith("make "):
+                    targets += line.split()[1:]
+    return targets
+
+
 def _uncovered_make_commands() -> list[str]:
-    """Every command `make check` runs, and every eval harness, must be a gate here or EXCLUDED."""
-    text = (REPO / "Makefile").read_text()
-    recipe = text.split("\ncheck:", 1)[1].split("\n\n", 1)[0].splitlines()[1:]
-    joined = [" ".join(v) for v in GATES.values()]
+    """Every command that `make check`, `make evals` and the CI workflow's `make` steps run must be a gate
+    here (argv-exact: the gate's argv starts with the command's) or EXCLUDED by its executable."""
+    gates = [_argv(" ".join(v)) for v in GATES.values()]
     missing = []
-    for line in recipe:
-        cmd = line.strip()
-        if "steward " in cmd:
-            sub = cmd.split("steward ", 1)[1].split()[0]
-            ok = any(f"steward.cli {sub}" in j for j in joined)
-        else:
-            script = cmd.split()[-1] if not cmd.endswith("--check") else cmd.split()[-2]
-            ok = any(script in j for j in joined) or any(x in cmd for x in EXCLUDED)
-        if not ok:
+    targets = sorted(set(["check", *_ci_make_targets()]) - {"gate-proof", "evals", "claims"})
+    for cmd in [c for t in targets for c in _commands(t)]:
+        argv = _argv(cmd)
+        if not argv or argv[0] in EXCLUDED or Path(argv[0]).name in EXCLUDED:
+            continue
+        if not any(g[: len(argv)] == argv for g in gates):
             missing.append(cmd)
     for harness in sorted(p.parent.name for p in (REPO / "evals").glob("*/eval.py")):
-        if not any(j.endswith(f"evals/run.py {harness}") for j in joined):
+        if ("evals/run.py", harness) not in gates:
             missing.append(f"evals/run.py {harness}")
-    return missing
+    return sorted(set(missing))
 
 
-def run_all(selected: list[Mutation]) -> tuple[list[dict], bool]:
+def run_all(selected: list[Mutation], worktree: bool = False) -> tuple[list[dict], bool]:
     results, ok = [], True
     with tempfile.TemporaryDirectory(prefix="gate-proof-") as tmp:
-        pristine = _copy(REPO, Path(tmp) / "pristine")  # one snapshot; every copy is cloned from it
+        pristine = _snapshot(Path(tmp) / "pristine", worktree)  # one snapshot; every copy is cloned from it
         baseline_out: dict[str, str] = {}
         for gate in sorted({m.gate for m in selected}):
             code, out = _run(pristine, gate)
@@ -526,6 +589,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--json", type=Path)
     ap.add_argument("--only", help="run only mutations whose gate matches")
+    ap.add_argument(
+        "--worktree", action="store_true", help="prove the working tree instead of git HEAD (local iteration)"
+    )
     args = ap.parse_args(argv)
     selected = [m for m in MUTATIONS if not args.only or m.gate == args.only]
     if args.list:
@@ -535,7 +601,7 @@ def main(argv: list[str] | None = None) -> int:
     covered = {m.gate for m in MUTATIONS}
     missing = sorted(set(GATES) - covered)
     uncovered = _uncovered_make_commands()
-    results, ok = run_all(selected)
+    results, ok = run_all(selected, args.worktree)
     if missing:
         print(f"UNPROVEN gates (no mutation): {missing}")
         ok = False

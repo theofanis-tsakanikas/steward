@@ -3,8 +3,8 @@
 
 CLAUDE.md, the contract layer: "A field in a contract that no generator reads is a defect." Matching
 field names anywhere in the code passes on collisions (`mode`, `id`, `type` are read for other objects),
-so the reader of each field is declared here, explicitly, and checked: the named file must contain an
-attribute access `.field`. A field missing from READERS is FIELD_UNREAD — adding a field means naming its
+so the reader of each field is declared here, explicitly, and checked: the named file must contain the
+attribute access `<receiver>.field` with one of the receivers named (`col.type`, not `info.type`). A field missing from READERS is FIELD_UNREAD — adding a field means naming its
 reader. Documentation-only fields and fields whose reader is a later atom are listed apart, with why.
 
     python scripts/check_contract_fields.py     # FIELD_UNREAD / READER_STALE on failure
@@ -24,70 +24,70 @@ from pydantic import BaseModel  # noqa: E402
 from steward.core import contract as C  # noqa: E402
 
 CORE = "src/steward/core/"
-READERS: dict[tuple[str, str], str] = {
-    ("QualityRule", "id"): CORE + "quality.py",
-    ("QualityRule", "kind"): CORE + "quality.py",
-    ("QualityRule", "allowed"): CORE + "quality.py",
-    ("QualityRule", "regex"): CORE + "quality.py",
-    ("QualityRule", "min"): CORE + "quality.py",
-    ("QualityRule", "max"): CORE + "quality.py",
-    ("QualityRule", "references"): CORE + "quality.py",
-    ("Freshness", "id"): CORE + "quality.py",
-    ("Freshness", "column"): CORE + "quality.py",
-    ("Freshness", "max_age_days"): CORE + "quality.py",
-    ("Column", "type"): CORE + "retention.py",
-    ("Column", "classification"): CORE + "gate_classification.py",
-    ("Column", "kinds"): CORE + "gate_classification.py",
-    ("Column", "masking"): CORE + "compile.py",
-    ("Column", "quality"): CORE + "quality.py",
-    ("TableRetention", "mode"): CORE + "retention.py",
-    ("TableRetention", "column"): CORE + "retention.py",
-    ("TableRetention", "period_days"): CORE + "validate.py",
-    ("TableRetention", "rule"): CORE + "retention.py",
-    ("RowAccess", "column"): CORE + "compile.py",
-    ("Table", "description"): CORE + "compile.py",
-    ("Table", "primary_key"): CORE + "quality.py",
-    ("Table", "retention"): CORE + "retention.py",
-    ("Table", "row_access"): CORE + "compile.py",
-    ("Table", "freshness"): CORE + "quality.py",
-    ("Table", "columns"): CORE + "compile.py",
-    ("Retention", "period_days"): CORE + "retention.py",
-    ("Retention", "legal_basis"): CORE + "retention.py",
-    ("Marketplace", "listable"): CORE + "marketplace.py",
-    ("Marketplace", "approvers"): CORE + "marketplace.py",
-    ("Marketplace", "max_grant_days"): CORE + "marketplace.py",
-    ("Marketplace", "grantable_roles"): CORE + "marketplace.py",
-    ("LogSink", "personal_kinds"): CORE + "gate_classification.py",
-    ("Change", "version"): CORE + "contract.py",  # the changelog validator: versions 1..n, last == version
-    ("Contract", "dataset"): CORE + "compile.py",
-    ("Contract", "version"): CORE + "compile.py",
-    ("Contract", "description"): CORE + "compile.py",
-    ("Contract", "owner"): CORE + "validate.py",
-    ("Contract", "steward"): CORE + "compile.py",
-    ("Contract", "custodian"): CORE + "compile.py",
-    ("Contract", "lawful_basis"): CORE + "compile.py",
-    ("Contract", "retention"): CORE + "retention.py",
-    ("Contract", "readers"): CORE + "compile.py",
-    ("Contract", "marketplace"): CORE + "marketplace.py",
-    ("Contract", "changelog"): CORE + "contract.py",  # the changelog validator (doctrine 4)
-    ("Contract", "log_sink"): CORE + "gate_classification.py",
-    ("Contract", "tables"): CORE + "compile.py",
-    ("Role", "scoped_by"): CORE + "compile.py",
-    ("Role", "scopes"): CORE + "compile.py",
-    ("Role", "bound_from"): CORE + "compile.py",
-    ("Ceiling", "clear_kinds"): CORE + "compile.py",
-    ("Roles", "roles"): CORE + "compile.py",
-    ("Roles", "ceilings"): CORE + "compile.py",
-    ("Roles", "seat_groups"): CORE + "marketplace.py",
-    ("Roles", "waiver_approvers"): CORE + "validate.py",
-    ("Roles", "directory"): CORE + "validate.py",
-    ("Waiver", "id"): CORE + "validate.py",
-    ("Waiver", "finding"): CORE + "validate.py",
-    ("Waiver", "target"): CORE + "validate.py",
-    ("Waiver", "requested_by"): CORE + "validate.py",
-    ("Waiver", "approved_by"): CORE + "validate.py",
-    ("Waiver", "approved_on"): CORE + "validate.py",
-    ("Waiver", "expires"): CORE + "validate.py",
+READERS: dict[tuple[str, str], tuple[str, list[str]]] = {
+    ("QualityRule", "id"): (CORE + "quality.py", ["rule"]),
+    ("QualityRule", "kind"): (CORE + "quality.py", ["rule"]),
+    ("QualityRule", "allowed"): (CORE + "quality.py", ["rule"]),
+    ("QualityRule", "regex"): (CORE + "quality.py", ["rule"]),
+    ("QualityRule", "min"): (CORE + "quality.py", ["rule"]),
+    ("QualityRule", "max"): (CORE + "quality.py", ["rule"]),
+    ("QualityRule", "references"): (CORE + "quality.py", ["rule"]),
+    ("Freshness", "id"): (CORE + "quality.py", ["fr"]),
+    ("Freshness", "column"): (CORE + "quality.py", ["fr"]),
+    ("Freshness", "max_age_days"): (CORE + "quality.py", ["fr"]),
+    ("Column", "type"): (CORE + "validate.py", ["col"]),
+    ("Column", "classification"): (CORE + "gate_classification.py", ["col"]),
+    ("Column", "kinds"): (CORE + "gate_classification.py", ["col"]),
+    ("Column", "masking"): (CORE + "compile.py", ["col"]),
+    ("Column", "quality"): (CORE + "quality.py", ["col"]),
+    ("TableRetention", "mode"): (CORE + "retention.py", ["t.retention"]),
+    ("TableRetention", "column"): (CORE + "retention.py", ["t.retention"]),
+    ("TableRetention", "period_days"): (CORE + "validate.py", ["t.retention"]),
+    ("TableRetention", "rule"): (CORE + "retention.py", ["t.retention"]),
+    ("RowAccess", "column"): (CORE + "compile.py", ["tbl.row_access"]),
+    ("Table", "description"): (CORE + "compile.py", ["tbl"]),
+    ("Table", "primary_key"): (CORE + "quality.py", ["tbl"]),
+    ("Table", "retention"): (CORE + "retention.py", ["t"]),
+    ("Table", "row_access"): (CORE + "compile.py", ["tbl"]),
+    ("Table", "freshness"): (CORE + "quality.py", ["tbl"]),
+    ("Table", "columns"): (CORE + "compile.py", ["tbl"]),
+    ("Retention", "period_days"): (CORE + "retention.py", ["c.retention"]),
+    ("Retention", "legal_basis"): (CORE + "retention.py", ["c.retention"]),
+    ("Marketplace", "listable"): (CORE + "marketplace.py", ["ds.marketplace"]),
+    ("Marketplace", "approvers"): (CORE + "marketplace.py", ["ds.marketplace"]),
+    ("Marketplace", "max_grant_days"): (CORE + "marketplace.py", ["ds.marketplace"]),
+    ("Marketplace", "grantable_roles"): (CORE + "marketplace.py", ["ds.marketplace"]),
+    ("LogSink", "personal_kinds"): (CORE + "gate_classification.py", ["sinks[dataset]"]),
+    ("Change", "version"): (CORE + "contract.py", ["c"]),  # the changelog validator: versions 1..n, last == version
+    ("Contract", "dataset"): (CORE + "compile.py", ["c"]),
+    ("Contract", "version"): (CORE + "compile.py", ["c"]),
+    ("Contract", "description"): (CORE + "compile.py", ["c"]),
+    ("Contract", "owner"): (CORE + "validate.py", ["c"]),
+    ("Contract", "steward"): (CORE + "compile.py", ["c"]),
+    ("Contract", "custodian"): (CORE + "compile.py", ["c"]),
+    ("Contract", "lawful_basis"): (CORE + "compile.py", ["c"]),
+    ("Contract", "retention"): (CORE + "retention.py", ["c"]),
+    ("Contract", "readers"): (CORE + "compile.py", ["c"]),
+    ("Contract", "marketplace"): (CORE + "marketplace.py", ["ds"]),
+    ("Contract", "changelog"): (CORE + "contract.py", ["self"]),  # the changelog validator (doctrine 4)
+    ("Contract", "log_sink"): (CORE + "gate_classification.py", ["c"]),
+    ("Contract", "tables"): (CORE + "compile.py", ["c"]),
+    ("Role", "scoped_by"): (CORE + "compile.py", ["r"]),
+    ("Role", "scopes"): (CORE + "compile.py", ["r"]),
+    ("Role", "bound_from"): (CORE + "compile.py", ["r"]),
+    ("Ceiling", "clear_kinds"): (CORE + "compile.py", ["ceiling"]),
+    ("Roles", "roles"): (CORE + "compile.py", ["roles"]),
+    ("Roles", "ceilings"): (CORE + "compile.py", ["roles"]),
+    ("Roles", "seat_groups"): (CORE + "marketplace.py", ["roles"]),
+    ("Roles", "waiver_approvers"): (CORE + "validate.py", ["roles"]),
+    ("Roles", "directory"): (CORE + "validate.py", ["roles"]),
+    ("Waiver", "id"): (CORE + "validate.py", ["w"]),
+    ("Waiver", "finding"): (CORE + "validate.py", ["w"]),
+    ("Waiver", "target"): (CORE + "validate.py", ["w"]),
+    ("Waiver", "requested_by"): (CORE + "validate.py", ["w"]),
+    ("Waiver", "approved_by"): (CORE + "validate.py", ["w"]),
+    ("Waiver", "approved_on"): (CORE + "validate.py", ["w"]),
+    ("Waiver", "expires"): (CORE + "validate.py", ["w"]),
 }
 # Read by people (and shown by the catalog / demo), never by a control — stated so it is a decision.
 DOCUMENTATION = {
@@ -112,27 +112,33 @@ def models() -> list[type[BaseModel]]:
     ]
 
 
-def _attrs(path: Path) -> set[str]:
-    return {n.attr for n in ast.walk(ast.parse(path.read_text())) if isinstance(n, ast.Attribute)}
+def _reads(path: Path) -> set[tuple[str, str]]:
+    """(receiver source, attribute) for every attribute access — `col.type` is ("col", "type")."""
+    return {
+        (ast.unparse(n.value), n.attr) for n in ast.walk(ast.parse(path.read_text())) if isinstance(n, ast.Attribute)
+    }
 
 
 def violations() -> list[str]:
     out = []
-    cache: dict[str, set[str]] = {}
+    cache: dict[str, set[tuple[str, str]]] = {}
     for m in models():
         for f in m.model_fields:
             key = (m.__name__, f)
             if key in DOCUMENTATION or key in PENDING:
                 continue
-            reader = READERS.get(key)
-            if reader is None:
+            entry = READERS.get(key)
+            if entry is None:
                 out.append(
                     f"FIELD_UNREAD {m.__name__}.{f} — no reader declared; name the file that reads it in scripts/check_contract_fields.py READERS"
                 )
                 continue
-            attrs = cache.setdefault(reader, _attrs(REPO / reader))
-            if f not in attrs:
-                out.append(f"READER_STALE {m.__name__}.{f} — {reader} no longer reads .{f}")
+            reader, receivers = entry
+            reads = cache.setdefault(reader, _reads(REPO / reader))
+            if not any((r, f) in reads for r in receivers):
+                out.append(
+                    f"READER_STALE {m.__name__}.{f} — {reader} no longer reads {' / '.join(r + '.' + f for r in receivers)}"
+                )
     declared = {(m.__name__, f) for m in models() for f in m.model_fields}
     for key in sorted((set(READERS) | set(DOCUMENTATION) | set(PENDING)) - declared):
         out.append(f"READER_ORPHAN {key[0]}.{key[1]} — listed here but no longer a field")
