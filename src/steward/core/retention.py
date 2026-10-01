@@ -57,6 +57,22 @@ def plan(contracts: list[Contract], harvest: dict) -> list[dict]:
     """One row per table (and quarantine table): what was declared and which mechanism enforces it."""
     rows = []
     for c in sorted(contracts, key=lambda c: c.dataset):
+        if c.log_sink:
+            rows.append(
+                {
+                    "dataset": c.dataset,
+                    "table": "* (log sink tables)",
+                    "period_days": c.retention.period_days,
+                    "legal_basis": c.retention.legal_basis,
+                    "mode": "partition",
+                    "column": "(Logging's partitioning)",
+                    "rule": "Cloud Logging writes partitioned tables; the dataset's default partition expiry ages them out (B15)",
+                    "mechanism": {
+                        "kind": "dataset_default_partition_expiration",
+                        "expiration_ms": c.retention.period_days * DAY_MS,
+                    },
+                }
+            )
         for tname, t in sorted(c.tables.items()):
             days = c.table_retention_days(tname)
             row = {
