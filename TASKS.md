@@ -104,7 +104,7 @@ closes        request → approval by a principal ≠ requester and not a servic
 out_of_scope  real IAM (T016)
 stop_at       eval green
 review        yes
-status        open
+status        closed 2026-10-01 — PR #7 (review + verification pass)
 ```
 
 ```
@@ -117,7 +117,7 @@ closes        dataset without retention → red; compiled partition expiration /
 out_of_scope  —
 stop_at       eval green
 review        no
-status        open
+status        closed 2026-10-01 — this PR (review: no)
 ```
 
 ```

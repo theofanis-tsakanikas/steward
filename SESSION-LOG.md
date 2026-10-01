@@ -101,3 +101,14 @@
   writer = αυτός που καταγράφεται με το στιγμιότυπο. Επιπλέον ο gate-proof έπιασε ένα δικό μου σφάλμα
   (το offline στιγμιότυπο δεν έβλεπε τα grants μετά τη μετονομασία σε `grantees`).
 - **Ανοιχτό:** η πραγματική λήψη IAM (T016)· ο κατάλογος μελών είναι το `_roles.yaml`, όχι Cloud Identity (B16).
+
+### 2026-10-01 · T007 — claim 7, retention δηλωμένο → μεταγλωττισμένο → αναφορά
+- **Έκλεισε:** ένας μηχανισμός ανά πίνακα, ίσος με τη δήλωση: partition expiration· ή καθημερινό DELETE ως
+  custodian (με NOT EXISTS πάνω σε UNNEST για repeated στήλη)· DELETE για κάθε quarantine· lifecycle ανά
+  dataset στο bucket προσγείωσης· default partition expiration για το audit (log sink). Η πύλη ξαναδιαβάζει
+  το μεταγλωττισμένο Terraform. Η αναφορά ξεκινά πάντα με τη σημείωση: time travel 48 ώρες + fail-safe 7
+  ημέρες = έως 9 ημέρες ανακτήσιμα (τεκμηρίωση Google, 2026-10-01). Ο legacy πίνακας εμφανίζεται ως «ΧΩΡΙΣ
+  ΔΗΛΩΣΗ — waiver W-001».
+- **Απόδειξη:** `make evals` (claim 7), `steward retention` στο `make check`, gate-proof +3 (λήξη από το
+  dataset αντί του πίνακα, DELETE που δεν μεταγλωττίστηκε, σημείωση που χάθηκε).
+- **Ανοιχτό:** η τεκμηρίωση live (INFORMATION_SCHEMA) στα T011/T017.
