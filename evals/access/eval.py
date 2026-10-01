@@ -205,6 +205,23 @@ def evaluate() -> dict:
     }
 
 
+def mismatch_lines(mismatches: list[dict]) -> list[str]:
+    """One line per seat that disagrees, starting with a code and naming expected and compiled values —
+    so a refusal can be pinned to the exact seat and value that moved."""
+    out = []
+    for m in mismatches:
+        if m["scenario"] == "tag grants":
+            for seat in sorted(set(m["expected"]) | set(m["compiled"])):
+                e, g = m["expected"].get(seat), m["compiled"].get(seat)
+                if e != g:
+                    out.append(f"MISMATCH tag-grants {m['column']} {seat}: expected {e} compiled {g}")
+        else:
+            out.append(
+                f"MISMATCH {m['scenario'].replace(' ', '-')} {m['column']} {m['seat']}: expected {m['expected']} compiled {m['compiled']}"
+            )
+    return out
+
+
 def main() -> int:
     from steward.core.simulate import Unmodelled
 
@@ -217,8 +234,8 @@ def main() -> int:
     print(
         f"compiled vs contract: {r['checked_tags']} policy tags, {r['checked_column_decisions']} seat×column decisions, {r['checked_row_filters']} seat×table row filters"
     )
-    for m in r["mismatches"][:20]:
-        print(f"  MISMATCH {m}")
+    for line in mismatch_lines(r["mismatches"])[:40]:
+        print(f"  {line}")
     print(
         f"tables with no contract: {r['uncontracted_columns']} columns, denied to every seat: {'yes' if not r['uncontracted_leaks'] else 'NO ' + str(r['uncontracted_leaks'][:3])}"
     )

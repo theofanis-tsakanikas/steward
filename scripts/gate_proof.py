@@ -45,6 +45,18 @@ GATES: dict[str, list[str]] = {
     "marketplace-eval": [PY, "evals/run.py", "marketplace"],
     "retention": [PY, "-m", "steward.cli", "retention"],
     "retention-eval": [PY, "evals/run.py", "retention"],
+    "classification-eval": [PY, "evals/run.py", "classification"],
+    "quality-eval": [PY, "evals/run.py", "quality"],
+    "synthetic-check": [PY, "synthetic/generate.py", "--check"],
+}
+
+
+# Commands `make check` / `make evals` / CI run that are deliberately NOT proven here, and why.
+EXCLUDED = {
+    "pytest": "the unit tests are themselves assertions; a mutation would test pytest",
+    "ruff": "style, not a governance gate",
+    "tf_validate": "Terraform's own validator; generated Terraform is covered by the `generated` gate",
+    "gitleaks": "an external scanner with its own test suite",
 }
 
 
@@ -165,7 +177,7 @@ MUTATIONS: list[Mutation] = [
         "src/steward/core/compile.py",
         '                value = "clear" if rule == Masking.CLEAR else PREDEFINED[rule]',
         '                value = "clear"',
-        ("'scenario': 'tag grants'", "'analyst@DE': 'clear'"),
+        ("MISMATCH tag-grants", "analyst@DE: expected EMAIL_MASK compiled clear"),
         "compiled controls must be exactly what the contracts imply",
         "2",
     ),
@@ -175,7 +187,7 @@ MUTATIONS: list[Mutation] = [
         "src/steward/core/compile.py",
         "                    grants[key][seat] = value\n",
         '                    grants[key][seat] = value\n                    grants[key][c.custodian] = "clear"\n',
-        ("MISMATCH", "group:data-platform@halverra.example"),
+        ("MISMATCH tag-grants", "group:data-platform@halverra.example: expected None compiled clear"),
         "the custodian writes data and reads no tagged column in clear (doctrine 5)",
         "2",
     ),
@@ -195,7 +207,7 @@ MUTATIONS: list[Mutation] = [
         "src/steward/core/compile.py",
         '    Masking.LAST_FOUR: "LAST_FOUR_CHARACTERS",',
         '    Masking.LAST_FOUR: "SHA256",',
-        ("'scenario': 'tag grants'", "'LAST_FOUR_CHARACTERS'"),
+        ("MISMATCH tag-grants", "expected LAST_FOUR_CHARACTERS compiled SHA256"),
         "the eval reads the contract vocabulary with its own map, not the compiler's",
         "2",
     ),
@@ -320,14 +332,54 @@ MUTATIONS: list[Mutation] = [
         "7",
     ),
     Mutation(
-        "a contract field nothing reads",
+        "a contract field nothing reads, named like one that is read elsewhere",
         "contract-fields",
         "src/steward/core/contract.py",
         "    log_sink: LogSink | None = None\n",
-        "    log_sink: LogSink | None = None\n    data_residency: str | None = None\n",
-        ("FIELD_UNREAD", "Contract.data_residency"),
+        "    log_sink: LogSink | None = None\n    mode: str | None = None\n",
+        ("FIELD_UNREAD", "Contract.mode"),
         "a field in a contract that no generator reads is a defect (CLAUDE.md, the contract layer)",
         "all",
+    ),
+    Mutation(
+        "a detector that reads column names",
+        "classification-eval",
+        "src/steward/core/classify.py",
+        "    return [detect_column(c, vals, scan_date) for c, vals in sorted(columns.items())]\n",
+        "    return [ColumnDetection(c, len(vals), {}, name_heuristics(c)) for c, vals in sorted(columns.items())]\n",
+        ("FAIL claim 1", "recall < 1.0"),
+        "claim 1's trap: detection by name misses ref_2, notes_free_text and the legacy columns",
+        "1",
+    ),
+    Mutation(
+        "duplicates loaded instead of quarantined",
+        "quality-eval",
+        "src/steward/core/quality.py",
+        "            if v in bucket:\n",
+        "            if False:\n",
+        ("planted defects", "missed 2"),
+        "the two planted duplicate invoices must be quarantined by Q-FIN-002, not loaded",
+        "5",
+    ),
+    Mutation(
+        "a synthetic row edited by hand",
+        "synthetic-check",
+        "synthetic/data/finance.billing.jsonl",
+        '"invoice_id":"INV-2026-000001"',
+        '"invoice_id":"INV-2026-999999"',
+        ("SYNTHETIC_STALE", "finance.billing"),
+        "the synthetic estate is generated, seeded and byte-identical; a hand edit is drift",
+        "1",
+    ),
+    Mutation(
+        "a waiver left to lapse",
+        "contracts",
+        "contracts/_waivers.yaml",
+        "    approved_on: 2026-10-01\n    expires: 2026-11-30\n",
+        "    approved_on: 2026-08-01\n    expires: 2026-09-15\n",
+        ("CONTRACT_MISSING", "legacy.legacy_crm_export"),
+        "exceptions expire; on expiry the finding returns and CI goes red (doctrine 6)",
+        "4",
     ),
     Mutation(
         "generated Terraform edited by hand",
@@ -357,87 +409,115 @@ _IGNORE = shutil.ignore_patterns(
 )
 
 
-def _copy(dst: Path) -> Path:
-    root = dst / "repo"
-    shutil.copytree(REPO, root, ignore=_IGNORE, symlinks=True)
-    return root
+def _copy(src: Path, dst: Path) -> Path:
+    shutil.copytree(src, dst, ignore=_IGNORE, symlinks=True)
+    return dst
 
 
-def _run(root: Path, gate: str) -> subprocess.CompletedProcess:
+def _run(root: Path, gate: str) -> tuple[int | None, str]:
     env = {**os.environ, "PYTHONPATH": str(root / "src"), "STEWARD_BASE_REF": ""}
-    return subprocess.run(GATES[gate], cwd=root, env=env, capture_output=True, text=True, timeout=600)
+    try:
+        r = subprocess.run(GATES[gate], cwd=root, env=env, capture_output=True, text=True, timeout=600)
+    except subprocess.TimeoutExpired:
+        return None, "TIMEOUT after 600 s"
+    return r.returncode, r.stdout + r.stderr
 
 
 def _finding_line(output: str, code: str, target: str) -> str | None:
+    """The line that proves the RIGHT check refused: it STARTS with the code (after an optional
+    severity), is not a warning, info, success or waived line, and names the target."""
     for line in output.splitlines():
         s = line.strip()
         if s.startswith(("WARN", "INFO", "ok ")) or "[waived by" in s:
             continue
-        if code in s and target in s:
+        body = s[len("ERROR") :].strip() if s.startswith("ERROR") else s
+        if body.startswith(code) and target in body:
             return s
     return None
+
+
+def _uncovered_make_commands() -> list[str]:
+    """Every command `make check` runs, and every eval harness, must be a gate here or EXCLUDED."""
+    text = (REPO / "Makefile").read_text()
+    recipe = text.split("\ncheck:", 1)[1].split("\n\n", 1)[0].splitlines()[1:]
+    joined = [" ".join(v) for v in GATES.values()]
+    missing = []
+    for line in recipe:
+        cmd = line.strip()
+        if "steward " in cmd:
+            sub = cmd.split("steward ", 1)[1].split()[0]
+            ok = any(f"steward.cli {sub}" in j for j in joined)
+        else:
+            script = cmd.split()[-1] if not cmd.endswith("--check") else cmd.split()[-2]
+            ok = any(script in j for j in joined) or any(x in cmd for x in EXCLUDED)
+        if not ok:
+            missing.append(cmd)
+    for harness in sorted(p.parent.name for p in (REPO / "evals").glob("*/eval.py")):
+        if not any(j.endswith(f"evals/run.py {harness}") for j in joined):
+            missing.append(f"evals/run.py {harness}")
+    return missing
 
 
 def run_all(selected: list[Mutation]) -> tuple[list[dict], bool]:
     results, ok = [], True
     with tempfile.TemporaryDirectory(prefix="gate-proof-") as tmp:
-        base = _copy(Path(tmp) / "baseline")
+        pristine = _copy(REPO, Path(tmp) / "pristine")  # one snapshot; every copy is cloned from it
+        baseline_out: dict[str, str] = {}
         for gate in sorted({m.gate for m in selected}):
-            r = _run(base, gate)
-            if r.returncode != 0:
+            code, out = _run(pristine, gate)
+            if code != 0:
                 print(f"BASELINE RED  {gate}: the unmutated tree already fails — nothing below would prove anything")
-                print((r.stdout + r.stderr)[-1500:])
+                print(out[-1500:])
                 return [], False
-    for i, m in enumerate(selected, 1):
-        with tempfile.TemporaryDirectory(prefix="gate-proof-") as tmp:
-            root = _copy(Path(tmp))
+            baseline_out[gate] = out
+        for i, m in enumerate(selected, 1):
+            root = _copy(pristine, Path(tmp) / f"m{i}")
             path = root / m.file
             text = path.read_text()
-            if text.count(m.find) != m.count:
-                found = text.count(m.find)
-                status, detail = (
-                    "STALE",
-                    (
-                        f"target text found {found}× in {m.file}, expected exactly {m.count}× — "
-                        + (
-                            "the mutation would change nothing"
-                            if not found
-                            else "an ambiguous target can silently hit the wrong line"
-                        )
-                    ),
+            found = text.count(m.find)
+            if found != m.count:
+                status = "STALE"
+                detail = f"target text found {found}× in {m.file}, expected exactly {m.count}× — " + (
+                    "the mutation would change nothing"
+                    if not found
+                    else "an ambiguous target can silently hit the wrong line"
                 )
+            elif _finding_line(baseline_out[m.gate], *m.marker):
+                status, detail = "WRONG REASON", "the marker already appears in the unmutated gate's output"
             else:
                 path.write_text(text.replace(m.find, m.replace, m.count))
-                r = _run(root, m.gate)
-                line = _finding_line(r.stdout + r.stderr, *m.marker)
-                if r.returncode == 0:
+                code, out = _run(root, m.gate)
+                line = _finding_line(out, *m.marker)
+                tail = (out.strip().splitlines() or ["(no output)"])[-1][:160]
+                if code is None:
+                    status, detail = "WRONG REASON", "the gate timed out"
+                elif code == 0:
                     status, detail = "LET THROUGH", "the gate exited 0"
+                elif "Traceback (most recent call last)" in out:
+                    status, detail = "WRONG REASON", "the gate crashed instead of refusing: " + tail
                 elif line is None:
-                    status, detail = (
-                        "WRONG REASON",
-                        "non-zero exit, but not the expected finding: "
-                        + (r.stdout + r.stderr).strip().splitlines()[-1][:160],
-                    )
+                    status, detail = "WRONG REASON", "non-zero exit, but not the expected finding: " + tail
                 else:
-                    status, detail = "REFUSED", line[:200]
-        ok &= status == "REFUSED"
-        mark = "\033[32m" if status == "REFUSED" else "\033[31m"
-        print(
-            f"{i:2}. {mark}{status:12}\033[0m [{m.gate}] {m.name}\n      expect {m.marker[0]} on {m.marker[1]}\n      {detail}"
-        )
-        results.append(
-            {
-                "n": i,
-                "name": m.name,
-                "gate": m.gate,
-                "claim": m.claim,
-                "file": m.file,
-                "why": m.why,
-                "expect": list(m.marker),
-                "status": status,
-                "detail": detail,
-            }
-        )
+                    status, detail = "REFUSED", line[:300]
+            shutil.rmtree(root, ignore_errors=True)
+            ok &= status == "REFUSED"
+            mark = "\033[32m" if status == "REFUSED" else "\033[31m"
+            print(
+                f"{i:2}. {mark}{status:12}\033[0m [{m.gate}] {m.name}\n      expect {m.marker[0]} … {m.marker[1]}\n      {detail}"
+            )
+            results.append(
+                {
+                    "n": i,
+                    "name": m.name,
+                    "gate": m.gate,
+                    "claim": m.claim,
+                    "file": m.file,
+                    "why": m.why,
+                    "expect": list(m.marker),
+                    "status": status,
+                    "detail": detail,
+                }
+            )
     return results, ok
 
 
@@ -454,9 +534,13 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     covered = {m.gate for m in MUTATIONS}
     missing = sorted(set(GATES) - covered)
+    uncovered = _uncovered_make_commands()
     results, ok = run_all(selected)
     if missing:
         print(f"UNPROVEN gates (no mutation): {missing}")
+        ok = False
+    if uncovered and not args.only:
+        print(f"UNGATED commands (in make check / evals, neither a gate here nor EXCLUDED): {uncovered}")
         ok = False
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
