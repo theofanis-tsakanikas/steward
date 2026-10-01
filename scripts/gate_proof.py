@@ -116,6 +116,16 @@ MUTATIONS: list[Mutation] = [
         "7",
     ),
     Mutation(
+        "a layer destroyed under another state prefix than it was applied with",
+        "workflows",
+        ".github/workflows/destroy.yml",
+        'prefix=assurance"',
+        'prefix=assurance-old"',
+        ("WORKFLOW_LAYER_MISSING", ".github/workflows/destroy.yml"),
+        "a layer left out of destroy outlives the estate and keeps costing",
+        "7",
+    ),
+    Mutation(
         "a key in the deploy workflow",
         "workflows",
         ".github/workflows/deploy.yml",

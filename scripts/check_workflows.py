@@ -6,6 +6,8 @@ WORKFLOW_NO_ENVIRONMENT a job that authenticates to Google must run in the `depl
                         (it is what the federation trust names) and may request id-token only there
 WORKFLOW_CANCELS_APPLY  no cancel-in-progress on an apply or a destroy (a cancelled apply leaves a lock)
 WORKFLOW_KEY            no credentials_json, no secret holding a key: federation only
+WORKFLOW_LAYER_MISSING  every infra layer with a remote state must be applied by deploy.yml and destroyed by destroy.yml
+                        under the same state prefix (a layer left out of destroy outlives the estate)
 CI_HAS_CREDENTIALS      ci.yml has no id-token permission and no Google auth step: CI is offline by construction
 CI_APPLIES              ci.yml never runs terraform apply or destroy
 """
@@ -55,6 +57,17 @@ def problems(root: Path = REPO) -> list[str]:
             if (_uses_auth(job) or wants_token) and job.get("environment") != env:
                 out.append(
                     f"ERROR WORKFLOW_NO_ENVIRONMENT {rel} — job {jname} authenticates but is not in environment {env!r}"
+                )
+    for versions in sorted((root / "infra").glob("*/versions.tf")):
+        if 'backend "gcs"' not in versions.read_text():
+            continue
+        layer = versions.parent.name
+        for name in GATED:
+            path = wf / name
+            if path.exists() and f'prefix={layer}"' not in path.read_text():
+                out.append(
+                    f"ERROR WORKFLOW_LAYER_MISSING {path.relative_to(root)} — layer {layer!r} has a remote state "
+                    f"but this workflow never uses its state prefix"
                 )
     ci = wf / "ci.yml"
     if ci.exists():

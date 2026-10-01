@@ -56,6 +56,12 @@ jobs:
           terraform init -input=false -backend-config="bucket=$STATE_BUCKET" -backend-config="prefix=marketplace"
           terraform destroy -input=false -auto-approve -var "project_id=$PROJECT" -var "expires_at=2000-01-01"
 
+      - name: assurance
+        working-directory: infra/assurance
+        run: |
+          terraform init -input=false -backend-config="bucket=$STATE_BUCKET" -backend-config="prefix=assurance"
+          terraform destroy -input=false -auto-approve -var "project_id=$PROJECT" -var "expires_at=2000-01-01"
+
       - name: governance
         working-directory: infra/governance
         run: |
