@@ -161,6 +161,7 @@ def main(argv: list[str] | None = None) -> int:
         "compile": cmd_compile,
         "quality": cmd_quality,
         "marketplace": cmd_marketplace,
+        "retention": cmd_retention,
     }[args.cmd](args)
 
 

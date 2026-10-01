@@ -371,6 +371,17 @@
               "type": "Delete"
             },
             "condition": {
+              "age": 90,
+              "matches_prefix": [
+                "audit/"
+              ]
+            }
+          },
+          {
+            "action": {
+              "type": "Delete"
+            },
+            "condition": {
               "age": 2555,
               "matches_prefix": [
                 "crm/"
