@@ -107,6 +107,30 @@ def cmd_marketplace(args: argparse.Namespace) -> int:
     return code
 
 
+def cmd_retention(args: argparse.Namespace) -> int:
+    """Claim 7's gate: retention declared → compiled (read back from the Terraform) → report."""
+    from steward import io, pipeline
+    from steward.core import retention
+    from steward.core.findings import report as rep
+
+    e = pipeline.load()
+    r = retention.report(e.contracts, e.harvest, io.waivers_doc().get("waivers", []))
+    print(r["caveat"])
+    for row in r["rows"]:
+        print(
+            f"  {row['dataset']}.{row['table']:28} {row['period_days']!s:>5} d  {row['mechanism']['kind']:22} {row['status']}"
+        )
+    findings = retention.gate(
+        e.contracts,
+        e.compiled["infra/estate/generated.tf.json"],
+        e.compiled["infra/governance/generated.tf.json"],
+        e.harvest,
+    )
+    code, lines = rep("retention", findings)
+    print("\n".join(lines))
+    return code
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="steward", description=__doc__)
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -124,6 +148,7 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument(
         "--snapshot", help="IAM snapshot JSON (live capture); default: the compiled Terraform at the ledger's as_of"
     )
+    sub.add_parser("retention", help="claim 7: retention declared, compiled, reported (caveat first)")
     args = parser.parse_args(argv)
     if args.cmd == "version":
         from steward import __version__
@@ -136,6 +161,7 @@ def main(argv: list[str] | None = None) -> int:
         "compile": cmd_compile,
         "quality": cmd_quality,
         "marketplace": cmd_marketplace,
+        "retention": cmd_retention,
     }[args.cmd](args)
 
 

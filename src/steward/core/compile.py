@@ -26,6 +26,7 @@ import hashlib
 import json
 import re
 
+from . import retention as _retention
 from .contract import Classification, Contract, Masking, Roles
 from .findings import Finding
 from .schema import harvest_columns
@@ -68,7 +69,9 @@ QUARANTINE_FIELDS = [
     {"name": "_quarantined_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
 ]
 RESTRICTED = "restricted"  # the safe-state tag: no reader, no data policy, nobody sees it
-TIME_TRAVEL_HOURS = "48"  # the minimum BigQuery allows; shortens how long deleted data stays recoverable
+TIME_TRAVEL_HOURS = str(
+    _retention.TIME_TRAVEL_HOURS
+)  # the minimum (2 days); shortens how long deleted data stays recoverable
 DAY_MS = 86_400_000
 
 
@@ -332,6 +335,8 @@ def compile_controls(contracts: list[Contract], roles: Roles, harvest: dict) -> 
                 "labels": {"project": "steward", "managed-by": "steward", "quarantine-of": _label(tname)},
             }
     R["google_bigquery_table"] = tables
+    ret_estate, ret_gov = _retention.terraform(contracts, harvest)
+    R.update(ret_estate)
 
     # ── publish policy-tag names for the governance layer (no remote-state reads across layers) ──
     R["google_parameter_manager_parameter"] = {
@@ -485,6 +490,18 @@ def compile_controls(contracts: list[Contract], roles: Roles, harvest: dict) -> 
                         "grantees": [f'${{var.principals["{s_}"]}}' for s_ in sorted(set(unscoped))],
                     }
     G["google_bigquery_row_access_policy"] = rap
+    G.update(ret_gov)
+    custodians = sorted({c.custodian for c in contracts})
+    gov["variable"]["principals"]["validation"].append(
+        {
+            "condition": "${alltrue([for k in "
+            + json.dumps(custodians)
+            + ' : startswith(var.principals[k], "serviceAccount:")])}',
+            "error_message": "every custodian runs the scheduled retention DELETEs, so it must be a service account: "
+            + ", ".join(custodians)
+            + ".",
+        }
+    )
 
     def _sorted(d):
         if isinstance(d, dict):
