@@ -1,5 +1,6 @@
 {
-  "data/_schema.json": "112c647d570a106317bd7222c7505b9392ddd9873822acff0aeff0d65638d953",
+  "data/_schema.json": "dbd45564eadbb6ec2679d9ff2ebf273ef49706a4abac65db948b5f66d6eb5e5f",
+  "data/analytics.weekly_usage_by_cell.jsonl": "26391b8b66b1c5768f16b3287127f002aaac21e43021266a2e31a0a2b86338a8",
   "data/crm.customers.jsonl": "bdb5399b57109fa4fe0a7f96c2ec70728f21002edaeff8c21f3d8ecbb89430f8",
   "data/crm.support_tickets.jsonl": "539566e51c570220fde2a0c438032698ce8cbd41ded42843dd95eba3be2af5aa",
   "data/finance.billing.jsonl": "2442d0d7a3cab7ed0feb0a1db51b33213f82048e65b40df4b5e2d937de138244",

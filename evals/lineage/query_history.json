@@ -1,0 +1,107 @@
+{
+  "_mode": "FIXTURE \u2014 written by hand after the LookML, standing in for INFORMATION_SCHEMA.JOBS. Its clean agreement with LookML is therefore constructed; only the planted drift tests the cross-check. Independence needs real Looker query jobs, i.e. a Looker instance (D3). The `looker_dashboard` label is Steward's convention for this fixture, not a label Looker is known to write (unverified, B18).",
+  "captured_at": "2026-09-30T18:00:00Z",
+  "jobs": [
+    {
+      "job_id": "load-crm-customers",
+      "type": "LOAD",
+      "destination": "crm.customers",
+      "source_uris": [
+        "gs://landing/crm/customers/*.jsonl"
+      ],
+      "creation_time": "2026-09-30T02:00:00Z"
+    },
+    {
+      "job_id": "load-crm-tickets",
+      "type": "LOAD",
+      "destination": "crm.support_tickets",
+      "source_uris": [
+        "gs://landing/crm/support_tickets/*.jsonl"
+      ],
+      "creation_time": "2026-09-30T02:00:00Z"
+    },
+    {
+      "job_id": "load-network-usage",
+      "type": "LOAD",
+      "destination": "network.usage_events",
+      "source_uris": [
+        "gs://landing/network/usage_events/*.jsonl"
+      ],
+      "creation_time": "2026-09-30T02:00:00Z"
+    },
+    {
+      "job_id": "load-network-attach",
+      "type": "LOAD",
+      "destination": "network.network_events",
+      "source_uris": [
+        "gs://landing/network/network_events/*.jsonl"
+      ],
+      "creation_time": "2026-09-30T02:00:00Z"
+    },
+    {
+      "job_id": "load-finance-billing",
+      "type": "LOAD",
+      "destination": "finance.billing",
+      "source_uris": [
+        "gs://landing/finance/billing/*.jsonl"
+      ],
+      "creation_time": "2026-09-30T02:00:00Z"
+    },
+    {
+      "job_id": "ctas-weekly-usage",
+      "type": "QUERY",
+      "destination": "analytics.weekly_usage_by_cell",
+      "referenced_tables": [
+        "network.usage_events"
+      ],
+      "creation_time": "2026-09-30T03:00:00Z"
+    },
+    {
+      "job_id": "looker-1001",
+      "type": "QUERY",
+      "labels": {
+        "looker_dashboard": "customer_overview"
+      },
+      "referenced_tables": [
+        "crm.customers",
+        "crm.support_tickets"
+      ],
+      "creation_time": "2026-09-29T09:00:00Z"
+    },
+    {
+      "job_id": "looker-1002",
+      "type": "QUERY",
+      "labels": {
+        "looker_dashboard": "network_usage"
+      },
+      "referenced_tables": [
+        "analytics.weekly_usage_by_cell"
+      ],
+      "creation_time": "2026-09-29T09:00:00Z"
+    },
+    {
+      "job_id": "looker-1003",
+      "type": "QUERY",
+      "labels": {
+        "looker_dashboard": "billing_health"
+      },
+      "referenced_tables": [
+        "crm.customers",
+        "finance.billing"
+      ],
+      "creation_time": "2026-09-29T09:00:00Z"
+    },
+    {
+      "job_id": "looker-0950",
+      "type": "QUERY",
+      "labels": {
+        "looker_dashboard": "legacy_churn"
+      },
+      "referenced_tables": [
+        "crm.customers",
+        "crm.support_tickets"
+      ],
+      "creation_time": "2026-09-29T09:00:00Z"
+    }
+  ]
+}

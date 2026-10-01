@@ -1,0 +1,4 @@
+# Steward's sidecar for the Looker project: which role each BigQuery connection runs as. Every dashboard
+# field is judged by what THAT role sees (claim 3): a tagged column must reach a dashboard masked.
+connections:
+  bq_halverra: bi_service

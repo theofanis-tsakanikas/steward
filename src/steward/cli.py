@@ -131,6 +131,32 @@ def cmd_retention(args: argparse.Namespace) -> int:
     return code
 
 
+def cmd_lineage(args: argparse.Namespace) -> int:
+    """Claim 3's gate: every dashboard field resolves to a catalogued column, sensitive columns reach
+    dashboards masked for the connection's role, and LookML lineage agrees with the job history."""
+    import json
+    from pathlib import Path
+
+    from steward import io, pipeline
+    from steward.core.findings import report
+
+    e = pipeline.load()
+    jobs_file = Path(args.jobs) if args.jobs else io.REPO / "evals" / "lineage" / "query_history.json"
+    history = json.loads(jobs_file.read_text())
+    lk, (findings, graph, _detail) = pipeline.lineage(
+        e, Path(args.lookml) if args.lookml else io.REPO / "lookml", history
+    )
+    conns = ", ".join(f"{m}→{v['runs_as_role']}" for m, v in lk["models"].items())
+    print(
+        f"LookML ({lk['mode']}): {len(lk['views'])} views, {len(lk['explores'])} explores, {len(lk['dashboards'])} dashboards; connections {conns}"
+    )
+    print(f"job history: {jobs_file.name}, captured {history['captured_at']} (window {30} days)")
+    print(f"lineage graph: {len(graph.nodes)} nodes, {len(graph.edges)} edges")
+    code, lines = report("lineage", findings)
+    print("\n".join(lines))
+    return code
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="steward", description=__doc__)
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -149,6 +175,11 @@ def main(argv: list[str] | None = None) -> int:
         "--snapshot", help="IAM snapshot JSON (live capture); default: the compiled Terraform at the ledger's as_of"
     )
     sub.add_parser("retention", help="claim 7: retention declared, compiled, reported (caveat first)")
+    ln = sub.add_parser(
+        "lineage", help="claim 3: dashboard fields resolve, sensitive columns masked, lineage cross-checked"
+    )
+    ln.add_argument("--lookml", help="LookML project root (default: lookml/)")
+    ln.add_argument("--jobs", help="job history JSON (default: the labelled fixture)")
     args = parser.parse_args(argv)
     if args.cmd == "version":
         from steward import __version__
@@ -162,6 +193,7 @@ def main(argv: list[str] | None = None) -> int:
         "quality": cmd_quality,
         "marketplace": cmd_marketplace,
         "retention": cmd_retention,
+        "lineage": cmd_lineage,
     }[args.cmd](args)
 
 

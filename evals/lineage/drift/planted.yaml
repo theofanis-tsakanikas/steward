@@ -1,0 +1,24 @@
+# The drift the demo shows, applied in memory on top of the clean estate. Each change names the one
+# blocking finding claim 3's gate must raise for it.
+lookml_extra_dashboards: [churn_risk.dashboard.lookml]
+jobs_extra:
+  - {job_id: looker-1004, type: QUERY, creation_time: "2026-09-29T10:00:00Z", labels: {looker_dashboard: billing_health},
+     referenced_tables: [crm.customers, finance.billing, network.usage_events]}
+  - {job_id: looker-2001, type: QUERY, creation_time: "2026-09-28T10:00:00Z", labels: {looker_dashboard: my_quick_numbers},
+     referenced_tables: [crm.customers]}
+# Raising bi_service's ceiling for msisdn — approved properly, so the access gate passes — and giving the
+# Looker connection msisdn in clear. The lineage gate must still refuse: a sensitive column on a dashboard
+# in clear is a finding no approval removes.
+roles_patch:
+  change:
+    {version: 2, date: "2026-09-30", change: "callback reconciliation dashboard for the CRM team",
+     requested_by: "user:katerina.vasileiou@halverra.example", approved_by: "user:dimitris.nikolaou@halverra.example",
+     ceilings_added: [{role: bi_service, kinds: [msisdn]}]}
+  bi_service_clear_kinds: [msisdn]
+contract_patch:
+  crm.customers.msisdn.masking.bi_service: clear
+expect:
+  - [UNRESOLVED_FIELD, "churn_risk/at_risk/customers.churn_score"]
+  - [SENSITIVE_UNMASKED_ON_DASHBOARD, "customer_overview/callers_with_most_tickets/customers.msisdn"]
+  - [LINEAGE_DISAGREEMENT, billing_health]
+  - [LINEAGE_UNMODELLED_DASHBOARD, my_quick_numbers]

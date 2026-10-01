@@ -222,6 +222,18 @@ SCHEMA: dict[str, dict] = {
             f("country", "STRING"),
         ],
     },
+    "analytics.weekly_usage_by_cell": {
+        "partition": "week_start",
+        "cluster": ["country", "cell_id"],
+        "fields": [
+            f("week_start", "DATE", "REQUIRED"),
+            f("country", "STRING", "REQUIRED"),
+            f("cell_id", "STRING", "REQUIRED"),
+            f("events", "INTEGER"),
+            f("total_mb", "FLOAT"),
+            f("subscribers", "INTEGER"),
+        ],
+    },
     "legacy.legacy_crm_export": {
         "partition": None,
         "fields": [
@@ -506,19 +518,53 @@ def gen_legacy(rng: random.Random, planted: Planted) -> list[dict]:
     return rows
 
 
+K_ANONYMITY = 5  # a cell-week is published only if at least this many distinct subscribers used it
+
+
+def gen_weekly_usage(usage: list[dict]) -> list[dict]:
+    """The CTAS an analytics job runs over network.usage_events: per ISO week, country and cell —
+    events, volume and distinct subscribers — keeping only groups with >= K_ANONYMITY subscribers.
+    Derived, not sampled: the lineage edge usage_events → weekly_usage_by_cell is real."""
+    groups: dict[tuple, dict] = {}
+    for r in usage:
+        if r["msisdn"] is None or r["event_type"] not in ("voice", "sms", "data"):
+            continue  # the load quarantines these rows; the aggregate reads only loaded rows
+        d = date.fromisoformat(r["event_date"])
+        week = (d - timedelta(days=d.weekday())).isoformat()
+        g = groups.setdefault((week, r["country"], r["cell_id"]), {"events": 0, "mb": 0.0, "subs": set()})
+        g["events"] += 1
+        g["mb"] += r["volume_mb"]
+        g["subs"].add(r["msisdn"])
+    return [
+        {
+            "week_start": w,
+            "country": c,
+            "cell_id": cell,
+            "events": g["events"],
+            "total_mb": round(g["mb"], 2),
+            "subscribers": len(g["subs"]),
+        }
+        for (w, c, cell), g in sorted(groups.items())
+        if len(g["subs"]) >= K_ANONYMITY
+    ]
+
+
 def build() -> dict[str, str]:
     """Return {relative path: file content}. Pure: same seed, same bytes."""
     rng = random.Random(SEED)
     planted = Planted()
     customers = gen_customers(rng, planted)
     cellmap = cells(rng)
+    tickets = gen_tickets(rng, customers, planted)  # order matters: every table draws from one seeded RNG
+    usage = gen_usage(rng, customers, cellmap, planted)
     tables = {
         "crm.customers": customers,
-        "crm.support_tickets": gen_tickets(rng, customers, planted),
-        "network.usage_events": gen_usage(rng, customers, cellmap, planted),
+        "crm.support_tickets": tickets,
+        "network.usage_events": usage,
         "network.network_events": gen_network(rng, customers, cellmap, planted),
         "finance.billing": gen_billing(rng, customers, planted),
         "legacy.legacy_crm_export": gen_legacy(rng, planted),
+        "analytics.weekly_usage_by_cell": gen_weekly_usage(usage),
     }
     out: dict[str, str] = {}
     for name, rows in tables.items():
