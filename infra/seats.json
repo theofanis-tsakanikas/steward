@@ -1,0 +1,19 @@
+{
+  "//": "Seat or requester -> service-account id. scripts/tfvars.py turns it into var.principals / var.grantees for a project.",
+  "seats": {
+    "analyst@DE": "seat-analyst-de",
+    "analyst@GR": "seat-analyst-gr",
+    "analyst@IT": "seat-analyst-it",
+    "bi_service": "seat-bi-service",
+    "fraud_investigator": "seat-fraud-investigator",
+    "group:crm-stewards@halverra.example": "seat-crm-stewards",
+    "group:data-governance@halverra.example": "seat-data-governance",
+    "group:data-platform@halverra.example": "seat-data-platform",
+    "group:finance-stewards@halverra.example": "seat-finance-stewards",
+    "group:network-stewards@halverra.example": "seat-network-stewards"
+  },
+  "people": {
+    "user:eleni.kosta@halverra.example": "person-eleni-kosta",
+    "user:paolo.marino@halverra.example": "person-paolo-marino"
+  }
+}

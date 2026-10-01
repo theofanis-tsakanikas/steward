@@ -1,0 +1,96 @@
+name: deploy
+
+# Applies the layers in dependency order to the dedicated GCP project, from CI, with no key: GitHub's OIDC
+# token is exchanged for the deployer service account (Workload Identity Federation). The bootstrap layer that
+# makes that possible was applied once from a laptop (docs/DAY-ONE.md).
+#
+# workflow_dispatch is the ONLY trigger. The `deploy` environment is what the federation trust names: without
+# it no credentials are issued. The whole offline suite runs first, so nothing reaches the cloud until it is green.
+on:
+  workflow_dispatch:
+    inputs:
+      expires_at:
+        description: "End date of this estate, YYYY-MM-DD (labels every resource; the reaper deletes datasets after it)"
+        required: true
+        type: string
+      publish_version:
+        description: "Version id of the published policy-tag parameter (immutable: bump it when tags change)"
+        required: true
+        default: "v1"
+        type: string
+
+permissions:
+  contents: read
+
+# Never cancel an apply: a cancelled apply leaves a lock and a half-built estate.
+concurrency:
+  group: steward-estate
+  cancel-in-progress: false
+
+env:
+  UV_PYTHON: "3.12"
+  TF_IN_AUTOMATION: "1"
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.15.5"
+      - run: uv sync --group dev --all-extras
+      - run: make preflight
+
+  apply:
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment: deploy
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PROJECT: ${{ vars.GCP_PROJECT_ID }}
+      STATE_BUCKET: ${{ vars.GCP_PROJECT_ID }}-steward-tfstate
+      EXPIRES_AT: ${{ inputs.expires_at }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.15.5"
+      - run: uv sync --group dev
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: estate
+        working-directory: infra/estate
+        run: |
+          terraform init -input=false -backend-config="bucket=$STATE_BUCKET" -backend-config="prefix=estate"
+          terraform apply -input=false -auto-approve \
+            -var "project_id=$PROJECT" -var "expires_at=$EXPIRES_AT" -var "publish_version=${{ inputs.publish_version }}"
+
+      - name: load the synthetic data and prove the row counts
+        run: uv run python scripts/load_synthetic.py --project "$PROJECT"
+
+      - name: governance
+        working-directory: infra/governance
+        run: |
+          uv run python ../../scripts/tfvars.py --project "$PROJECT" --layer governance > principals.auto.tfvars.json
+          terraform init -input=false -backend-config="bucket=$STATE_BUCKET" -backend-config="prefix=governance"
+          terraform apply -input=false -auto-approve \
+            -var "project_id=$PROJECT" -var "expires_at=$EXPIRES_AT" -var "estate_version=${{ inputs.publish_version }}"
+
+      - name: marketplace
+        working-directory: infra/marketplace
+        run: |
+          uv run python ../../scripts/tfvars.py --project "$PROJECT" --layer marketplace > grantees.auto.tfvars.json
+          terraform init -input=false -backend-config="bucket=$STATE_BUCKET" -backend-config="prefix=marketplace"
+          terraform apply -input=false -auto-approve \
+            -var "project_id=$PROJECT" -var "expires_at=$EXPIRES_AT"

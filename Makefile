@@ -31,6 +31,7 @@ claims: evals ## alias of evals (portfolio Makefile contract)
 check: ## every structural gate + every generator in --check mode
 	$(PY) scripts/check_core_purity.py
 	$(PY) scripts/check_contract_versions.py
+	$(PY) scripts/check_workflows.py
 	$(PY) scripts/check_contract_fields.py
 	$(UV) run steward validate
 	$(UV) run steward scan
@@ -85,6 +86,9 @@ tf-validate: ## terraform fmt -check + validate, every layer, no backend, no cre
 	$(PY) scripts/tf_validate.py
 
 ci: preflight ## what CI runs
+
+destroy: ## dispatch the destroy workflow (needs the gh CLI); then `gh run watch`
+	gh workflow run destroy.yml -f confirm=destroy-steward
 
 clean:
 	rm -rf .pytest_cache .ruff_cache out

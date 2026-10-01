@@ -1,0 +1,75 @@
+name: destroy
+
+# Removes the estate in reverse dependency order, then sweeps: the run is red if anything is left. A deploy
+# path with no exercised destroy path is how an estate gets left standing.
+#
+# workflow_dispatch only, and only with the confirmation phrase typed. The bootstrap layer is not touched: it is
+# removed by deleting the project (docs/DAY-ONE.md step 10).
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type destroy-steward to confirm"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: steward-estate
+  cancel-in-progress: false
+
+env:
+  UV_PYTHON: "3.12"
+  TF_IN_AUTOMATION: "1"
+
+jobs:
+  destroy:
+    if: ${{ inputs.confirm == 'destroy-steward' }}
+    runs-on: ubuntu-latest
+    environment: destroy
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PROJECT: ${{ vars.GCP_PROJECT_ID }}
+      STATE_BUCKET: ${{ vars.GCP_PROJECT_ID }}-steward-tfstate
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.15.5"
+      - run: uv sync --group dev
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+
+      # The variables below only have to satisfy validation: destroy reads state, not these values.
+      - name: marketplace
+        working-directory: infra/marketplace
+        run: |
+          uv run python ../../scripts/tfvars.py --project "$PROJECT" --layer marketplace > grantees.auto.tfvars.json
+          terraform init -input=false -backend-config="bucket=$STATE_BUCKET" -backend-config="prefix=marketplace"
+          terraform destroy -input=false -auto-approve -var "project_id=$PROJECT" -var "expires_at=2000-01-01"
+
+      - name: governance
+        working-directory: infra/governance
+        run: |
+          uv run python ../../scripts/tfvars.py --project "$PROJECT" --layer governance > principals.auto.tfvars.json
+          terraform init -input=false -backend-config="bucket=$STATE_BUCKET" -backend-config="prefix=governance"
+          terraform destroy -input=false -auto-approve \
+            -var "project_id=$PROJECT" -var "expires_at=2000-01-01" -var "estate_version=v1"
+
+      - name: estate
+        working-directory: infra/estate
+        run: |
+          terraform init -input=false -backend-config="bucket=$STATE_BUCKET" -backend-config="prefix=estate"
+          terraform destroy -input=false -auto-approve \
+            -var "project_id=$PROJECT" -var "expires_at=2000-01-01" -var "publish_version=v1"
+
+      - name: sweep (red if anything is left)
+        run: uv run python scripts/sweep.py --project "$PROJECT"
