@@ -35,9 +35,9 @@ def load_yaml(path: Path) -> dict:
 
 
 def contract_docs(root: Path = CONTRACTS) -> dict[str, dict]:
-    stray = sorted(p.name for p in root.glob("*.yml"))
+    stray = sorted(str(p.relative_to(root)) for p in root.rglob("*.y*ml") if p.suffix == ".yml" or p.parent != root)
     if stray:
-        raise ValueError(f"contracts must be *.yaml; found {stray} (they would be silently ignored)")
+        raise ValueError(f"contracts must be contracts/*.yaml; found {stray} (they would be silently ignored)")
     return {p.stem: load_yaml(p) for p in sorted(root.glob("*.yaml")) if not p.name.startswith("_")}
 
 

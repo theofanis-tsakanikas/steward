@@ -56,7 +56,11 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   `masking` → policy tags and data policies (T004) · `quality`, `freshness` → rules engine (T005) ·
   `row_access` → row access policies (T004). T008 adds a check that every contract field is read by
   at least one generator or gate; until then this list is the record.
-- **B5 — Only `CONTRACT_MISSING` and `TABLE_UNDECLARED` are waivable (allowlist), for at most 90 days,
+- **B5 — Only `CONTRACT_MISSING` is waivable (allowlist; `TABLE_UNDECLARED` removed by the verification pass, since deleting a declared table and waiving it would drop its tags), for at most 90 days,
   approved by a member of `group:privacy-office` who is neither the requester nor an owner of the
   waived dataset.** A waiver that could suppress a missing owner, retention or classification would be
   doctrine 3 with a deadline attached. Found by the T002 hostile review (finding 1).
+- **B6 — Known limits of the contract checks, accepted.** `legal_basis`/`lawful_basis` only has to
+  *name* an instrument (regex on Art./Directive/Regulation/law/obligation) — "Art. nothing" passes;
+  whether the cited basis is right is a privacy-office review, not a regex. Directory groups may not
+  nest (refused, not expanded). Contracts are `contracts/*.yaml` only; any other placement is an error.

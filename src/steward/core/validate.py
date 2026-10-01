@@ -14,11 +14,13 @@ from .schema import harvest_columns
 
 GATE = "contracts"
 
-# Doctrine 3 and 6 together: only "this table has no contract yet" may be waived — the legacy case,
-# where every column is held at the safe state until an owner is found. Everything else a waiver
-# could switch off (a missing owner, retention, classification, an undeclared column) is a default
-# being invented with a deadline attached, so it is not waivable at all.
-WAIVABLE = frozenset({"CONTRACT_MISSING", "TABLE_UNDECLARED"})
+# Doctrine 3 and 6 together: only "this dataset has never had a contract" may be waived — the legacy
+# case, where every column is held at the safe state until an owner is found. Everything else a
+# waiver could switch off (a missing owner, retention, classification, an undeclared column, a table
+# deleted from a contract that still governs its dataset) is a default being invented with a
+# deadline attached, so it is not waivable at all. Deleting a whole contract to make its tables
+# "missing" is CONTRACT_DELETED in the doctrine-4 gate.
+WAIVABLE = frozenset({"CONTRACT_MISSING"})
 
 _MISSING_CODES = {
     "retention": "RETENTION_MISSING",
@@ -299,6 +301,8 @@ def apply_waivers(
             refusals.append(f"approved by {w.approved_by}: only a named human may approve an exception (doctrine 5)")
         elif not roles.is_member(w.approved_by, roles.waiver_approvers):
             refusals.append(f"{w.approved_by} is not a member of {roles.waiver_approvers}")
+        if not roles.in_directory(w.requested_by):
+            refusals.append(f"requester {w.requested_by} is not in the directory")
         if w.approved_by == w.requested_by:
             refusals.append("requester approved their own waiver (doctrine 5)")
         owner = owners.get(w.target.split(".")[0])
@@ -356,7 +360,13 @@ def validate_all(
         findings += errs
         if c:
             contracts.append(c)
-    roles = Roles.model_validate(roles_doc)
+    try:
+        roles = Roles.model_validate(roles_doc)
+    except ValidationError as e:
+        return contracts, findings + [
+            Finding("ROLES_INVALID", GATE, "_roles.yaml:" + ".".join(map(str, err["loc"])), err["msg"])
+            for err in e.errors()
+        ]
     waivers, werrs = load_waivers(waivers_doc)
     findings += werrs
     findings += cross_check(contracts, roles)

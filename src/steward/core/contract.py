@@ -138,6 +138,10 @@ class Column(Strict):
             raise ValueError(f"masking on a `{self.classification}` column has nothing to act on (no policy tag)")
         if self.classification.tagged and not self.kinds:
             raise ValueError("a tagged column must declare which kinds of personal data it holds")
+        if not self.classification.tagged and self.kinds:
+            raise ValueError(
+                f"declares personal data ({', '.join(self.kinds)}) but is classified `{self.classification}` — it would carry no policy tag (doctrine 7)"
+            )
         if self.type == "RECORD" and (self.masking or self.classification.tagged):
             raise ValueError("a RECORD is a container; classify its leaves")
         for rule in self.quality:
@@ -282,8 +286,14 @@ class Roles(Strict):
     def _members(cls, v: dict[str, list[str]]) -> dict[str, list[str]]:
         for g, ms in v.items():
             _principal(g)
+            if not g.startswith("group:"):
+                raise ValueError(f"directory keys are groups, got {g!r}")
             for m in ms:
                 _principal(m)
+                if m.startswith("group:"):
+                    # Nested groups are refused rather than expanded: membership is then exactly what
+                    # this file says, and "who is in this group" has one answer a reviewer can read.
+                    raise ValueError(f"{g} contains group {m}: nested groups are not allowed")
         return v
 
     def members(self, group: str) -> list[str]:
@@ -291,6 +301,9 @@ class Roles(Strict):
 
     def is_member(self, principal: str, group: str) -> bool:
         return principal == group or principal in self.members(group)
+
+    def in_directory(self, principal: str) -> bool:
+        return principal in self.directory or any(principal in ms for ms in self.directory.values())
 
 
 MAX_WAIVER_DAYS = 90

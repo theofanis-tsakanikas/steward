@@ -31,6 +31,8 @@ def compare(name: str, old: dict | None, new: dict | None) -> list[Finding]:
         return []
     out = []
     ov, nv = old.get("version", 0), new.get("version", 0)
+    if not isinstance(ov, int) or not isinstance(nv, int):
+        return [Finding("VERSION_INVALID", GATE, name, f"version must be an integer, got {ov!r} → {nv!r}")]
     if _strip(old) != _strip(new) and not nv > ov:
         out.append(Finding("VERSION_NOT_BUMPED", GATE, name, f"content changed but version stayed {ov} → {nv}"))
     if nv < ov:

@@ -5,7 +5,7 @@ import pytest
 import yaml
 
 from steward import io
-from steward.core.validate import validate_all
+from steward.core.validate import load_contract, validate_all
 from steward.core.versioning import compare
 
 TODAY = date(2026, 10, 1)
@@ -169,13 +169,47 @@ def test_waiver_approver_is_checked(base, approver, why):
 
 
 def test_owner_cannot_waive_own_dataset(base):
-    docs, roles, waivers, harvest = base
+    # Unreachable through validate_all today (only CONTRACT_MISSING is waivable, and a contracted
+    # dataset has no CONTRACT_MISSING) — pinned directly so the guard survives a future WAIVABLE change.
+    from steward.core.contract import Roles, Waiver
+    from steward.core.findings import Finding
+    from steward.core.validate import apply_waivers
+
+    docs, roles, _, _ = base
     roles["waiver_approvers"] = "group:crm-owners@halverra.example"
-    waivers["waivers"] = [
-        _waiver(finding="TABLE_UNDECLARED", target="crm.loyalty", approved_by="user:eleni.papadaki@halverra.example")
-    ]
-    harvest["crm.loyalty"] = {"partition": None, "fields": [{"name": "x", "type": "STRING", "mode": "NULLABLE"}]}
-    assert ("WAIVER_REFUSED", "W-900") in blocking(run(docs, roles, waivers, harvest))
+    w = Waiver.model_validate(
+        _waiver(finding="CONTRACT_MISSING", target="crm.loyalty", approved_by="user:eleni.papadaki@halverra.example")
+    )
+    fd = Finding("CONTRACT_MISSING", "contracts", "crm.loyalty", "x")
+    out = apply_waivers([fd], [w], Roles.model_validate(roles), [load_contract("crm", docs["crm"])[0]], TODAY)
+    assert ("WAIVER_REFUSED", "W-900") in blocking(out) and ("CONTRACT_MISSING", "crm.loyalty") in blocking(out)
+
+
+def test_deleting_a_declared_table_cannot_be_waived(base):
+    docs, roles, waivers, harvest = base
+    del docs["network"]["tables"]["network_events"]
+    waivers["waivers"].append(_waiver(id="W-905", finding="TABLE_UNDECLARED", target="network.network_events"))
+    out = blocking(run(docs, roles, waivers, harvest))
+    assert ("TABLE_UNDECLARED", "network.network_events") in out and ("WAIVER_REFUSED", "W-905") in out
+
+
+def test_requester_must_be_in_the_directory(base):
+    docs, roles, waivers, harvest = base
+    waivers["waivers"][0]["requested_by"] = "user:nobody@nowhere.example"
+    assert ("WAIVER_REFUSED", "W-001") in blocking(run(docs, roles, waivers, harvest))
+
+
+def test_nested_groups_are_refused(base):
+    docs, roles, waivers, harvest = base
+    roles["directory"]["group:crm-owners@halverra.example"].append("group:data-platform@halverra.example")
+    out = blocking(run(docs, roles, waivers, harvest))
+    assert any(c == "ROLES_INVALID" for c, _ in out)
+
+
+def test_kinds_on_an_untagged_column_are_refused(base):
+    docs, *rest = base
+    docs["crm"]["tables"]["customers"]["columns"]["segment"]["kinds"] = ["msisdn"]
+    assert ("CONTRACT_INVALID", "crm:tables.customers.columns.segment") in blocking(run(docs, *rest))
 
 
 def test_future_approval_and_duplicates_and_unused_are_refused(base):
@@ -286,3 +320,7 @@ def test_changed_contract_must_bump_version():
     new["changelog"][0]["change"] = "rewritten"
     assert [f.code for f in compare("crm", old, new)] == ["CHANGELOG_REWRITTEN"]
     assert [f.code for f in compare("crm", old, None)] == ["CONTRACT_DELETED"]
+
+
+def test_non_integer_version_is_a_finding_not_a_crash():
+    assert [f.code for f in compare("crm", {"version": 1}, {"version": "2"})] == ["VERSION_INVALID"]
