@@ -32,6 +32,8 @@ check: ## every structural gate + every generator in --check mode
 	$(PY) scripts/check_core_purity.py
 	$(PY) scripts/check_contract_versions.py
 	$(UV) run steward validate
+	$(UV) run steward scan
+	$(PY) scripts/check_planted_isolation.py
 	$(PY) synthetic/generate.py --check
 	$(PY) scripts/generate.py --check
 
