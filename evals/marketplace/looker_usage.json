@@ -1,0 +1,10 @@
+{
+  "_mode": "FIXTURE — no Looker instance (DECISIONS D3). In REAL mode this is Looker System Activity.",
+  "captured_at": "2026-09-30T18:00:00Z",
+  "dashboards": [
+    {"id": "customer_overview", "owner": "group:crm-owners@halverra.example", "last_viewed": "2026-09-29T08:12:00Z"},
+    {"id": "network_usage", "owner": "group:network-owners@halverra.example", "last_viewed": "2026-09-30T07:40:00Z"},
+    {"id": "billing_health", "owner": "group:finance-owners@halverra.example", "last_viewed": "2026-09-18T10:05:00Z"},
+    {"id": "legacy_churn", "owner": "group:crm-owners@halverra.example", "last_viewed": "2026-05-04T16:20:00Z", "notified_at": "2026-09-10T09:00:00Z"}
+  ]
+}

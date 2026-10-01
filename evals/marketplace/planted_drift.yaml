@@ -1,0 +1,11 @@
+# Bindings added to the clean snapshot to make the drift snapshot — the estate after someone granted by
+# hand and nobody cleaned up. Each line names the finding the gate must raise for it, and only it.
+bindings:
+  - {dataset: network, seat: "analyst@GR", role: roles/bigquery.dataViewer,
+     condition: {title: steward-R-009, expression: 'request.time < timestamp("2026-09-11T15:00:00Z")'},
+     expect: GRANT_EXPIRED_PRESENT, why: "R-009 was approved for 14 days from 2026-08-28; it lapsed and is still bound"}
+  - {dataset: finance, seat: "analyst@IT", role: roles/bigquery.dataViewer,
+     condition: {title: hand-made, expression: 'request.time < timestamp("2026-12-31T00:00:00Z")'},
+     expect: GRANT_UNAPPROVED, why: "an expiring grant with no request behind it"}
+  - {dataset: crm, seat: fraud_investigator, role: roles/bigquery.dataViewer, condition: null,
+     expect: GRANT_WITHOUT_EXPIRY, why: "a permanent grant to a seat that is not a standing reader of crm"}
