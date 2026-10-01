@@ -95,6 +95,18 @@
         "schema": "[{\"name\":\"customer_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_fcd2e14f.name}\"]}},{\"name\":\"full_name\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_797e2fac.name}\"]}},{\"name\":\"email\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_0c8a752d.name}\"]}},{\"name\":\"msisdn\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_e07e3e53.name}\"]}},{\"name\":\"birth_date\",\"type\":\"DATE\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_91294881.name}\"]}},{\"name\":\"address\",\"type\":\"RECORD\",\"mode\":\"NULLABLE\",\"fields\":[{\"name\":\"street\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_797e2fac.name}\"]}},{\"name\":\"city\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"postcode\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_797e2fac.name}\"]}}]},{\"name\":\"country\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"segment\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"consent\",\"type\":\"RECORD\",\"mode\":\"NULLABLE\",\"fields\":[{\"name\":\"marketing\",\"type\":\"BOOLEAN\",\"mode\":\"NULLABLE\"},{\"name\":\"profiling\",\"type\":\"BOOLEAN\",\"mode\":\"NULLABLE\"},{\"name\":\"updated_at\",\"type\":\"TIMESTAMP\",\"mode\":\"NULLABLE\"}]},{\"name\":\"contracts\",\"type\":\"RECORD\",\"mode\":\"REPEATED\",\"fields\":[{\"name\":\"contract_id\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"plan\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"start_date\",\"type\":\"DATE\",\"mode\":\"NULLABLE\"},{\"name\":\"end_date\",\"type\":\"DATE\",\"mode\":\"NULLABLE\"},{\"name\":\"status\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"monthly_fee\",\"type\":\"NUMERIC\",\"mode\":\"NULLABLE\"}]},{\"name\":\"created_at\",\"type\":\"TIMESTAMP\",\"mode\":\"NULLABLE\"}]",
         "table_id": "customers"
       },
+      "crm__customers__quarantine": {
+        "dataset_id": "${google_bigquery_dataset.crm.dataset_id}",
+        "deletion_protection": false,
+        "description": "Quarantine for crm.customers: rows that failed a contract rule, with rule ids, row key, run id and owner.",
+        "labels": {
+          "managed-by": "steward",
+          "project": "steward",
+          "quarantine-of": "customers"
+        },
+        "schema": "[{\"name\":\"customer_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_fcd2e14f.name}\"]}},{\"name\":\"full_name\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_797e2fac.name}\"]}},{\"name\":\"email\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_0c8a752d.name}\"]}},{\"name\":\"msisdn\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_e07e3e53.name}\"]}},{\"name\":\"birth_date\",\"type\":\"DATE\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_91294881.name}\"]}},{\"name\":\"address\",\"type\":\"RECORD\",\"mode\":\"NULLABLE\",\"fields\":[{\"name\":\"street\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_797e2fac.name}\"]}},{\"name\":\"city\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"postcode\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_797e2fac.name}\"]}}]},{\"name\":\"country\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"segment\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"consent\",\"type\":\"RECORD\",\"mode\":\"NULLABLE\",\"fields\":[{\"name\":\"marketing\",\"type\":\"BOOLEAN\",\"mode\":\"NULLABLE\"},{\"name\":\"profiling\",\"type\":\"BOOLEAN\",\"mode\":\"NULLABLE\"},{\"name\":\"updated_at\",\"type\":\"TIMESTAMP\",\"mode\":\"NULLABLE\"}]},{\"name\":\"contracts\",\"type\":\"RECORD\",\"mode\":\"REPEATED\",\"fields\":[{\"name\":\"contract_id\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"plan\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"start_date\",\"type\":\"DATE\",\"mode\":\"NULLABLE\"},{\"name\":\"end_date\",\"type\":\"DATE\",\"mode\":\"NULLABLE\"},{\"name\":\"status\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"monthly_fee\",\"type\":\"NUMERIC\",\"mode\":\"NULLABLE\"}]},{\"name\":\"created_at\",\"type\":\"TIMESTAMP\",\"mode\":\"NULLABLE\"},{\"name\":\"_run_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_rule_ids\",\"type\":\"STRING\",\"mode\":\"REPEATED\"},{\"name\":\"_row_key\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_routed_to\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_failures\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"_quarantined_at\",\"type\":\"TIMESTAMP\",\"mode\":\"REQUIRED\"}]",
+        "table_id": "customers__quarantine"
+      },
       "crm__support_tickets": {
         "dataset_id": "${google_bigquery_dataset.crm.dataset_id}",
         "deletion_protection": false,
@@ -106,6 +118,18 @@
         },
         "schema": "[{\"name\":\"ticket_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"customer_id\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_fcd2e14f.name}\"]}},{\"name\":\"opened_at\",\"type\":\"TIMESTAMP\",\"mode\":\"NULLABLE\"},{\"name\":\"channel\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"category\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"notes_free_text\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_797e2fac.name}\"]}},{\"name\":\"ref_2\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_e07e3e53.name}\"]}},{\"name\":\"country\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"status\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"}]",
         "table_id": "support_tickets"
+      },
+      "crm__support_tickets__quarantine": {
+        "dataset_id": "${google_bigquery_dataset.crm.dataset_id}",
+        "deletion_protection": false,
+        "description": "Quarantine for crm.support_tickets: rows that failed a contract rule, with rule ids, row key, run id and owner.",
+        "labels": {
+          "managed-by": "steward",
+          "project": "steward",
+          "quarantine-of": "support_tickets"
+        },
+        "schema": "[{\"name\":\"ticket_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"customer_id\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_fcd2e14f.name}\"]}},{\"name\":\"opened_at\",\"type\":\"TIMESTAMP\",\"mode\":\"NULLABLE\"},{\"name\":\"channel\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"category\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"notes_free_text\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_797e2fac.name}\"]}},{\"name\":\"ref_2\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_e07e3e53.name}\"]}},{\"name\":\"country\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"status\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"_run_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_rule_ids\",\"type\":\"STRING\",\"mode\":\"REPEATED\"},{\"name\":\"_row_key\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_routed_to\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_failures\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"_quarantined_at\",\"type\":\"TIMESTAMP\",\"mode\":\"REQUIRED\"}]",
+        "table_id": "support_tickets__quarantine"
       },
       "finance__billing": {
         "dataset_id": "${google_bigquery_dataset.finance.dataset_id}",
@@ -124,6 +148,18 @@
           "field": "issue_date",
           "type": "DAY"
         }
+      },
+      "finance__billing__quarantine": {
+        "dataset_id": "${google_bigquery_dataset.finance.dataset_id}",
+        "deletion_protection": false,
+        "description": "Quarantine for finance.billing: rows that failed a contract rule, with rule ids, row key, run id and owner.",
+        "labels": {
+          "managed-by": "steward",
+          "project": "steward",
+          "quarantine-of": "billing"
+        },
+        "schema": "[{\"name\":\"invoice_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"customer_id\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_07eeb42d.name}\"]}},{\"name\":\"iban\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_825e2471.name}\"]}},{\"name\":\"amount\",\"type\":\"NUMERIC\",\"mode\":\"NULLABLE\"},{\"name\":\"currency\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"issue_date\",\"type\":\"DATE\",\"mode\":\"REQUIRED\"},{\"name\":\"due_date\",\"type\":\"DATE\",\"mode\":\"NULLABLE\"},{\"name\":\"status\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"country\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"_run_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_rule_ids\",\"type\":\"STRING\",\"mode\":\"REPEATED\"},{\"name\":\"_row_key\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_routed_to\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_failures\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"_quarantined_at\",\"type\":\"TIMESTAMP\",\"mode\":\"REQUIRED\"}]",
+        "table_id": "billing__quarantine"
       },
       "legacy__legacy_crm_export": {
         "dataset_id": "${google_bigquery_dataset.legacy.dataset_id}",
@@ -156,6 +192,18 @@
           "type": "DAY"
         }
       },
+      "network__network_events__quarantine": {
+        "dataset_id": "${google_bigquery_dataset.network.dataset_id}",
+        "deletion_protection": false,
+        "description": "Quarantine for network.network_events: rows that failed a contract rule, with rule ids, row key, run id and owner.",
+        "labels": {
+          "managed-by": "steward",
+          "project": "steward",
+          "quarantine-of": "network_events"
+        },
+        "schema": "[{\"name\":\"attach_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"event_date\",\"type\":\"DATE\",\"mode\":\"REQUIRED\"},{\"name\":\"ts\",\"type\":\"TIMESTAMP\",\"mode\":\"NULLABLE\"},{\"name\":\"imei\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.sensitive_network_bfba4130.name}\"]}},{\"name\":\"imsi\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.sensitive_network_bfba4130.name}\"]}},{\"name\":\"cell_id\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.sensitive_network_a9e19a3b.name}\"]}},{\"name\":\"country\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"rat\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"_run_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_rule_ids\",\"type\":\"STRING\",\"mode\":\"REPEATED\"},{\"name\":\"_row_key\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_routed_to\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_failures\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"_quarantined_at\",\"type\":\"TIMESTAMP\",\"mode\":\"REQUIRED\"}]",
+        "table_id": "network_events__quarantine"
+      },
       "network__usage_events": {
         "clustering": [
           "msisdn",
@@ -177,6 +225,18 @@
           "field": "event_date",
           "type": "DAY"
         }
+      },
+      "network__usage_events__quarantine": {
+        "dataset_id": "${google_bigquery_dataset.network.dataset_id}",
+        "deletion_protection": false,
+        "description": "Quarantine for network.usage_events: rows that failed a contract rule, with rule ids, row key, run id and owner.",
+        "labels": {
+          "managed-by": "steward",
+          "project": "steward",
+          "quarantine-of": "usage_events"
+        },
+        "schema": "[{\"name\":\"event_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"event_date\",\"type\":\"DATE\",\"mode\":\"REQUIRED\"},{\"name\":\"event_ts\",\"type\":\"TIMESTAMP\",\"mode\":\"NULLABLE\"},{\"name\":\"msisdn\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.sensitive_network_e07e3e53.name}\"]}},{\"name\":\"imsi\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.sensitive_network_bfba4130.name}\"]}},{\"name\":\"cell_id\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.sensitive_network_a9e19a3b.name}\"]}},{\"name\":\"country\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"event_type\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"volume_mb\",\"type\":\"FLOAT\",\"mode\":\"NULLABLE\"},{\"name\":\"duration_s\",\"type\":\"INTEGER\",\"mode\":\"NULLABLE\"},{\"name\":\"_run_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_rule_ids\",\"type\":\"STRING\",\"mode\":\"REPEATED\"},{\"name\":\"_row_key\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_routed_to\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_failures\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"_quarantined_at\",\"type\":\"TIMESTAMP\",\"mode\":\"REQUIRED\"}]",
+        "table_id": "usage_events__quarantine"
       }
     },
     "google_data_catalog_policy_tag": {

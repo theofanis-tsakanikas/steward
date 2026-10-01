@@ -116,3 +116,9 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   (running a query is not reading data), `require_partition_filter` on partitioned tables (B9),
   `max_time_travel_hours = 48` (the minimum; claim 7), `deletion_protection = false` and
   `delete_contents_on_destroy = true` (deploy → capture → destroy, M4).
+- **B14 — The quarantine table (claim 5).** For every contracted table with at least one quality rule,
+  the compiler emits `<table>__quarantine`: the source schema with the source's policy tags (the payload
+  is the same personal data), plus six untagged metadata columns — `_run_id`, `_rule_ids`, `_row_key`,
+  `_routed_to`, `_failures`, `_quarantined_at` — and the source table's row access policies (an analyst
+  must not read another country's quarantined rows). It has no partition expiry: it is emptied by repair,
+  not by the calendar. The contracts gate does not report it as an undeclared table.

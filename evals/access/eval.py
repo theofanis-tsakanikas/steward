@@ -30,6 +30,10 @@ from steward.core.simulate import DENIED_COLUMN, DENIED_DATASET, answer, effecti
 # The eval's own reading of the contract vocabulary → BigQuery predefined expressions.
 MASK = {"hash": "SHA256", "nullify": "ALWAYS_NULL", "last_four": "LAST_FOUR_CHARACTERS", "email_mask": "EMAIL_MASK", "year_only": "DATE_YEAR_MASK", "default": "DEFAULT_MASKING_VALUE", "clear": "clear"}  # fmt: skip
 
+# The quarantine table's own metadata columns (DECISIONS B14), written here, not imported: untagged,
+# and only on <table>__quarantine.
+QUARANTINE_METADATA = {"_run_id", "_rule_ids", "_row_key", "_routed_to", "_failures", "_quarantined_at"}
+
 QUERY_TABLE = "crm.customers"
 QUERY_COLUMNS = ["customer_id", "msisdn", "email", "birth_date", "country", "segment"]
 
@@ -60,7 +64,8 @@ def _roles_of(e, c, seat: str) -> set[str]:
 
 def expected(e, seat: str, fqn: str, granted) -> str:
     ds, table, path = fqn.split(".", 2)
-    table = table.removesuffix(QUARANTINE_SUFFIX)
+    is_quarantine = table.endswith(QUARANTINE_SUFFIX)
+    table = table.removesuffix(QUARANTINE_SUFFIX)  # a quarantine table carries its source's payload and tags
     c = _contract(e, ds)
     if c is None:
         return DENIED_DATASET
@@ -71,6 +76,8 @@ def expected(e, seat: str, fqn: str, granted) -> str:
         return DENIED_DATASET
     cols = c.tables[table].columns
     if path not in cols:
+        if is_quarantine and path in QUARANTINE_METADATA:
+            return "clear"
         return DENIED_COLUMN  # a column the contract does not declare compiles `restricted` (B13 rule 4)
     col = cols[path]
     if not col.classification.tagged:

@@ -20,7 +20,7 @@ closes        `git init`; pyproject (uv, Python 3.12), ruff, pytest, Makefile wi
 out_of_scope  any domain code; any Terraform resource
 stop_at       CI green on the first PR; report in Greek
 review        no
-status        open
+status        closed 2026-10-01 — PR #1
 ```
 
 ```
@@ -35,7 +35,7 @@ closes        `synthetic/` generates (seeded, deterministic) customers, contract
 out_of_scope  loading to BigQuery
 stop_at       sample of 20 rows per table shown to the author
 review        no
-status        open
+status        closed 2026-10-01 — PR #2
 ```
 
 ```
@@ -49,7 +49,7 @@ closes        pydantic contract model (owner/steward/custodian, retention + lega
 out_of_scope  compiling controls
 stop_at       contracts reviewed by the author
 review        yes
-status        open
+status        closed 2026-10-01 — PR #3 (review + verification pass)
 ```
 
 ```
@@ -64,7 +64,7 @@ closes        `core/classify.py` detects MSISDN, IMSI, IMEI, email, IBAN, birth 
 out_of_scope  calling the real DLP (that is T014)
 stop_at       eval report shown
 review        yes
-status        open
+status        closed 2026-10-01 — PR #5 with T004 (DECISIONS B7; review + verification pass; gate-proof mutations registered)
 ```
 
 ```
@@ -78,7 +78,7 @@ closes        `core/compile.py` emits policy-tag taxonomy, masking rules, row ac
 out_of_scope  applying to GCP
 stop_at       compiled output reviewed
 review        yes
-status        open
+status        closed 2026-10-01 — PR #5 with T003 (review + verification pass)
 ```
 
 ```
@@ -91,7 +91,7 @@ closes        rules as code from contracts; quarantine rows carry rule id + row 
 out_of_scope  Dataplex DQ scans (T015)
 stop_at       eval green
 review        no
-status        open
+status        closed 2026-10-01 — this PR (review: no)
 ```
 
 ```

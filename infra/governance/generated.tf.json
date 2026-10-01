@@ -656,6 +656,45 @@
         "policy_id": "analyst_it",
         "table_id": "customers"
       },
+      "crm__customers__quarantine__all_rows": {
+        "dataset_id": "crm",
+        "filter_predicate": "TRUE",
+        "grantees": [
+          "${var.principals[\"bi_service\"]}",
+          "${var.principals[\"fraud_investigator\"]}",
+          "${var.principals[\"group:crm-stewards@halverra.example\"]}",
+          "${var.principals[\"group:data-platform@halverra.example\"]}"
+        ],
+        "policy_id": "all_rows",
+        "table_id": "customers__quarantine"
+      },
+      "crm__customers__quarantine__analyst_de": {
+        "dataset_id": "crm",
+        "filter_predicate": "country = \"DE\"",
+        "grantees": [
+          "${var.principals[\"analyst@DE\"]}"
+        ],
+        "policy_id": "analyst_de",
+        "table_id": "customers__quarantine"
+      },
+      "crm__customers__quarantine__analyst_gr": {
+        "dataset_id": "crm",
+        "filter_predicate": "country = \"GR\"",
+        "grantees": [
+          "${var.principals[\"analyst@GR\"]}"
+        ],
+        "policy_id": "analyst_gr",
+        "table_id": "customers__quarantine"
+      },
+      "crm__customers__quarantine__analyst_it": {
+        "dataset_id": "crm",
+        "filter_predicate": "country = \"IT\"",
+        "grantees": [
+          "${var.principals[\"analyst@IT\"]}"
+        ],
+        "policy_id": "analyst_it",
+        "table_id": "customers__quarantine"
+      },
       "crm__support_tickets__all_rows": {
         "dataset_id": "crm",
         "filter_predicate": "TRUE",
@@ -695,6 +734,45 @@
         "policy_id": "analyst_it",
         "table_id": "support_tickets"
       },
+      "crm__support_tickets__quarantine__all_rows": {
+        "dataset_id": "crm",
+        "filter_predicate": "TRUE",
+        "grantees": [
+          "${var.principals[\"bi_service\"]}",
+          "${var.principals[\"fraud_investigator\"]}",
+          "${var.principals[\"group:crm-stewards@halverra.example\"]}",
+          "${var.principals[\"group:data-platform@halverra.example\"]}"
+        ],
+        "policy_id": "all_rows",
+        "table_id": "support_tickets__quarantine"
+      },
+      "crm__support_tickets__quarantine__analyst_de": {
+        "dataset_id": "crm",
+        "filter_predicate": "country = \"DE\"",
+        "grantees": [
+          "${var.principals[\"analyst@DE\"]}"
+        ],
+        "policy_id": "analyst_de",
+        "table_id": "support_tickets__quarantine"
+      },
+      "crm__support_tickets__quarantine__analyst_gr": {
+        "dataset_id": "crm",
+        "filter_predicate": "country = \"GR\"",
+        "grantees": [
+          "${var.principals[\"analyst@GR\"]}"
+        ],
+        "policy_id": "analyst_gr",
+        "table_id": "support_tickets__quarantine"
+      },
+      "crm__support_tickets__quarantine__analyst_it": {
+        "dataset_id": "crm",
+        "filter_predicate": "country = \"IT\"",
+        "grantees": [
+          "${var.principals[\"analyst@IT\"]}"
+        ],
+        "policy_id": "analyst_it",
+        "table_id": "support_tickets__quarantine"
+      },
       "finance__billing__all_rows": {
         "dataset_id": "finance",
         "filter_predicate": "TRUE",
@@ -732,6 +810,44 @@
         ],
         "policy_id": "analyst_it",
         "table_id": "billing"
+      },
+      "finance__billing__quarantine__all_rows": {
+        "dataset_id": "finance",
+        "filter_predicate": "TRUE",
+        "grantees": [
+          "${var.principals[\"bi_service\"]}",
+          "${var.principals[\"group:data-platform@halverra.example\"]}",
+          "${var.principals[\"group:finance-stewards@halverra.example\"]}"
+        ],
+        "policy_id": "all_rows",
+        "table_id": "billing__quarantine"
+      },
+      "finance__billing__quarantine__analyst_de": {
+        "dataset_id": "finance",
+        "filter_predicate": "country = \"DE\"",
+        "grantees": [
+          "${var.principals[\"analyst@DE\"]}"
+        ],
+        "policy_id": "analyst_de",
+        "table_id": "billing__quarantine"
+      },
+      "finance__billing__quarantine__analyst_gr": {
+        "dataset_id": "finance",
+        "filter_predicate": "country = \"GR\"",
+        "grantees": [
+          "${var.principals[\"analyst@GR\"]}"
+        ],
+        "policy_id": "analyst_gr",
+        "table_id": "billing__quarantine"
+      },
+      "finance__billing__quarantine__analyst_it": {
+        "dataset_id": "finance",
+        "filter_predicate": "country = \"IT\"",
+        "grantees": [
+          "${var.principals[\"analyst@IT\"]}"
+        ],
+        "policy_id": "analyst_it",
+        "table_id": "billing__quarantine"
       },
       "network__network_events__all_rows": {
         "dataset_id": "network",
@@ -772,6 +888,45 @@
         "policy_id": "analyst_it",
         "table_id": "network_events"
       },
+      "network__network_events__quarantine__all_rows": {
+        "dataset_id": "network",
+        "filter_predicate": "TRUE",
+        "grantees": [
+          "${var.principals[\"bi_service\"]}",
+          "${var.principals[\"fraud_investigator\"]}",
+          "${var.principals[\"group:data-platform@halverra.example\"]}",
+          "${var.principals[\"group:network-stewards@halverra.example\"]}"
+        ],
+        "policy_id": "all_rows",
+        "table_id": "network_events__quarantine"
+      },
+      "network__network_events__quarantine__analyst_de": {
+        "dataset_id": "network",
+        "filter_predicate": "country = \"DE\"",
+        "grantees": [
+          "${var.principals[\"analyst@DE\"]}"
+        ],
+        "policy_id": "analyst_de",
+        "table_id": "network_events__quarantine"
+      },
+      "network__network_events__quarantine__analyst_gr": {
+        "dataset_id": "network",
+        "filter_predicate": "country = \"GR\"",
+        "grantees": [
+          "${var.principals[\"analyst@GR\"]}"
+        ],
+        "policy_id": "analyst_gr",
+        "table_id": "network_events__quarantine"
+      },
+      "network__network_events__quarantine__analyst_it": {
+        "dataset_id": "network",
+        "filter_predicate": "country = \"IT\"",
+        "grantees": [
+          "${var.principals[\"analyst@IT\"]}"
+        ],
+        "policy_id": "analyst_it",
+        "table_id": "network_events__quarantine"
+      },
       "network__usage_events__all_rows": {
         "dataset_id": "network",
         "filter_predicate": "TRUE",
@@ -810,6 +965,45 @@
         ],
         "policy_id": "analyst_it",
         "table_id": "usage_events"
+      },
+      "network__usage_events__quarantine__all_rows": {
+        "dataset_id": "network",
+        "filter_predicate": "TRUE",
+        "grantees": [
+          "${var.principals[\"bi_service\"]}",
+          "${var.principals[\"fraud_investigator\"]}",
+          "${var.principals[\"group:data-platform@halverra.example\"]}",
+          "${var.principals[\"group:network-stewards@halverra.example\"]}"
+        ],
+        "policy_id": "all_rows",
+        "table_id": "usage_events__quarantine"
+      },
+      "network__usage_events__quarantine__analyst_de": {
+        "dataset_id": "network",
+        "filter_predicate": "country = \"DE\"",
+        "grantees": [
+          "${var.principals[\"analyst@DE\"]}"
+        ],
+        "policy_id": "analyst_de",
+        "table_id": "usage_events__quarantine"
+      },
+      "network__usage_events__quarantine__analyst_gr": {
+        "dataset_id": "network",
+        "filter_predicate": "country = \"GR\"",
+        "grantees": [
+          "${var.principals[\"analyst@GR\"]}"
+        ],
+        "policy_id": "analyst_gr",
+        "table_id": "usage_events__quarantine"
+      },
+      "network__usage_events__quarantine__analyst_it": {
+        "dataset_id": "network",
+        "filter_predicate": "country = \"IT\"",
+        "grantees": [
+          "${var.principals[\"analyst@IT\"]}"
+        ],
+        "policy_id": "analyst_it",
+        "table_id": "usage_events__quarantine"
       }
     },
     "google_data_catalog_policy_tag_iam_member": {

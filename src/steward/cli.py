@@ -55,6 +55,31 @@ def cmd_compile(args: argparse.Namespace) -> int:
     return code
 
 
+def cmd_quality(args: argparse.Namespace) -> int:
+    """Claim 5's gate: run the contract rules over the synthetic sources, then reconcile source with
+    what was written (loaded + quarantined)."""
+    import tempfile
+    from pathlib import Path
+
+    from steward import pipeline, quality_run
+    from steward.core.findings import report
+    from steward.core.gate_quality import gate
+
+    e = pipeline.load()
+    today = date.fromisoformat(args.today) if args.today else pipeline.synthetic_anchor()
+    out = Path(args.out) if args.out else Path(tempfile.mkdtemp(prefix="steward-quality-"))
+    summary = quality_run.load_all(e.contracts, out, today)
+    counts, quarantine = quality_run.read_destination(out, sorted(summary["tables"]))
+    for t, c in counts.items():
+        print(f"{t:32} source {c['source']:6}  loaded {c['loaded']:6}  quarantined {c['quarantined']:3}")
+    from steward.core.findings import Finding
+
+    findings = gate(counts, quarantine) + [Finding(**f) for t in summary["tables"].values() for f in t["findings"]]
+    code, lines = report("quality", findings)
+    print("\n".join(lines))
+    return code
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="steward", description=__doc__)
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -65,13 +90,16 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--limit", type=int, default=None, help="rows per table, like a sampled DLP job")
     s.add_argument("--scan-date", help="ISO date birth dates are judged against (default: the synthetic anchor date)")
     sub.add_parser("compile", help="claim 2: the access gate (role ceilings, masking/type fit) over the contracts")
+    q = sub.add_parser("quality", help="claim 5: rules from contracts, quarantine, source = loaded + quarantined")
+    q.add_argument("--out", help="destination directory (default: a temp dir)")
+    q.add_argument("--today", help="ISO date for freshness (default: the synthetic anchor date)")
     args = parser.parse_args(argv)
     if args.cmd == "version":
         from steward import __version__
 
         print(__version__)
         return 0
-    return {"validate": cmd_validate, "scan": cmd_scan, "compile": cmd_compile}[args.cmd](args)
+    return {"validate": cmd_validate, "scan": cmd_scan, "compile": cmd_compile, "quality": cmd_quality}[args.cmd](args)
 
 
 if __name__ == "__main__":
