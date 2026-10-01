@@ -39,12 +39,28 @@ GATES: dict[str, list[str]] = {
     "access-eval": [PY, "evals/run.py", "access"],
     "generated": [PY, "scripts/generate.py", "--check"],
     "core-purity": [PY, "scripts/check_core_purity.py"],
+    "contract-fields": [PY, "scripts/check_contract_fields.py"],
     "quality": [PY, "-m", "steward.cli", "quality"],
     "marketplace": [PY, "-m", "steward.cli", "marketplace"],
     "marketplace-eval": [PY, "evals/run.py", "marketplace"],
     "retention": [PY, "-m", "steward.cli", "retention"],
     "retention-eval": [PY, "evals/run.py", "retention"],
+    "classification-eval": [PY, "evals/run.py", "classification"],
+    "quality-eval": [PY, "evals/run.py", "quality"],
+    "synthetic-check": [PY, "synthetic/generate.py", "--check"],
 }
+
+
+# Commands `make check` / `make evals` / CI run that are deliberately NOT proven here, and why.
+EXCLUDED = {
+    "pytest": "the unit tests are themselves assertions; a mutation would test pytest",
+    "ruff": "style, not a governance gate",
+    "scripts/tf_validate.py": "Terraform's own validator; generated Terraform is covered by the `generated` gate",
+    "steward": "never matched: every steward subcommand must be a gate (listed so the rule is explicit)",
+}
+EXCLUDED.pop("steward")  # see above — present only as documentation of the rule
+# CI also runs `uv sync` (installation) and gitleaks inline (an external scanner with its own test suite);
+# neither is a make target, so neither is in scope here.
 
 
 @dataclass
@@ -164,7 +180,7 @@ MUTATIONS: list[Mutation] = [
         "src/steward/core/compile.py",
         '                value = "clear" if rule == Masking.CLEAR else PREDEFINED[rule]',
         '                value = "clear"',
-        ("'scenario': 'tag grants'", "'analyst@DE': 'clear'"),
+        ("MISMATCH tag-grants", "analyst@DE: expected EMAIL_MASK compiled clear"),
         "compiled controls must be exactly what the contracts imply",
         "2",
     ),
@@ -174,7 +190,7 @@ MUTATIONS: list[Mutation] = [
         "src/steward/core/compile.py",
         "                    grants[key][seat] = value\n",
         '                    grants[key][seat] = value\n                    grants[key][c.custodian] = "clear"\n',
-        ("MISMATCH", "group:data-platform@halverra.example"),
+        ("MISMATCH tag-grants", "group:data-platform@halverra.example: expected None compiled clear"),
         "the custodian writes data and reads no tagged column in clear (doctrine 5)",
         "2",
     ),
@@ -194,7 +210,7 @@ MUTATIONS: list[Mutation] = [
         "src/steward/core/compile.py",
         '    Masking.LAST_FOUR: "LAST_FOUR_CHARACTERS",',
         '    Masking.LAST_FOUR: "SHA256",',
-        ("'scenario': 'tag grants'", "'LAST_FOUR_CHARACTERS'"),
+        ("MISMATCH tag-grants", "expected LAST_FOUR_CHARACTERS compiled SHA256"),
         "the eval reads the contract vocabulary with its own map, not the compiler's",
         "2",
     ),
@@ -244,7 +260,7 @@ MUTATIONS: list[Mutation] = [
         "src/steward/core/marketplace.py",
         "        if approver == requester:\n",
         "        if False:\n",
-        ("MISMATCH", "R-004"),
+        ("MISMATCH", "R-004:"),
         "R-004's approver owns network and sits in analyst@IT — only the self-approval check stops it (doctrine 5)",
         "6",
     ),
@@ -254,7 +270,7 @@ MUTATIONS: list[Mutation] = [
         "src/steward/core/marketplace.py",
         '        if approver.startswith("serviceaccount:"):\n',
         "        if False:\n",
-        ("MISMATCH", "R-005"),
+        ("MISMATCH", "R-005:"),
         "no pipeline approves access (doctrine 5); the refusal still holds as APPROVER_NOT_HUMAN — this proves the eval checks the reason",
         "6",
     ),
@@ -264,7 +280,7 @@ MUTATIONS: list[Mutation] = [
         "src/steward/core/marketplace.py",
         '        return self.request["requester"]\n',
         '        return self.request["seat"]\n',
-        ("MISMATCH", "R-001"),
+        ("MISMATCH", "R-001:"),
         "the grant goes to the person who asked, never to their whole seat",
         "6",
     ),
@@ -319,6 +335,66 @@ MUTATIONS: list[Mutation] = [
         "7",
     ),
     Mutation(
+        "a contract field nothing reads, named like one that is read elsewhere",
+        "contract-fields",
+        "src/steward/core/contract.py",
+        "    log_sink: LogSink | None = None\n",
+        "    log_sink: LogSink | None = None\n    mode: str | None = None\n",
+        ("FIELD_UNREAD", "Contract.mode"),
+        "a field in a contract that no generator reads is a defect (CLAUDE.md, the contract layer)",
+        "all",
+    ),
+    Mutation(
+        "a detector that reads column names",
+        "classification-eval",
+        "src/steward/core/classify.py",
+        "    return [detect_column(c, vals, scan_date) for c, vals in sorted(columns.items())]\n",
+        "    return [ColumnDetection(c, len(vals), {}, name_heuristics(c)) for c, vals in sorted(columns.items())]\n",
+        ("FAIL claim 1", "recall < 1.0"),
+        "claim 1's trap: detection by name misses ref_2, notes_free_text and the legacy columns",
+        "1",
+    ),
+    Mutation(
+        "duplicates loaded instead of quarantined",
+        "quality-eval",
+        "src/steward/core/quality.py",
+        "            if v in bucket:\n",
+        "            if False:\n",
+        ("MISSED", "finance.billing"),
+        "the two planted duplicate invoices must be quarantined by Q-FIN-002, not loaded",
+        "5",
+    ),
+    Mutation(
+        "a synthetic row edited by hand",
+        "synthetic-check",
+        "synthetic/data/finance.billing.jsonl",
+        '"invoice_id":"INV-2026-000001"',
+        '"invoice_id":"INV-2026-999999"',
+        ("SYNTHETIC_STALE", "finance.billing"),
+        "the synthetic estate is generated, seeded and byte-identical; a hand edit is drift",
+        "1",
+    ),
+    Mutation(
+        "a waiver left to lapse",
+        "contracts",
+        "contracts/_waivers.yaml",
+        "    approved_on: 2026-10-01\n    expires: 2026-11-30\n",
+        "    approved_on: 2026-08-01\n    expires: 2026-09-15\n",
+        ("CONTRACT_MISSING", "legacy.legacy_crm_export"),
+        "exceptions expire; on expiry the finding returns and CI goes red (doctrine 6)",
+        "4",
+    ),
+    Mutation(
+        "the type-drift check dropped",
+        "contract-fields",
+        "src/steward/core/validate.py",
+        '            elif col.type != info.type:\n                f.append(\n                    Finding(\n                        "TYPE_MISMATCH", GATE, f"{table}.{path}", f"contract says {col.type}, estate has {info.type}"\n                    )\n                )\n',
+        "",
+        ("READER_STALE", "Column.type"),
+        "a field whose only reader is removed is a promise nobody keeps",
+        "all",
+    ),
+    Mutation(
         "generated Terraform edited by hand",
         "generated",
         "infra/estate/generated.tf.json",
@@ -346,73 +422,162 @@ _IGNORE = shutil.ignore_patterns(
 )
 
 
-def _copy(dst: Path) -> Path:
-    root = dst / "repo"
-    shutil.copytree(REPO, root, ignore=_IGNORE, symlinks=True)
-    return root
+def _copy(src: Path, dst: Path) -> Path:
+    shutil.copytree(src, dst, ignore=_IGNORE, symlinks=True)
+    return dst
 
 
-def _run(root: Path, gate: str) -> subprocess.CompletedProcess:
+def _snapshot(dst: Path, worktree: bool) -> Path:
+    """The pristine tree every mutation is cloned from: git HEAD by default — what is committed is what is
+    proven — or the working tree with --worktree, for local iteration. A detached `git worktree` works in
+    a plain clone, inside another worktree and in CI's shallow checkout alike."""
+    if worktree:
+        return _copy(REPO, dst)
+    subprocess.run(["git", "worktree", "add", "--detach", "--quiet", str(dst), "HEAD"], cwd=REPO, check=True)
+    return dst
+
+
+def _drop_snapshot(dst: Path) -> None:
+    subprocess.run(["git", "worktree", "remove", "--force", str(dst)], cwd=REPO, capture_output=True)
+
+
+def _run(root: Path, gate: str) -> tuple[int | None, str]:
     env = {**os.environ, "PYTHONPATH": str(root / "src"), "STEWARD_BASE_REF": ""}
-    return subprocess.run(GATES[gate], cwd=root, env=env, capture_output=True, text=True, timeout=600)
+    try:
+        r = subprocess.run(GATES[gate], cwd=root, env=env, capture_output=True, text=True, timeout=600)
+    except subprocess.TimeoutExpired:
+        return None, "TIMEOUT after 600 s"
+    return r.returncode, r.stdout + r.stderr
 
 
 def _finding_line(output: str, code: str, target: str) -> str | None:
+    """The line that proves the RIGHT check refused: it STARTS with the code (after an optional
+    severity), is not a warning, info, success or waived line, and names the target."""
     for line in output.splitlines():
         s = line.strip()
         if s.startswith(("WARN", "INFO", "ok ")) or "[waived by" in s:
             continue
-        if code in s and target in s:
+        body = s[len("ERROR") :].strip() if s.startswith("ERROR") else s
+        if body.startswith(code) and target in body:
             return s
     return None
 
 
-def run_all(selected: list[Mutation]) -> tuple[list[dict], bool]:
-    results, ok = [], True
+def _argv(cmd: str) -> tuple[str, ...]:
+    """Normalise a command to compare argv token-exactly: `uv run python X a` → (X, a); `uv run steward v`
+    and `python -m steward.cli v` → (steward, v)."""
+    import shlex
+
+    t = shlex.split(cmd)
+    while t and (
+        Path(t[0]).name in ("uv", "python", "python3")
+        or t[0] in ("run", PY, "-q")
+        or Path(t[0]).name.startswith("python3.")
+    ):
+        t = t[1:]
+    if t[:2] == ["-m", "steward.cli"]:
+        t = ["steward", *t[2:]]
+    if t[:1] == ["-m"]:
+        t = t[1:]
+    return tuple(t)
+
+
+def _commands(target: str) -> list[str]:
+    """What `make <target>` would run — prerequisites and variables expanded — split into single commands."""
+    import re as _re
+
+    r = subprocess.run(["make", "-n", "--no-print-directory", target], cwd=REPO, capture_output=True, text=True)
+    if r.returncode:
+        raise SystemExit(f"UNGATED cannot expand `make {target}`: {r.stderr.strip()}")
+    return [c.strip() for line in r.stdout.splitlines() for c in _re.split(r"&&|;|\|", line) if c.strip()]
+
+
+def _ci_make_targets() -> list[str]:
+    import yaml as _yaml
+
+    wf = _yaml.safe_load((REPO / ".github/workflows/ci.yml").read_text())
+    targets = []
+    for job in wf["jobs"].values():
+        for step in job.get("steps", []):
+            for line in str(step.get("run", "")).splitlines():
+                if line.strip().startswith("make "):
+                    targets += line.split()[1:]
+    return targets
+
+
+def _uncovered_make_commands() -> list[str]:
+    """Every command that `make check`, `make evals` and the CI workflow's `make` steps run must be a gate
+    here (argv-exact: the gate's argv starts with the command's) or EXCLUDED by its executable."""
+    gates = [_argv(" ".join(v)) for v in GATES.values()]
+    missing = []
+    targets = sorted(set(["check", *_ci_make_targets()]) - {"gate-proof", "evals", "claims"})
+    for cmd in [c for t in targets for c in _commands(t)]:
+        argv = _argv(cmd)
+        if not argv or argv[0] in EXCLUDED or Path(argv[0]).name in EXCLUDED:
+            continue
+        if not any(g[: len(argv)] == argv for g in gates):
+            missing.append(cmd)
+    for harness in sorted(p.parent.name for p in (REPO / "evals").glob("*/eval.py")):
+        if ("evals/run.py", harness) not in gates:
+            missing.append(f"evals/run.py {harness}")
+    return sorted(set(missing))
+
+
+def run_all(selected: list[Mutation], worktree: bool = False) -> tuple[list[dict], bool]:
     with tempfile.TemporaryDirectory(prefix="gate-proof-") as tmp:
-        base = _copy(Path(tmp) / "baseline")
-        for gate in sorted({m.gate for m in selected}):
-            r = _run(base, gate)
-            if r.returncode != 0:
-                print(f"BASELINE RED  {gate}: the unmutated tree already fails — nothing below would prove anything")
-                print((r.stdout + r.stderr)[-1500:])
-                return [], False
+        pristine = _snapshot(Path(tmp) / "pristine", worktree)  # one snapshot; every copy is cloned from it
+        try:
+            return _run_all(selected, pristine)
+        finally:
+            if not worktree:
+                _drop_snapshot(pristine)
+
+
+def _run_all(selected: list[Mutation], pristine: Path) -> tuple[list[dict], bool]:
+    results, ok = [], True
+    tmp = pristine.parent
+    baseline_out: dict[str, str] = {}
+    for gate in sorted({m.gate for m in selected}):
+        code, out = _run(pristine, gate)
+        if code != 0:
+            print(f"BASELINE RED  {gate}: the unmutated tree already fails — nothing below would prove anything")
+            print(out[-1500:])
+            return [], False
+        baseline_out[gate] = out
     for i, m in enumerate(selected, 1):
-        with tempfile.TemporaryDirectory(prefix="gate-proof-") as tmp:
-            root = _copy(Path(tmp))
-            path = root / m.file
-            text = path.read_text()
-            if text.count(m.find) != m.count:
-                found = text.count(m.find)
-                status, detail = (
-                    "STALE",
-                    (
-                        f"target text found {found}× in {m.file}, expected exactly {m.count}× — "
-                        + (
-                            "the mutation would change nothing"
-                            if not found
-                            else "an ambiguous target can silently hit the wrong line"
-                        )
-                    ),
-                )
+        root = _copy(pristine, Path(tmp) / f"m{i}")
+        path = root / m.file
+        text = path.read_text()
+        found = text.count(m.find)
+        if found != m.count:
+            status = "STALE"
+            detail = f"target text found {found}× in {m.file}, expected exactly {m.count}× — " + (
+                "the mutation would change nothing"
+                if not found
+                else "an ambiguous target can silently hit the wrong line"
+            )
+        elif _finding_line(baseline_out[m.gate], *m.marker):
+            status, detail = "WRONG REASON", "the marker already appears in the unmutated gate's output"
+        else:
+            path.write_text(text.replace(m.find, m.replace, m.count))
+            code, out = _run(root, m.gate)
+            line = _finding_line(out, *m.marker)
+            tail = (out.strip().splitlines() or ["(no output)"])[-1][:160]
+            if code is None:
+                status, detail = "WRONG REASON", "the gate timed out"
+            elif code == 0:
+                status, detail = "LET THROUGH", "the gate exited 0"
+            elif "Traceback (most recent call last)" in out:
+                status, detail = "WRONG REASON", "the gate crashed instead of refusing: " + tail
+            elif line is None:
+                status, detail = "WRONG REASON", "non-zero exit, but not the expected finding: " + tail
             else:
-                path.write_text(text.replace(m.find, m.replace, m.count))
-                r = _run(root, m.gate)
-                line = _finding_line(r.stdout + r.stderr, *m.marker)
-                if r.returncode == 0:
-                    status, detail = "LET THROUGH", "the gate exited 0"
-                elif line is None:
-                    status, detail = (
-                        "WRONG REASON",
-                        "non-zero exit, but not the expected finding: "
-                        + (r.stdout + r.stderr).strip().splitlines()[-1][:160],
-                    )
-                else:
-                    status, detail = "REFUSED", line[:200]
+                status, detail = "REFUSED", line[:300]
+        shutil.rmtree(root, ignore_errors=True)
         ok &= status == "REFUSED"
         mark = "\033[32m" if status == "REFUSED" else "\033[31m"
         print(
-            f"{i:2}. {mark}{status:12}\033[0m [{m.gate}] {m.name}\n      expect {m.marker[0]} on {m.marker[1]}\n      {detail}"
+            f"{i:2}. {mark}{status:12}\033[0m [{m.gate}] {m.name}\n      expect {m.marker[0]} … {m.marker[1]}\n      {detail}"
         )
         results.append(
             {
@@ -435,6 +600,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--json", type=Path)
     ap.add_argument("--only", help="run only mutations whose gate matches")
+    ap.add_argument(
+        "--worktree", action="store_true", help="prove the working tree instead of git HEAD (local iteration)"
+    )
     args = ap.parse_args(argv)
     selected = [m for m in MUTATIONS if not args.only or m.gate == args.only]
     if args.list:
@@ -443,9 +611,13 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     covered = {m.gate for m in MUTATIONS}
     missing = sorted(set(GATES) - covered)
-    results, ok = run_all(selected)
+    uncovered = _uncovered_make_commands()
+    results, ok = run_all(selected, args.worktree)
     if missing:
         print(f"UNPROVEN gates (no mutation): {missing}")
+        ok = False
+    if uncovered and not args.only:
+        print(f"UNGATED commands (in make check / evals, neither a gate here nor EXCLUDED): {uncovered}")
         ok = False
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)

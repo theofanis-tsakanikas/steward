@@ -28,7 +28,7 @@
         "dataset_id": "audit",
         "default_partition_expiration_ms": 7776000000,
         "delete_contents_on_destroy": true,
-        "description": "BigQuery Data Access audit logs for the estate — the input to the access review. Owner group:privacy-office@halverra.example; steward group:data-governance@halverra.example; custodian group:data-platform@halverra.example.",
+        "description": "BigQuery Data Access audit logs for the estate — the input to the access review. Owner group:privacy-office@halverra.example; steward group:data-governance@halverra.example; custodian group:data-platform@halverra.example. Lawful basis: GDPR Art. 6(1)(c) and Art. 32 — security of processing: a record of who read personal data. Retention: 90 days — GDPR Art. 5(1)(e) storage limitation; 90 days covers a quarterly access review (illustrative).",
         "labels": {
           "contract-version": "1",
           "managed-by": "steward",
@@ -43,7 +43,7 @@
       "crm": {
         "dataset_id": "crm",
         "delete_contents_on_destroy": true,
-        "description": "Customer master data and customer-service tickets of Halverra Telecom (fictional). Owner group:crm-owners@halverra.example; steward group:crm-stewards@halverra.example; custodian group:data-platform@halverra.example.",
+        "description": "Customer master data and customer-service tickets of Halverra Telecom (fictional). Owner group:crm-owners@halverra.example; steward group:crm-stewards@halverra.example; custodian group:data-platform@halverra.example. Lawful basis: GDPR Art. 6(1)(b) — performance of the subscription contract. Retention: 2555 days — GDPR Art. 5(1)(e) storage limitation; 7 years after the last contract ends (illustrative, not a legal determination).",
         "labels": {
           "contract-version": "2",
           "managed-by": "steward",
@@ -58,7 +58,7 @@
       "finance": {
         "dataset_id": "finance",
         "delete_contents_on_destroy": true,
-        "description": "Invoices of Halverra Telecom (fictional). Owner group:finance-owners@halverra.example; steward group:finance-stewards@halverra.example; custodian group:data-platform@halverra.example.",
+        "description": "Invoices of Halverra Telecom (fictional). Owner group:finance-owners@halverra.example; steward group:finance-stewards@halverra.example; custodian group:data-platform@halverra.example. Lawful basis: GDPR Art. 6(1)(c) — legal obligation (tax and accounting records). Retention: 3650 days — Tax and accounting record-keeping obligation, 10 years (illustrative; varies by country).",
         "labels": {
           "contract-version": "3",
           "managed-by": "steward",
@@ -85,7 +85,7 @@
       "network": {
         "dataset_id": "network",
         "delete_contents_on_destroy": true,
-        "description": "Usage (traffic) events and device attach events of Halverra Telecom (fictional). Owner group:network-owners@halverra.example; steward group:network-stewards@halverra.example; custodian group:data-platform@halverra.example.",
+        "description": "Usage (traffic) events and device attach events of Halverra Telecom (fictional). Owner group:network-owners@halverra.example; steward group:network-stewards@halverra.example; custodian group:data-platform@halverra.example. Lawful basis: ePrivacy Directive 2002/58/EC Art. 6(2) — traffic data for billing and interconnection. Retention: 180 days — ePrivacy Art. 6(1): erase or anonymise when no longer needed; 180 days for billing disputes (illustrative).",
         "labels": {
           "contract-version": "2",
           "managed-by": "steward",
