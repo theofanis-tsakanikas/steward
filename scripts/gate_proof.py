@@ -395,6 +395,16 @@ MUTATIONS: list[Mutation] = [
         "all",
     ),
     Mutation(
+        "a ceiling raised in the same PR, unapproved",
+        "contract-versions",
+        "contracts/_roles.yaml",
+        "  bi_service: {clear_kinds: []}\n",
+        "  bi_service: {clear_kinds: [msisdn]}\n",
+        ("CEILING_RAISED", "_roles.yaml:ceilings.bi_service"),
+        "raising a ceiling is an approval by someone else, not an edit (doctrines 5 and 7)",
+        "7",
+    ),
+    Mutation(
         "generated Terraform edited by hand",
         "generated",
         "infra/estate/generated.tf.json",

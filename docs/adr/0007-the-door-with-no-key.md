@@ -16,13 +16,26 @@ what the values are.
   back clean.
 - The waiver mechanism refuses to even record such an exception: a waiver whose finding is anything but
   `CONTRACT_MISSING` is `WAIVER_REFUSED`.
-- The one bounded case — a table with no contract at all (the legacy export) — is not an exception to
-  this rule: its personal data passes only because the compiler holds every column at `restricted`
-  (nobody can read it), and only while its `CONTRACT_MISSING` waiver lives.
+- Two bounded cases are not exceptions to this rule, and each is argued here:
+  1. A dataset with **no contract at all** (the legacy export): its personal data passes only because the
+     compiler holds every column at `restricted` (nobody can read it), and only while its
+     `CONTRACT_MISSING` waiver lives.
+  2. The **log-sink dataset** (`audit`, B15): Cloud Logging creates its tables, so they cannot carry
+     Terraform tags. Value-found personal data there is accepted (info) only in tables named
+     `cloudaudit_googleapis_com_*` and only of the kinds the contract declares, which may only be `email`;
+     the dataset's readers are its steward alone. Any other table, or any other kind, blocks.
+- **Ceilings** are part of the door: a contract cannot give a role `clear` beyond its ceiling, and raising
+  a ceiling needs an approval by a privacy-office member who did not ask for it (`CEILING_RAISED`) — so
+  "tag it, then give everyone clear" is not a way round.
+- **"Removed" means a clean scan of the whole table, or of a stated sample.** `steward scan` prints its
+  row limit; a clean sample is not proof of absence, and the evidence states n.
 
 ## Enforced by
 - `tests/test_contracts.py::test_only_contract_missing_is_waivable` (a waiver for `PII_UNTAGGED` is refused).
-- `tests/test_no_key.py` — the waiver is refused **and** the scan still blocks, with the waiver in place.
+- `tests/test_no_key.py` — the waiver is refused **and** the scan still blocks; the scan CLI ignores a PII
+  waiver file; the gate imports nothing from the waiver machinery; removing the values clears the finding;
+  the log-sink branch is narrow; a ceiling raise needs someone else's approval.
+- `tests/test_classification.py::test_downgraded_ref_2_is_refused`, `::test_under_declared_kinds_are_refused`.
 - gate-proof: "waiver for personal data" → `WAIVER_REFUSED`; "the tag removed from ref_2" → `PII_UNTAGGED`.
 
 ## Rejected

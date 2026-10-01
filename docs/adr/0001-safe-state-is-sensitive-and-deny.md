@@ -8,14 +8,15 @@ costs an analyst an access request; under-masking is a breach.
 
 ## Decision
 Unknown sensitivity is masked; an undecided access request is denied; a conflict between what values
-show and what a contract says resolves to the stricter reading. The catalog is the exception: if the
-Collibra sync fails, BigQuery keeps working and the catalog carries a stale marker with its age — fail
-closed on privacy, fail open (loudly, with a deadline) on documentation.
+show and what a contract says resolves to the stricter reading. The catalog will be the exception
+(T021, not built yet): if the Collibra sync fails, BigQuery keeps working and the catalog carries a stale
+marker with its age — fail closed on privacy, fail open (loudly, with a deadline) on documentation.
 
 ## Enforced by
 - `core/compile.py`: every column of a table no contract declares, and every column the estate has that
   its contract does not, compiles to the `restricted` tag — no reader, no data policy.
-- `core/classify.py`: one value is enough to flag a column (`MIN` = 1 hit); the cost is measured
+- `core/classify.py` `detect_column`: one matching value is enough to flag a column
+  (`tests/test_classification.py::test_one_hit_is_enough`); the cost is measured
   (`evals/classification/cases.yaml → known_over_flags`).
 - `core/marketplace.py`: a request with no decision is `denied-no-decision`.
 - gate-proof: "compiler forgets the safe state" → `PII_UNTAGGED` on `legacy.legacy_crm_export.tel_a`.
