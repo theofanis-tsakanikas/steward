@@ -48,26 +48,63 @@ ALLOWED = {
 }
 
 
-def _allowlisted(doc: dict) -> None:
+ESTATE_TYPES = frozenset(k for k, v in ALLOWED.items() if v is None) - {
+    "google_bigquery_datapolicy_data_policy",
+    "google_bigquery_row_access_policy",
+}
+TOP_LEVEL = frozenset({"//", "resource", "data", "locals", "variable", "output"})
+_IAM_KEYS = frozenset(
+    {"access", "role", "member", "members", "grantees", "condition", "iam", "policy_data", "bindings"}
+)
+
+
+def _iam_keys_anywhere(node, path: str = "") -> list[str]:
+    """Every IAM-shaped key at any depth — an inline `access {}` block grants as surely as a resource does."""
+    found = []
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if k in _IAM_KEYS:
+                found.append(f"{path}.{k}" if path else k)
+            found += _iam_keys_anywhere(v, f"{path}.{k}" if path else k)
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            found += _iam_keys_anywhere(v, f"{path}[{i}]")
+    return found
+
+
+def _allowlisted(doc: dict, layer: str) -> None:
+    unknown_top = sorted(set(doc) - TOP_LEVEL)
+    if unknown_top:
+        raise Unmodelled(f"{layer}: top-level blocks {unknown_top} are not modelled")
     for rtype, nodes in doc.get("resource", {}).items():
-        if rtype not in ALLOWED:
-            raise Unmodelled(f"resource type {rtype} is not modelled")
+        allowed_types = ESTATE_TYPES if layer == "estate" else set(ALLOWED)
+        if rtype not in allowed_types:
+            raise Unmodelled(f"{layer}: resource type {rtype} is not modelled in this layer")
         roles = ALLOWED[rtype]
         for name, node in nodes.items():
+            where = f"{rtype}.{name}"
             if roles is None:
-                if "role" in node or "member" in node:
-                    raise Unmodelled(f"{rtype}.{name} carries IAM the model does not read")
+                stray = [
+                    k
+                    for k in _iam_keys_anywhere(node)
+                    if not (rtype == "google_bigquery_row_access_policy" and k == "grantees")
+                ]
+                if stray:
+                    raise Unmodelled(f"{where} carries IAM the model does not read: {stray}")
                 continue
+            extra = set(node) - {"role", "member", "project", "location", "data_policy_id", "dataset_id", "policy_tag"}
+            if extra:
+                raise Unmodelled(f"{where}: keys {sorted(extra)} are not modelled")
             if node.get("role") not in roles:
-                raise Unmodelled(f"{rtype}.{name}: role {node.get('role')} is not modelled")
-            if node.get("condition"):
-                raise Unmodelled(f"{rtype}.{name}: IAM conditions are not modelled here (claim 6 owns them)")
+                raise Unmodelled(f"{where}: role {node.get('role')} is not modelled")
+            if not _VAR.match(str(node.get("member", ""))):
+                raise Unmodelled(f"{where}: member {node.get('member')!r} is not a seat variable")
 
 
 def _seat(member: str) -> str:
     m = _VAR.match(member)
     if not m:
-        raise ValueError(f"principal is not a seat variable: {member!r}")
+        raise Unmodelled(f"principal is not a seat variable: {member!r}")
     return m.group(1)
 
 
@@ -84,24 +121,27 @@ class AccessModel:
 
 
 def model(estate: dict, governance: dict) -> AccessModel:
-    _allowlisted(estate)
-    _allowlisted(governance)
+    _allowlisted(estate, "estate")
+    _allowlisted(governance, "governance")
     am = AccessModel(compiled_column_tags(estate))
     key_to_tag = {k: _TAG_NAME.match(v).group(1) for k, v in estate["locals"]["published"]["policy_tags"].items()}
     gr = governance["resource"]
     for node in gr.get("google_bigquery_dataset_iam_member", {}).values():
         target = am.viewers if node["role"] == "roles/bigquery.dataViewer" else am.editors
         target.setdefault(node["dataset_id"], set()).add(_seat(node["member"]))
-    for node in gr.get("google_data_catalog_policy_tag_iam_member", {}).values():
+    for name, node in gr.get("google_data_catalog_policy_tag_iam_member", {}).items():
         if node["role"] == "roles/datacatalog.categoryFineGrainedReader":
-            tag = key_to_tag[_LOCAL_TAG.match(node["policy_tag"]).group(1)]
+            tag = _tag_of(key_to_tag, node["policy_tag"], name)
             am.fine_grained.setdefault(tag, set()).add(_seat(node["member"]))
     dps = gr.get("google_bigquery_datapolicy_data_policy", {})
     for node in gr.get("google_bigquery_datapolicy_data_policy_iam_member", {}).values():
         if node["role"] != "roles/bigquerydatapolicy.maskedReader":
             continue
-        dp = dps[_DP_REF.match(node["data_policy_id"]).group(1)]
-        tag = key_to_tag[_LOCAL_TAG.match(dp["policy_tag"]).group(1)]
+        ref = _DP_REF.match(node["data_policy_id"])
+        if not ref or ref.group(1) not in dps:
+            raise Unmodelled(f"masked reader on an unknown data policy: {node['data_policy_id']}")
+        dp = dps[ref.group(1)]
+        tag = _tag_of(key_to_tag, dp["policy_tag"], ref.group(1))
         rule = dp["data_masking_policy"]["predefined_expression"]
         seat = _seat(node["member"])
         prev = am.masked.setdefault(tag, {}).get(seat)
@@ -114,6 +154,15 @@ def model(estate: dict, governance: dict) -> AccessModel:
             (node["filter_predicate"], seats)
         )
     return am
+
+
+def _tag_of(key_to_tag: dict, ref: str, where: str) -> str:
+    """Grants are modelled on published leaf tags only. A grant on a parent (class) tag, which would
+    reach every child, or on anything else, is refused as unmodelled."""
+    m = _LOCAL_TAG.match(ref)
+    if not m or m.group(1) not in key_to_tag:
+        raise Unmodelled(f"{where}: grant on {ref!r}, which is not a published leaf policy tag")
+    return key_to_tag[m.group(1)]
 
 
 DENIED_DATASET = "denied: no dataset access"

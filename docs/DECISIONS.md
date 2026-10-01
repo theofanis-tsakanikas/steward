@@ -97,10 +97,15 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   (it loads, quarantines and deletes rows), `jobUser`, and **no** Fine-Grained Reader or Masked Reader.
   Quality rules run in the loader on the source before the load (claim 5), so no rule needs a tagged
   column in clear inside BigQuery. gate-proof plants a Fine-Grained Reader for it and the access eval
-  refuses it.
+  refuses it. dataEditor does not include `bigquery.tables.setCategory` (only dataOwner and admin do;
+  BigQuery IAM docs, read 2026-10-01), so the custodian cannot untag a column to read it. **Open:** an
+  erasure keyed on a tagged column (a customer key) cannot run as the custodian; erasure by tagged key
+  needs its own decision before it is claimed (claim 7 does not claim it).
 - **B13 — Roles bound to a contract field; the reach rules the access eval checks.** `steward` and
   `custodian` have no global seat: on each dataset their seat is that contract's own `steward` /
-  `custodian` principal, so crm's stewards govern crm and nothing else. The rules, stated here so the
+  `custodian` principal, so crm's stewards read crm and nothing else. (At tag level a steward may hold a
+  Masked Reader on a tag another dataset's columns also carry — tags are shared by identical profiles —
+  but without dataset access that grant reaches nothing; the eval checks both levels.) The rules, stated here so the
   eval does not copy them from the compiler: (1) dataset read = `readers` ∪ the custodian (B12) ∪ an
   approved, unexpired marketplace grant for a `grantable_roles` seat; (2) a tagged column is clear only
   with Fine-Grained Reader, masked only with that rule's Masked Reader, otherwise denied; (3) row

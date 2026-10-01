@@ -1,8 +1,9 @@
 """Claim 2 (compiled side) — same query, different answer, by role.
 
 Two readings, kept as independent as a single author can make them:
-  expected — from the contracts, by the rules written in docs/DECISIONS.md B12–B13 and a literal
-             masking map defined HERE (not imported from the compiler)
+  expected — from the contracts and _roles.yaml, by the rules written in docs/DECISIONS.md B12–B13,
+             with its own seat derivation and its own literal masking map (nothing imported from the
+             compiler but the quarantine suffix and the access gate it scores)
   compiled — from the generated Terraform only (core/simulate.py never sees a contract, and refuses
              any IAM it does not model)
 Checked:
@@ -22,7 +23,7 @@ from __future__ import annotations
 import sys
 
 from steward import io, pipeline
-from steward.core.compile import QUARANTINE_SUFFIX, check, seats_for
+from steward.core.compile import QUARANTINE_SUFFIX, check
 from steward.core.findings import Finding, report
 from steward.core.simulate import DENIED_COLUMN, DENIED_DATASET, answer, effective, model, row_filter, tag_grant
 
@@ -31,6 +32,14 @@ MASK = {"hash": "SHA256", "nullify": "ALWAYS_NULL", "last_four": "LAST_FOUR_CHAR
 
 QUERY_TABLE = "crm.customers"
 QUERY_COLUMNS = ["customer_id", "msisdn", "email", "birth_date", "country", "segment"]
+
+
+def seats_of(e, role: str, c) -> list[str]:
+    """The eval's own reading of _roles.yaml (B13) — deliberately not the compiler's seats_for()."""
+    r = e.roles.roles[role]
+    if r.bound_from:
+        return [getattr(c, r.bound_from)]
+    return [f"{role}@{x}" for x in r.scopes] if r.scopes else [role]
 
 
 def _contract(e, ds):
@@ -62,7 +71,7 @@ def expected(e, seat: str, fqn: str, granted) -> str:
         return DENIED_DATASET
     cols = c.tables[table].columns
     if path not in cols:
-        return "clear" if path.startswith("_") else DENIED_COLUMN  # quarantine metadata / undeclared → restricted
+        return DENIED_COLUMN  # a column the contract does not declare compiles `restricted` (B13 rule 4)
     col = cols[path]
     if not col.classification.tagged:
         return "clear"
@@ -97,7 +106,7 @@ def expected_tag_grants(e, am) -> dict[str, dict[str, str]]:
                 continue
             tag = am.column_tag[fqn]
             for role, m in col.masking.items():
-                for seat in seats_for(e.roles, role, c):
+                for seat in seats_of(e, role, c):
                     out.setdefault(tag, {})[seat] = MASK[m.value]
     return out
 
@@ -105,7 +114,7 @@ def expected_tag_grants(e, am) -> dict[str, dict[str, str]]:
 def evaluate() -> dict:
     e = pipeline.load()
     am = model(e.compiled["infra/estate/generated.tf.json"], e.compiled["infra/governance/generated.tf.json"])
-    seats = sorted({s for c in e.contracts for r in e.roles.roles for s in seats_for(e.roles, r, c)})
+    seats = sorted({s for c in e.contracts for r in e.roles.roles for s in seats_of(e, r, c)})
     columns = sorted(am.column_tag)
     contracted = {c.dataset for c in e.contracts}
     mismatches = []
@@ -128,7 +137,7 @@ def evaluate() -> dict:
 
     # B — seat × column
     grants = frozenset(
-        (s, c.dataset) for c in e.contracts for r in c.marketplace.grantable_roles for s in seats_for(e.roles, r, c)
+        (s, c.dataset) for c in e.contracts for r in c.marketplace.grantable_roles for s in seats_of(e, r, c)
     )
     checked = 0
     for scenario, granted in (("standing", frozenset()), ("with approved grants", grants)):
