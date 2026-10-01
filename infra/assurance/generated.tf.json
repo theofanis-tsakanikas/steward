@@ -3,7 +3,7 @@
   "resource": {
     "google_data_loss_prevention_inspect_template": {
       "steward": {
-        "description": "Kinds of personal data the contracts can declare and a value scan can find: msisdn, imsi, imei, email, iban, birth_date, address. Run on row-limited samples only (CLAUDE.md cost controls).",
+        "description": "Kinds of personal data the contracts can declare and a value scan can find: msisdn, imsi, imei, email, iban, birth_date, address. A template cannot limit rows: the sample size belongs to the code that runs an inspection.",
         "display_name": "steward-inspect",
         "inspect_config": {
           "custom_info_types": [
