@@ -1,0 +1,30 @@
+# Hand-labelled values, written independently of the synthetic generator: formats it never emits,
+# and things that look like personal data but are not. Each case: value -> expected kinds (exact set).
+# Scored per value by scan_value(); 15-digit kinds are decided per column, so single-value cases for
+# IMSI/IMEI are scored on the raw signal (_luhn15 / _mcc15_nonluhn) instead.
+positives:
+  - {value: "+30 694 123 4567", kinds: [msisdn]}
+  - {value: "0049-171-2345678", kinds: [msisdn]}
+  - {value: "call me at 00393471234567 tomorrow", kinds: [msisdn]}
+  - {value: "first.last+promo@sub.example.co.uk", kinds: [email]}
+  - {value: "pay to DE89370400440532013000 please", kinds: [iban]}
+  - {value: "GB82WEST12345698765432", kinds: [iban]}
+  - {value: "born 03.11.1975", kinds: [birth_date]}
+  - {value: "Viale Monza 221", kinds: [address]}
+  - {value: "Am Lindenplatz 4", kinds: [address]}
+  - {value: "Kaiserring 12", kinds: [address]}
+  - {value: "12 Baker Street", kinds: [address]}
+negatives:
+  - {value: "INV-2026-000123", why: invoice number}
+  - {value: "+302101234567", why: Greek landline (not a mobile; the msisdn kind here is mobile numbers)}
+  - {value: "DE89370400440532013001", why: IBAN shape with a wrong check digit}
+  - {value: "2026-09-12", why: a recent date (contract start), not a birth date}
+  - {value: "1890-01-01", why: older than 110 years}
+  - {value: "ticket escalated, see note@ 14:00", why: an at-sign is not an e-mail}
+  - {value: "REF-37095", why: internal reference}
+  - {value: "GR-ATH-0042", why: cell id}
+  - {value: "Version 2 street level view", why: the word street without a number}
+fifteen_digit:
+  - {value: "490154203237518", expect: imei, why: a valid IMEI (Luhn ok)}
+  - {value: "262011234567890", expect: imsi, why: German MCC, Luhn fails}
+  - {value: "123456789012345", expect: none, why: neither Luhn-valid nor a European MCC}
