@@ -72,3 +72,15 @@
   το bug που διορθώθηκε. Σημείωση ειλικρίνειας: το μήνυμα του commit 069f59c («refuses unmodelled IAM»)
   ήταν ευρύτερο από τον κώδικα εκείνης της στιγμής· ισχύει από το επόμενο commit.
 - **Ανοιχτό:** διαγραφή (erasure) με κλειδί που είναι tagged δεν μπορεί να τρέξει ως custodian (B12).
+
+### 2026-10-01 · T005 — claim 5, quarantine και συμφιλίωση
+- **Έκλεισε:** κανόνες από τα contracts (completeness, validity, uniqueness, referential — και σε nested/
+  repeated πεδία — και freshness)· κάθε γραμμή που αποτυγχάνει πάει σε quarantine μία φορά, με όλους τους
+  κανόνες, row key, run id, owner, steward και το ίδιο το payload· `<table>__quarantine` με τα ίδια tags
+  και row policies (B14).
+- **Η παγίδα:** η συμφιλίωση δεν υπολογίζεται από την έξοδο του engine — η πηγή μετριέται σε γραμμές πριν
+  τρέξουν οι κανόνες, loaded και quarantined μετριούνται από ό,τι γράφτηκε.
+- **Απόδειξη:** `make evals` → 14/14 φυτεμένα σφάλματα, 0 απρόσμενα, δρομολογημένα στους owners·
+  `steward quality` στο `make check`· gate-proof +2 (loader που «ξεχνά» γραμμή → QUALITY_ROWS_LOST,
+  quarantine χωρίς rule id → QUARANTINE_UNATTRIBUTED).
+- **Ανοιχτό:** Dataplex DQ scans (T015).

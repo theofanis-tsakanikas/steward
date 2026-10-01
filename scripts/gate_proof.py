@@ -39,6 +39,7 @@ GATES: dict[str, list[str]] = {
     "access-eval": [PY, "evals/run.py", "access"],
     "generated": [PY, "scripts/generate.py", "--check"],
     "core-purity": [PY, "scripts/check_core_purity.py"],
+    "quality": [PY, "-m", "steward.cli", "quality"],
 }
 
 
@@ -212,6 +213,26 @@ MUTATIONS: list[Mutation] = [
         ("UNMODELLED_ACCESS", "estate"),
         "IAM in a layer the model does not read is refused, not ignored",
         "2",
+    ),
+    Mutation(
+        "a loader that drops a quarantined row",
+        "quality",
+        "src/steward/quality_run.py",
+        "for q in res.quarantined)",
+        "for q in res.quarantined[1:])",
+        ("QUALITY_ROWS_LOST", "finance.billing"),
+        "source = loaded + quarantined, counted from what was written (claim 5)",
+        "5",
+    ),
+    Mutation(
+        "quarantine without its rule id",
+        "quality",
+        "src/steward/core/quality.py",
+        'sorted({f["rule_id"] for f in failures})',
+        "[]",
+        ("QUARANTINE_UNATTRIBUTED", "finance.billing"),
+        "a quarantined row carries the rule that sent it there",
+        "5",
     ),
     Mutation(
         "generated Terraform edited by hand",

@@ -56,7 +56,17 @@ CLASS_ABBR = {
     Classification.SPECIAL: "special",
     Classification.SENSITIVE_NETWORK: "sensitive_network",
 }
-QUARANTINE_SUFFIX = "__quarantine"  # claim 5: <table>__quarantine (emitted by the quality atom)
+QUARANTINE_SUFFIX = "__quarantine"  # claim 5: <table>__quarantine
+# Metadata a quarantine row carries beside the source row's own columns (claim 5). Untagged: they hold
+# rule ids and keys, not personal data — the payload columns keep the source's tags.
+QUARANTINE_FIELDS = [
+    {"name": "_run_id", "type": "STRING", "mode": "REQUIRED"},
+    {"name": "_rule_ids", "type": "STRING", "mode": "REPEATED"},
+    {"name": "_row_key", "type": "STRING", "mode": "REQUIRED"},
+    {"name": "_routed_to", "type": "STRING", "mode": "REQUIRED"},
+    {"name": "_failures", "type": "STRING", "mode": "NULLABLE"},
+    {"name": "_quarantined_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+]
 RESTRICTED = "restricted"  # the safe-state tag: no reader, no data policy, nobody sees it
 TIME_TRAVEL_HOURS = "48"  # the minimum BigQuery allows; shortens how long deleted data stays recoverable
 DAY_MS = 86_400_000
@@ -308,6 +318,19 @@ def compile_controls(contracts: list[Contract], roles: Roles, harvest: dict) -> 
         if spec.get("cluster"):
             node["clustering"] = spec["cluster"]
         tables[_ident(table.replace(".", "__"))] = node
+        if table in declared and any(col.quality for col in declared[table][1].columns.values()):
+            # Claim 5: failing rows land here with their rule, never dropped. Same payload, same tags,
+            # no partition expiry of its own: it is emptied by repair, not by the calendar.
+            tables[_ident(table.replace(".", "__")) + QUARANTINE_SUFFIX] = {
+                "dataset_id": node["dataset_id"],
+                "table_id": tname + QUARANTINE_SUFFIX,
+                "deletion_protection": False,
+                "description": f"Quarantine for {table}: rows that failed a contract rule, with rule ids, row key, run id and owner.",
+                "schema": json.dumps(
+                    _schema_fields(spec["fields"], tag_of_table[table]) + QUARANTINE_FIELDS, separators=(",", ":")
+                ),
+                "labels": {"project": "steward", "managed-by": "steward", "quarantine-of": _label(tname)},
+            }
     R["google_bigquery_table"] = tables
 
     # ── publish policy-tag names for the governance layer (no remote-state reads across layers) ──
@@ -437,28 +460,30 @@ def compile_controls(contracts: list[Contract], roles: Roles, harvest: dict) -> 
             col = tbl.row_access.column
             if col is None:
                 continue
-            unscoped: list[str] = []
-            for role in reach:
-                r = roles.roles[role]
-                if r.scoped_by == col:
-                    for scope in r.scopes or []:
-                        rap[f"{c.dataset}__{tname}__{_ident(role)}_{scope.lower()}"] = {
-                            "dataset_id": c.dataset,
-                            "table_id": tname,
-                            "policy_id": f"{_ident(role)}_{scope.lower()}",
-                            "filter_predicate": f'{col} = "{scope}"',
-                            "grantees": [f'${{var.principals["{role}@{scope}"]}}'],
-                        }
-                else:
-                    unscoped.extend(seats_for(roles, role, c))
-            if unscoped:
-                rap[f"{c.dataset}__{tname}__all_rows"] = {
-                    "dataset_id": c.dataset,
-                    "table_id": tname,
-                    "policy_id": "all_rows",
-                    "filter_predicate": "TRUE",
-                    "grantees": [f'${{var.principals["{s_}"]}}' for s_ in sorted(set(unscoped))],
-                }
+            targets = [tname] + ([tname + QUARANTINE_SUFFIX] if any(x.quality for x in tbl.columns.values()) else [])
+            for target in targets:
+                unscoped: list[str] = []
+                for role in reach:
+                    r = roles.roles[role]
+                    if r.scoped_by == col:
+                        for scope in r.scopes or []:
+                            rap[f"{c.dataset}__{target}__{_ident(role)}_{scope.lower()}"] = {
+                                "dataset_id": c.dataset,
+                                "table_id": target,
+                                "policy_id": f"{_ident(role)}_{scope.lower()}",
+                                "filter_predicate": f'{col} = "{scope}"',
+                                "grantees": [f'${{var.principals["{role}@{scope}"]}}'],
+                            }
+                    else:
+                        unscoped.extend(seats_for(roles, role, c))
+                if unscoped:
+                    rap[f"{c.dataset}__{target}__all_rows"] = {
+                        "dataset_id": c.dataset,
+                        "table_id": target,
+                        "policy_id": "all_rows",
+                        "filter_predicate": "TRUE",
+                        "grantees": [f'${{var.principals["{s_}"]}}' for s_ in sorted(set(unscoped))],
+                    }
     G["google_bigquery_row_access_policy"] = rap
 
     def _sorted(d):
