@@ -429,14 +429,16 @@ def _copy(src: Path, dst: Path) -> Path:
 
 def _snapshot(dst: Path, worktree: bool) -> Path:
     """The pristine tree every mutation is cloned from: git HEAD by default — what is committed is what is
-    proven — or the working tree with --worktree, for local iteration."""
+    proven — or the working tree with --worktree, for local iteration. A detached `git worktree` works in
+    a plain clone, inside another worktree and in CI's shallow checkout alike."""
     if worktree:
         return _copy(REPO, dst)
-    dst.mkdir(parents=True)
-    archive = subprocess.run(["git", "archive", "--format=tar", "HEAD"], cwd=REPO, capture_output=True, check=True)
-    subprocess.run(["tar", "-x", "-C", str(dst)], input=archive.stdout, check=True)
-    shutil.copytree(REPO / ".git", dst / ".git")  # the contract-versions gate compares with HEAD
+    subprocess.run(["git", "worktree", "add", "--detach", "--quiet", str(dst), "HEAD"], cwd=REPO, check=True)
     return dst
+
+
+def _drop_snapshot(dst: Path) -> None:
+    subprocess.run(["git", "worktree", "remove", "--force", str(dst)], cwd=REPO, capture_output=True)
 
 
 def _run(root: Path, gate: str) -> tuple[int | None, str]:
@@ -522,65 +524,74 @@ def _uncovered_make_commands() -> list[str]:
 
 
 def run_all(selected: list[Mutation], worktree: bool = False) -> tuple[list[dict], bool]:
-    results, ok = [], True
     with tempfile.TemporaryDirectory(prefix="gate-proof-") as tmp:
         pristine = _snapshot(Path(tmp) / "pristine", worktree)  # one snapshot; every copy is cloned from it
-        baseline_out: dict[str, str] = {}
-        for gate in sorted({m.gate for m in selected}):
-            code, out = _run(pristine, gate)
-            if code != 0:
-                print(f"BASELINE RED  {gate}: the unmutated tree already fails — nothing below would prove anything")
-                print(out[-1500:])
-                return [], False
-            baseline_out[gate] = out
-        for i, m in enumerate(selected, 1):
-            root = _copy(pristine, Path(tmp) / f"m{i}")
-            path = root / m.file
-            text = path.read_text()
-            found = text.count(m.find)
-            if found != m.count:
-                status = "STALE"
-                detail = f"target text found {found}× in {m.file}, expected exactly {m.count}× — " + (
-                    "the mutation would change nothing"
-                    if not found
-                    else "an ambiguous target can silently hit the wrong line"
-                )
-            elif _finding_line(baseline_out[m.gate], *m.marker):
-                status, detail = "WRONG REASON", "the marker already appears in the unmutated gate's output"
+        try:
+            return _run_all(selected, pristine)
+        finally:
+            if not worktree:
+                _drop_snapshot(pristine)
+
+
+def _run_all(selected: list[Mutation], pristine: Path) -> tuple[list[dict], bool]:
+    results, ok = [], True
+    tmp = pristine.parent
+    baseline_out: dict[str, str] = {}
+    for gate in sorted({m.gate for m in selected}):
+        code, out = _run(pristine, gate)
+        if code != 0:
+            print(f"BASELINE RED  {gate}: the unmutated tree already fails — nothing below would prove anything")
+            print(out[-1500:])
+            return [], False
+        baseline_out[gate] = out
+    for i, m in enumerate(selected, 1):
+        root = _copy(pristine, Path(tmp) / f"m{i}")
+        path = root / m.file
+        text = path.read_text()
+        found = text.count(m.find)
+        if found != m.count:
+            status = "STALE"
+            detail = f"target text found {found}× in {m.file}, expected exactly {m.count}× — " + (
+                "the mutation would change nothing"
+                if not found
+                else "an ambiguous target can silently hit the wrong line"
+            )
+        elif _finding_line(baseline_out[m.gate], *m.marker):
+            status, detail = "WRONG REASON", "the marker already appears in the unmutated gate's output"
+        else:
+            path.write_text(text.replace(m.find, m.replace, m.count))
+            code, out = _run(root, m.gate)
+            line = _finding_line(out, *m.marker)
+            tail = (out.strip().splitlines() or ["(no output)"])[-1][:160]
+            if code is None:
+                status, detail = "WRONG REASON", "the gate timed out"
+            elif code == 0:
+                status, detail = "LET THROUGH", "the gate exited 0"
+            elif "Traceback (most recent call last)" in out:
+                status, detail = "WRONG REASON", "the gate crashed instead of refusing: " + tail
+            elif line is None:
+                status, detail = "WRONG REASON", "non-zero exit, but not the expected finding: " + tail
             else:
-                path.write_text(text.replace(m.find, m.replace, m.count))
-                code, out = _run(root, m.gate)
-                line = _finding_line(out, *m.marker)
-                tail = (out.strip().splitlines() or ["(no output)"])[-1][:160]
-                if code is None:
-                    status, detail = "WRONG REASON", "the gate timed out"
-                elif code == 0:
-                    status, detail = "LET THROUGH", "the gate exited 0"
-                elif "Traceback (most recent call last)" in out:
-                    status, detail = "WRONG REASON", "the gate crashed instead of refusing: " + tail
-                elif line is None:
-                    status, detail = "WRONG REASON", "non-zero exit, but not the expected finding: " + tail
-                else:
-                    status, detail = "REFUSED", line[:300]
-            shutil.rmtree(root, ignore_errors=True)
-            ok &= status == "REFUSED"
-            mark = "\033[32m" if status == "REFUSED" else "\033[31m"
-            print(
-                f"{i:2}. {mark}{status:12}\033[0m [{m.gate}] {m.name}\n      expect {m.marker[0]} … {m.marker[1]}\n      {detail}"
-            )
-            results.append(
-                {
-                    "n": i,
-                    "name": m.name,
-                    "gate": m.gate,
-                    "claim": m.claim,
-                    "file": m.file,
-                    "why": m.why,
-                    "expect": list(m.marker),
-                    "status": status,
-                    "detail": detail,
-                }
-            )
+                status, detail = "REFUSED", line[:300]
+        shutil.rmtree(root, ignore_errors=True)
+        ok &= status == "REFUSED"
+        mark = "\033[32m" if status == "REFUSED" else "\033[31m"
+        print(
+            f"{i:2}. {mark}{status:12}\033[0m [{m.gate}] {m.name}\n      expect {m.marker[0]} … {m.marker[1]}\n      {detail}"
+        )
+        results.append(
+            {
+                "n": i,
+                "name": m.name,
+                "gate": m.gate,
+                "claim": m.claim,
+                "file": m.file,
+                "why": m.why,
+                "expect": list(m.marker),
+                "status": status,
+                "detail": detail,
+            }
+        )
     return results, ok
 
 
