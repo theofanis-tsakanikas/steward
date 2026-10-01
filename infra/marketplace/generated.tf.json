@@ -73,13 +73,17 @@
     }
   },
   "variable": {
-    "principals": {
-      "description": "Requester -> IAM member for every person holding a live grant (the grant goes to the person, not the seat).",
+    "grantees": {
+      "description": "Requester -> the single IAM member that person reads as (user: or serviceAccount:, never a group: a grant goes to one person, not a seat). Distinct from the governance layer's `principals`, which maps seats.",
       "type": "map(string)",
       "validation": [
         {
-          "condition": "${alltrue([for k in [\"user:eleni.kosta@halverra.example\", \"user:paolo.marino@halverra.example\"] : contains(keys(var.principals), k)])}",
-          "error_message": "principals must bind every grantee: user:eleni.kosta@halverra.example, user:paolo.marino@halverra.example."
+          "condition": "${alltrue([for k in [\"user:eleni.kosta@halverra.example\", \"user:paolo.marino@halverra.example\"] : contains(keys(var.grantees), k)])}",
+          "error_message": "grantees must bind every person holding a live grant: user:eleni.kosta@halverra.example, user:paolo.marino@halverra.example."
+        },
+        {
+          "condition": "${alltrue([for v in values(var.grantees) : can(regex(\"^(user|serviceAccount):\", v))])}",
+          "error_message": "a grantee is one person (user:) or the account standing in for them (serviceAccount:), never a group."
         }
       ]
     }

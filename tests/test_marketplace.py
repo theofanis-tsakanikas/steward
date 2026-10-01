@@ -262,3 +262,8 @@ def test_ledger_rejects_bad_times_and_prefixes(field, value):
 def test_the_offline_snapshot_sees_marketplace_grants(e):
     snap = pipeline.iam_snapshot(e, "2026-09-30T18:00:00Z")
     assert any(b["member"] == "user:eleni.kosta@halverra.example" and b["condition"] for b in snap["bindings"])
+
+
+def test_grantees_variable_is_declared_and_refuses_groups(e):
+    var = e.compiled["infra/marketplace/generated.tf.json"]["variable"]["grantees"]
+    assert any("never a group" in v["error_message"] for v in var["validation"])
