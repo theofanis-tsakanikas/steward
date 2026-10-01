@@ -193,3 +193,23 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
 - **B23 — Directory ids are derived, fictional, and the mock's only source of identity.** The 10 contract
   groups map to `uuid5` ids in `catalog/collibra.yaml`; a contract naming a group not listed stops the build
   (`OWNER_GROUP_UNKNOWN`). Steward assigns groups, never individual users: the mock refuses `user`.
+- **B24 — The diff compares only what Steward owns.** `_owned(stored, want)` restricts the comparison to the
+  attributes, relation types and responsibilities Steward writes. A foreign attribute, relation or
+  responsibility added in Collibra is *reported* by `reconcile` (`in_both_differing`) and never resent
+  forever, so a second sync of an unchanged estate sends 0 commands. `Last Changed` is stamped only on
+  changed assets and is not content.
+- **B25 — Human-owned fields are never overwritten.** A Business Term is proposed as `Candidate` (or
+  `Under Review` when two definitions conflict); a steward accepts it in Collibra and the sync leaves its
+  `status` alone (`HUMAN_OWNED`). A term born `Accepted` fails the gate (`CATALOG_SELF_ACCEPTED`, doctrine 5).
+- **B26 — Review findings accepted rather than fixed (T021 level-2 review, 2026-10-01).**
+  (a) The claim-1 conflict on *contracted* columns is owned by `steward scan`, not by the catalog; the catalog
+  only reports "Not scanned" for undeclared columns with no detection run, never "no personal data found".
+  (b) The mode (`MOCK|REAL`) is stated in the community and domain descriptions and in every report, not on
+  every asset: Collibra has no per-asset provenance field and an extra attribute would be one more thing to
+  reconcile. (c) A change of an existing asset's type is not refused by the mock: Collibra's guide allows it.
+  (d) The cardinality of multi-value attributes is assumed from the guide, not observed on an instance.
+  (e) The operating model in `catalog/collibra.yaml` is Steward's own, not read from a real instance;
+  T024 is where that is tested, if a trial exists.
+- **B27 — `pending_first_write` expires.** A log-sink dataset (`audit`, B15) has no table until the first
+  write; the reconciliation lists it as pending, not missing, until `pending_first_write_until`
+  (2026-10-31, doctrine 6), judged by the run's own `at` timestamp because `core/` reads no clock.

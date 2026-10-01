@@ -14,7 +14,9 @@ import os
 import time
 
 MODE = "REAL"
-FINISHED = {"COMPLETED", "ERROR", "CANCELED"}
+# The guide lists COMPLETED_WITH_ERROR and ABORTED as outcomes without saying whether they appear as the job
+# `state` or the `result`; both are treated as finished and, either way, as not a sync.
+FINISHED = {"COMPLETED", "ERROR", "CANCELED", "COMPLETED_WITH_ERROR", "ABORTED", "FAILURE"}
 
 
 class CollibraClient:
@@ -49,9 +51,11 @@ class CollibraClient:
         r.raise_for_status()
         job = r.json()
         for _ in range(120):
-            s = self.http.get(f"{self.base}/rest/2.0/jobs/{job['id']}", timeout=30).json()
+            resp = self.http.get(f"{self.base}/rest/2.0/jobs/{job['id']}", timeout=30)
+            resp.raise_for_status()
+            s = resp.json()
             state, result = str(s.get("state", "")).upper(), str(s.get("result", "")).upper()
-            if state in FINISHED:
+            if state in FINISHED or result in FINISHED:
                 # Only COMPLETED/SUCCESS is a sync. COMPLETED_WITH_ERROR and ABORTED committed part of it.
                 if (state, result) != ("COMPLETED", "SUCCESS"):
                     raise RuntimeError(f"Collibra import job {job['id']} ended {state}/{result}: {s.get('message')}")

@@ -5,13 +5,16 @@ against the documented shape (docs/COLLIBRA.md, guide read 2026-10-01) and again
 rejects the WHOLE job on the first invalid command and commits nothing (`continueOnError=false`: one
 transaction, rolled back on error):
 
-  MALFORMED_COMMAND           missing resourceType / identifier, identifier of the wrong shape
+  MALFORMED_COMMAND           missing resourceType / identifier; an identifier, type, status, relation target or
+                              tag list of the wrong shape (extra keys included); a duplicate relation target
   UNKNOWN_RESOURCE_TYPE       not Community / Domain / Asset
   UNKNOWN_FIELD               a top-level field the command type does not have
   DOMAIN_MISSING              a domain in a community, or an asset in a domain, that does not exist
   UNKNOWN_DOMAIN_TYPE / WRONG_DOMAIN_TYPE
   UNKNOWN_ASSET_TYPE          an asset type the operating model does not have
-  UNKNOWN_STATUS / UNKNOWN_ATTRIBUTE / MALFORMED_ATTRIBUTE / MISSING_REQUIRED_ATTRIBUTE
+  UNKNOWN_STATUS / UNKNOWN_ATTRIBUTE / MISSING_REQUIRED_ATTRIBUTE
+  MALFORMED_ATTRIBUTE         not exactly one non-empty string value (Steward's attribute types are single-valued —
+                              an assumption: the guide says "most attribute types have one value")
   UNKNOWN_RELATION            a relation key that is not `<Source>:<role>:<role>:<Target>:<TARGET|SOURCE>` of
                               a relation type the model has (ids and PUBLIC_ID forms are not used by Steward)
   RELATION_TYPE_MISMATCH      the anchor or the related asset is not of the type the relation joins
@@ -122,8 +125,16 @@ class MockCollibra:
             if f not in ALLOWED[rt]:
                 raise Rejection("UNKNOWN_FIELD", i, f"a {rt} command has no field {f!r}")
         ident = cmd.get("identifier")
-        if not isinstance(ident, dict) or not isinstance(ident.get("name"), str) or not ident["name"]:
-            raise Rejection("MALFORMED_COMMAND", i, "identifier.name is required")
+        if not isinstance(ident, dict):
+            raise Rejection("MALFORMED_COMMAND", i, "identifier is required")
+        self._identifier(i, rt, ident)
+        for f in ("type", "status"):
+            if f in cmd:
+                self._name_ref(i, cmd[f], f)
+        if "displayName" in cmd and not (isinstance(cmd["displayName"], str) and cmd["displayName"]):
+            raise Rejection("MALFORMED_COMMAND", i, "displayName must be a non-empty string")
+        if "tags" in cmd and not (isinstance(cmd["tags"], list) and all(isinstance(t, str) for t in cmd["tags"])):
+            raise Rejection("MALFORMED_COMMAND", i, "tags must be a list of strings")
         self._responsibilities(i, rt, cmd)
 
         if rt == "Community":
@@ -154,18 +165,26 @@ class MockCollibra:
                 "WRONG_DOMAIN_TYPE", i, f"a {typ} belongs in a {spec['domain_type']} domain, not a {dtype} domain"
             )
         status = (cmd.get("status") or {}).get("name")
-        if status not in self.model["statuses"]:
+        exists = json.dumps(list(key(cmd))) in st["assets"]
+        if status is None and not exists:
+            raise Rejection("UNKNOWN_STATUS", i, "a new asset needs a status")
+        if status is not None and status not in self.model["statuses"]:
             raise Rejection("UNKNOWN_STATUS", i, f"{status!r}")
         for a, vals in (cmd.get("attributes") or {}).items():
             if a not in self.model["attribute_types"]:
                 raise Rejection("UNKNOWN_ATTRIBUTE", i, f"{a!r} is not an attribute type of this operating model")
             ok = (
                 isinstance(vals, list)
-                and vals
-                and all(isinstance(v, dict) and isinstance(v.get("value"), str) for v in vals)
+                and len(vals) == 1
+                and isinstance(vals[0], dict)
+                and set(vals[0]) == {"value"}
+                and isinstance(vals[0]["value"], str)
+                and vals[0]["value"] != ""
             )
             if not ok:
-                raise Rejection("MALFORMED_ATTRIBUTE", i, f"{a!r} must be a non-empty list of {{'value': <string>}}")
+                raise Rejection(
+                    "MALFORMED_ATTRIBUTE", i, f"{a!r} must be exactly [{{'value': <non-empty string>}}], got {vals!r}"
+                )
         k = json.dumps(list(key(cmd)))
         prev = st["assets"].get(k)
         have = {**(prev["attributes"] if prev else {}), **(cmd.get("attributes") or {})}
@@ -175,6 +194,27 @@ class MockCollibra:
         for rel_key, targets in (cmd.get("relations") or {}).items():
             self._relation(st, i, ident["name"], typ, rel_key, targets)
         return self._store(st["assets"], k, cmd, st, at, merge=True)
+
+    @staticmethod
+    def _name_ref(i: int, obj, what: str, nested: str | None = None) -> None:
+        """`{"name": str}` or `{"name": str, <nested>: {...}}` — and nothing else. Steward addresses everything by
+        name; an id or publicId form is valid Collibra but not one Steward emits, so it is refused here."""
+        allowed = {"name"} | ({nested} if nested else set())
+        if not (isinstance(obj, dict) and isinstance(obj.get("name"), str) and obj["name"] and set(obj) <= allowed):
+            raise Rejection(
+                "MALFORMED_COMMAND", i, f"{what}: expected an object with only {sorted(allowed)}, got {obj!r}"
+            )
+
+    def _identifier(self, i: int, rt: str, ident) -> None:
+        if rt == "Community":
+            self._name_ref(i, ident, "identifier")
+        elif rt == "Domain":
+            self._name_ref(i, ident, "identifier", "community")
+            self._name_ref(i, ident.get("community"), "identifier.community")
+        else:
+            self._name_ref(i, ident, "identifier", "domain")
+            self._name_ref(i, ident.get("domain"), "identifier.domain", "community")
+            self._name_ref(i, ident["domain"].get("community"), "identifier.domain.community")
 
     def _responsibilities(self, i: int, rt: str, cmd: dict) -> None:
         resp = cmd.get("responsibilities")
@@ -236,8 +276,13 @@ class MockCollibra:
             )
         if not isinstance(targets, list):
             raise Rejection("UNKNOWN_RELATION", i, f"{rel_key!r}: a list of asset identifiers (an empty list deletes)")
+        seen = set()
         for t in targets:
+            self._identifier(i, "Asset", t)
             tk = json.dumps(["Asset", t["domain"]["community"]["name"], t["domain"]["name"], t["name"]])
+            if tk in seen:
+                raise Rejection("MALFORMED_COMMAND", i, f"{rel_key!r}: {t['name']!r} is listed twice")
+            seen.add(tk)
             found = st["assets"].get(tk)
             if found is None:
                 raise Rejection("DANGLING_RELATION", i, f"{name!r} → {t['name']!r}, which does not exist")
@@ -247,12 +292,12 @@ class MockCollibra:
     def _store(self, bucket: dict, k: str, cmd: dict, st: dict, at: str, merge: bool) -> str:
         prev = bucket.get(k)
         new = copy.deepcopy(cmd)
+        if prev:  # a MERGE: fields the command does not send stay as they were (status, responsibilities, …)
+            new = {**prev, **new}
         if prev and merge:
             new["attributes"] = {**prev.get("attributes", {}), **cmd.get("attributes", {})}
             if prev.get("relations") or cmd.get("relations"):
                 new["relations"] = {**prev.get("relations", {}), **cmd.get("relations", {})}
-        elif prev:  # communities and domains: fields not sent stay as they were
-            new = {**prev, **new}
         if prev == new:
             return "unchanged"
         # doctrine 4: keep what a field said before it was replaced

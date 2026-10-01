@@ -3,17 +3,21 @@
   A. clean estate, fresh mock: the sync is accepted; a second sync sends 0 commands; the reconciliation is
      empty (a dataset whose tables a log sink creates on first write is listed on its own); every asset of a
      type carries the same attribute set (the Import API cannot delete an attribute by omitting it)
-  B. the mock refuses (the trap: a mock that accepts anything proves nothing): thirteen invalid jobs, each
+  B. the mock refuses (the trap: a mock that accepts anything proves nothing): twenty invalid jobs, each
      built by breaking one command of the valid catalog, each refused with its exact code, each leaving the
      catalog byte-for-byte as it was (one transaction, rolled back)
-  C. drift in the catalog: a column deleted, a ghost table added, an owner changed and a description edited by
-     hand — the reconciliation lists exactly those; the next sync repairs the edits and never deletes the
-     ghost (doctrine 4: it is listed until a human retires it)
+  C. drift in the catalog: a column deleted, a ghost table added, an owner changed, a description edited, a
+     status changed, a relation removed, a foreign attribute added and a retired dashboard left behind — the
+     reconciliation lists exactly those; the next sync repairs what it owns, never deletes the ghost or the
+     retired dashboard (doctrine 4: listed until a human retires them) and never resends what it cannot remove
   D. a contract change: a new version of one contract changes only that dataset's assets, and the catalog keeps
      what the description said before, with when (doctrine 4)
   E. a sync that fails leaves the catalog STALE with the age of the last good sync, fails loudly, and the
      second failure past 24 hours says so (doctrine 1: fail open on documentation, with a deadline)
   F. a contract naming a group the directory does not know stops the build (doctrine 3: no default owner)
+  G. what the sync must leave alone or say: a steward's acceptance of a glossary term survives the next sync; an
+     owner that outlives its contract is listed and not resent forever; a column the scan did not cover says
+     "not scanned", never "nothing found"; the log-sink exception expires (doctrine 6)
 
 Honest limits: the mock enforces the Import API as DOCUMENTED (docs/COLLIBRA.md, read 2026-10-01), not as a
 live instance behaves; whether a real Collibra accepts these commands is T024. Everything here is mode=MOCK.
@@ -149,6 +153,33 @@ def _bad_cases(good: list[dict]) -> list[tuple[str, str, list[dict]]]:
         r = c[_owned_domain(c)]["responsibilities"]
         r["Business Steward"] = r.pop("Steward")
 
+    rep_i = _first(good, "Report")
+
+    def wrong_anchor(
+        c,
+    ):  # the Report anchors Table->Schema; the target IS a Schema, so only the anchor check can refuse
+        schema = next(x for x in c if x["resourceType"] == "Asset" and x["type"]["name"] == "Schema")
+        c[rep_i]["relations"] = {C.IS_PART_OF_SCHEMA: [schema["identifier"]]}
+
+    def extra_ident_key(c):
+        c[tbl]["identifier"]["externalId"] = "x"
+
+    def type_by_id(c):
+        c[tbl]["type"] = {"id": "00000000-0000-0000-0000-000000031007"}
+
+    def two_values(c):
+        c[tbl]["attributes"]["Description"] = [{"value": "a"}, {"value": "b"}]
+
+    def empty_value(c):
+        c[tbl]["attributes"]["Description"] = [{"value": ""}]
+
+    def duplicate_target(c):
+        t = c[rep_i]["relations"][C.USES_COLUMN]
+        t.append(copy.deepcopy(t[0]))
+
+    def target_no_domain(c):
+        c[rep_i]["relations"][C.USES_COLUMN][0] = {"name": "halverra-data.crm.customers.msisdn"}
+
     return [
         ("an asset type the model does not have", "UNKNOWN_ASSET_TYPE", variant(unknown_type)),
         ("a required attribute missing", "MISSING_REQUIRED_ATTRIBUTE", variant(drop_desc)),
@@ -163,6 +194,17 @@ def _bad_cases(good: list[dict]) -> list[tuple[str, str, list[dict]]]:
         ("a status the model does not have", "UNKNOWN_STATUS", variant(unknown_status)),
         ("an asset sent before its domain", "DOMAIN_MISSING", variant(asset_before_domain)),
         ("a role the model does not have", "UNKNOWN_ROLE", variant(unknown_role)),
+        ("a report anchoring a table's relation (target type right)", "RELATION_TYPE_MISMATCH", variant(wrong_anchor)),
+        ("an extra key in an identifier", "MALFORMED_COMMAND", variant(extra_ident_key)),
+        ("a type addressed by id, a form Steward does not emit", "MALFORMED_COMMAND", variant(type_by_id)),
+        ("an attribute with two values", "MALFORMED_ATTRIBUTE", variant(two_values)),
+        ("an attribute with an empty value", "MALFORMED_ATTRIBUTE", variant(empty_value)),
+        ("a relation target listed twice", "MALFORMED_COMMAND", variant(duplicate_target)),
+        (
+            "a relation target with no domain (a KeyError, not a refusal)",
+            "MALFORMED_COMMAND",
+            variant(target_no_domain),
+        ),
     ]
 
 
@@ -229,6 +271,29 @@ def scenario_c(e) -> dict:
         {"value": "edited in the catalog UI"}
     ]
 
+    tickets = f"{proj}.crm.support_tickets"
+    cl.state["assets"][json.dumps(["Asset", comm, dom, tickets])]["status"] = {"name": "Under Review"}
+    rpt = next(k for k, v in cl.current().items() if k[0] == "Asset" and v["type"]["name"] == "Report")
+    cl.state["assets"][json.dumps(list(rpt))]["relations"][C.USES_COLUMN] = []
+    foreign_col = f"{proj}.crm.customers.email"
+    cl.state["assets"][json.dumps(["Asset", comm, dom, foreign_col])]["attributes"]["Comment"] = [{"value": "by hand"}]
+    reports = C.REPORTS
+    retired = "looker:retired_dashboard"
+    cl.import_job(
+        [
+            C._asset(
+                retired,
+                reports,
+                comm,
+                "Report",
+                "Accepted",
+                {"Description": "a dashboard deleted from LookML", "Lifecycle State": "active"},
+                relations={C.USES_COLUMN: [C._ident(f"{proj}.crm.customers.msisdn", dom, comm)]},
+            )
+        ],
+        T0,
+    )
+
     rec = S.reconcile(cl, e, T1)
     differing = sorted((d["resource"].split(" / ")[-1], tuple(d["differs"])) for d in rec["in_both_differing"])
     check(
@@ -241,15 +306,30 @@ def scenario_c(e) -> dict:
         rec["in_catalog_not_in_gcp"] == [ghost],
         str(rec["in_catalog_not_in_gcp"]),
     )
+    want_differing = sorted(
+        [
+            (dom, ("responsibilities",)),
+            (edited, ("attribute:Description",)),
+            (tickets, ("status",)),
+            (rpt[3], ("relations",)),
+            (foreign_col, ("attribute:Comment",)),
+        ]
+    )
     check(
-        "the changed owner and the edited description listed as differing",
-        differing == sorted([(dom, ("responsibilities",)), (edited, ("attribute:Description",))]),
+        "owner, description, status, relation and foreign attribute listed as differing",
+        differing == want_differing,
         str(differing),
+    )
+    check(
+        "a dashboard the estate no longer implies is listed, not left advertising its columns",
+        rec["in_catalog_not_generated"] == [f"{comm} / {reports} / {retired}"],
+        str(rec["in_catalog_not_generated"]),
     )
     for lst, code in (
         ("in_gcp_not_in_catalog", "RECONCILE_MISSING_IN_CATALOG"),
         ("in_catalog_not_in_gcp", "RECONCILE_MISSING_IN_GCP"),
         ("in_both_differing", "RECONCILE_DIFFERS"),
+        ("in_catalog_not_generated", "RECONCILE_STALE_GENERATED"),
     ):
         if not rec[lst]:
             FAILURES.append(f"NOT_DETECTED {code} {lst}")
@@ -258,14 +338,21 @@ def scenario_c(e) -> dict:
     again = S.sync(cl, e, T2)
     rec2 = S.reconcile(cl, e, T2)
     check(
-        "the next sync repairs the three it owns (column, domain, description)",
-        repair["changes_sent"] == 3,
+        "the next sync repairs the five it owns (column, domain, description, status, relation)",
+        repair["changes_sent"] == 5,
         str(repair["changes_sent"]),
     )
-    check("then sends nothing", again["changes_sent"] == 0, str(again["changes_sent"]))
     check(
-        "the ghost is not deleted: it stays listed",
-        rec2["in_catalog_not_in_gcp"] == [ghost] and not rec2["in_both_differing"],
+        "then sends nothing — including for what it cannot remove",
+        again["changes_sent"] == 0,
+        str(again["changes_sent"]),
+    )
+    check(
+        "the ghost, the retired dashboard and the foreign attribute stay listed, nothing else does",
+        rec2["in_catalog_not_in_gcp"] == [ghost]
+        and rec2["in_catalog_not_generated"] == [f"{comm} / {reports} / {retired}"]
+        and [(d["resource"].split(" / ")[-1], d["differs"]) for d in rec2["in_both_differing"]]
+        == [(foreign_col, ["attribute:Comment"])],
         str(rec2),
     )
     return {"reconciliation_before_repair": rec, "repair_commands": repair["changes_sent"], "after": rec2}
@@ -309,8 +396,19 @@ def scenario_d(base) -> dict:
 
 # ── E ──────────────────────────────────────────────────────────────────────────────────────────────
 class Refusing(MockCollibra):
+    """Refuses any real job but still accepts the one-command stale marker (the instance is up, the job is bad)."""
+
     def import_job(self, commands, at):
-        raise Rejection("UNKNOWN_ASSET_TYPE", 3, "simulated refusal")
+        if len(commands) > 1:
+            raise Rejection("UNKNOWN_ASSET_TYPE", 3, "simulated refusal")
+        return super().import_job(commands, at)
+
+
+class Down(MockCollibra):
+    """The instance is unreachable: nothing, not even the marker, can be written."""
+
+    def import_job(self, commands, at):
+        raise ConnectionError("simulated outage")
 
 
 def scenario_e(e) -> dict:
@@ -340,8 +438,50 @@ def scenario_e(e) -> dict:
         [x["status"] for x in runs] == ["ok", "failed", "failed"] and all(x["mode"] == "MOCK" for x in runs),
         str(runs),
     )
-    check("the catalog is exactly as it was", json.dumps(broken.state["assets"], sort_keys=True) == before, "")
-    return {"first_failure": r1, "second_failure": r2}
+    check(
+        "the catalog's assets are exactly as they were",
+        json.dumps(broken.state["assets"], sort_keys=True) == before,
+        "",
+    )
+    comm = broken.current()[("Community", S.model()["community"])]["description"]
+    check(
+        "the catalog itself shows the stale marker", r1.get("marker_written") and "STALE" in comm and T0 in comm, comm
+    )
+    recovered = MockCollibra(broken.model, state=broken.state)
+    healed = S.sync(recovered, changed, T2)
+    healed_desc = recovered.current()[("Community", S.model()["community"])]["description"]
+    check(
+        "the next good sync writes the plain text back",
+        healed["status"] == "ok" and "STALE" not in healed_desc,
+        healed_desc,
+    )
+    down = Down(cl.model, state=copy.deepcopy(cl.state))
+    r3 = S.sync(down, changed, T1)
+    check(
+        "an unreachable instance: failed, stale, marker not written, run still logged",
+        r3["status"] == "failed"
+        and r3["stale"]
+        and r3["marker_written"] is False
+        and down.state["runs"][-1]["status"] == "failed",
+        str(r3),
+    )
+    # a build failure (a group with no id) is a failed run with a record, not a traceback with none
+    nogroup = fresh()
+    S.sync(nogroup, e, T0)
+    docs2 = copy.deepcopy(io.contract_docs())
+    docs2["crm"]["owner"] = "group:nobody@halverra.example"
+    docs2["crm"]["version"] += 1
+    docs2["crm"]["changelog"].append({"version": docs2["crm"]["version"], "date": "2026-10-01", "change": "eval"})
+    r4 = S.sync(nogroup, pipeline.load(contract_docs=docs2), T1)
+    check(
+        "an owner with no catalog id: a failed, logged run that names the group",
+        r4["status"] == "failed"
+        and r4["error"].startswith("OWNER_GROUP_UNKNOWN")
+        and "nobody" in r4["error"]
+        and nogroup.state["runs"][-1]["status"] == "failed",
+        str(r4),
+    )
+    return {"first_failure": r1, "second_failure": r2, "unreachable": r3, "no_owner_id": r4}
 
 
 # ── F ──────────────────────────────────────────────────────────────────────────────────────────────
@@ -358,6 +498,67 @@ def scenario_f(e) -> None:
         FAILURES.append("NOT_DETECTED OWNER_GROUP_UNKNOWN crm-owners")
 
 
+def scenario_g(e) -> dict:
+    print("G. what the sync leaves alone, or says")
+    comm = S.model()["community"]
+    cl = fresh()
+    S.sync(cl, e, T0)
+    term = next(k for k, v in cl.current().items() if k[0] == "Asset" and v["type"]["name"] == "Business Term")
+    check(
+        "a drafted glossary term is not born Accepted",
+        cl.current()[term]["status"]["name"] in ("Candidate", "Under Review"),
+        "",
+    )
+    cl.state["assets"][json.dumps(list(term))]["status"] = {"name": "Accepted"}  # a steward's decision, in the catalog
+    after = S.sync(cl, e, T1)
+    rec = S.reconcile(cl, e, T1)
+    check(
+        "a steward's acceptance survives the next sync and is not drift",
+        after["changes_sent"] == 0
+        and cl.current()[term]["status"]["name"] == "Accepted"
+        and not rec["in_both_differing"],
+        f"sent {after['changes_sent']}, differing {rec['in_both_differing']}",
+    )
+
+    docs = copy.deepcopy(io.contract_docs())
+    docs.pop("crm")
+    no_crm = pipeline.load(contract_docs=docs)
+    S.sync(cl, no_crm, T1)
+    again = S.sync(cl, no_crm, T2)
+    left = [d for d in S.reconcile(cl, no_crm, T2)["in_both_differing"] if "crm" in d["resource"]]
+    check(
+        "a contract removed: its owner stays listed (the Import API cannot remove it) and is not resent forever",
+        again["changes_sent"] == 0 and [d["differs"] for d in left] == [["responsibilities"]],
+        f"sent {again['changes_sent']}, left {left}",
+    )
+
+    h = copy.deepcopy(io.harvest())
+    h["crm.customers"]["fields"].append({"name": "ref_3", "type": "STRING", "mode": "NULLABLE"})
+    e_h = pipeline.load(harvest=h)
+    cl2 = fresh()
+    S.sync(cl2, e_h, T0)
+    col = cl2.current()[("Asset", comm, C.physical_domain("crm"), f"{S.PROJECT}.crm.customers.ref_3")]
+    said = col["attributes"]["Proposed Description"][0]["value"]
+    check("a column the scan never saw says so, never 'nothing found'", said.startswith("Not scanned"), said)
+    check(
+        "…and is held at restricted until a contract declares it",
+        col["attributes"]["Personal Data Classification"][0]["value"].startswith("restricted"),
+        "",
+    )
+
+    live = S.reconcile(cl2, e_h, "2026-10-30T00:00:00Z")
+    lapsed = S.reconcile(cl2, e_h, "2026-11-02T00:00:00Z")
+    check(
+        "the log-sink exception holds before its date", live["pending_first_write"] == [f"{S.PROJECT}.audit"], str(live)
+    )
+    check(
+        "…and after it the dataset is drift again (doctrine 6)",
+        not lapsed["pending_first_write"] and lapsed["in_catalog_not_in_gcp"] == [f"{S.PROJECT}.audit"],
+        str(lapsed),
+    )
+    return {"acceptance_kept": True, "not_scanned": said, "pending_expiry": lapsed["in_catalog_not_in_gcp"]}
+
+
 def evaluate() -> dict:
     FAILURES.clear()
     e = pipeline.load()
@@ -368,6 +569,7 @@ def evaluate() -> dict:
     out["scenarios"]["D_contract_change"] = scenario_d(e)
     out["scenarios"]["E_failure"] = scenario_e(e)
     scenario_f(e)
+    out["scenarios"]["G_leave_alone_or_say"] = scenario_g(e)
     out["failures"] = list(FAILURES)
     return out
 

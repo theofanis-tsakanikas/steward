@@ -15,11 +15,13 @@ from steward.core import catalog as C
 
 
 class FakeResponse:
-    def __init__(self, body):
+    def __init__(self, body, status=200):
         self.body = body
+        self.status = status
 
     def raise_for_status(self):
-        pass
+        if self.status >= 400:
+            raise RuntimeError(f"HTTP {self.status}")
 
     def json(self):
         return self.body
@@ -35,7 +37,7 @@ class FakeHttp:
         return FakeResponse({"id": "job-1"})
 
     def get(self, url, timeout=None):
-        return FakeResponse(self.job_state)
+        return FakeResponse(self.job_state, getattr(self, "poll_status", 200))
 
 
 def client_with(job_state) -> tuple[CollibraClient, FakeHttp]:
@@ -65,6 +67,8 @@ def test_real_client_states_every_import_parameter_explicitly():
         {"state": "ERROR", "result": "FAILURE"},
         {"state": "CANCELED", "result": ""},
         {"state": "COMPLETED"},  # no result at all is not success
+        {"state": "COMPLETED_WITH_ERROR"},  # the guide does not say whether this is the state or the result
+        {"state": "ABORTED"},
     ],
 )
 def test_real_client_only_completed_success_is_a_sync(state):
@@ -155,3 +159,34 @@ def test_a_refusal_names_the_command_that_failed():
         cl.import_job(cmds, "2026-10-01T09:00:00Z")
     assert exc.value.code == "UNKNOWN_STATUS" and exc.value.command == i
     assert cl.current() == {}
+
+
+def test_real_client_does_not_poll_an_error_page_until_the_timeout():
+    c, http = client_with({"state": "COMPLETED", "result": "SUCCESS"})
+    http.poll_status = 401
+    with pytest.raises(RuntimeError, match="401"):
+        c.import_job([], "2026-10-01T00:00:00Z")
+
+
+def test_real_report_does_not_claim_counts_it_does_not_have():
+    class Real:
+        mode = "REAL"
+
+        def current(self):
+            return {}
+
+        def import_job(self, commands, at):
+            return {"mode": "REAL", "job": "j"}  # no counts until the read-back exists
+
+    rep = S.sync(Real(), pipeline.load(), "2026-10-01T09:00:00Z")
+    assert rep["status"] == "ok" and rep["created"] is None and rep["updated"] is None
+
+
+def test_a_build_failure_is_a_logged_failed_run_not_a_traceback(monkeypatch):
+    cl = MockCollibra(S.model())
+    groups = {k: v for k, v in S.model()["user_groups"].items() if k != "group:crm-owners@halverra.example"}
+    real = S.desired
+    monkeypatch.setattr(S, "desired", lambda est, mode="MOCK", group_ids=None: real(est, mode, groups))
+    rep = S.sync(cl, pipeline.load(), "2026-10-01T09:00:00Z")
+    assert rep["status"] == "failed" and rep["error"].startswith("OWNER_GROUP_UNKNOWN")
+    assert cl.state["runs"][-1]["status"] == "failed"

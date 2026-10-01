@@ -48,3 +48,7 @@ user_groups:
   group:network-owners@halverra.example: 8a285663-7481-52a1-90ef-b554a415b6ad
   group:network-stewards@halverra.example: 7d648dbf-d4d9-55dd-b202-cfde977303ea
   group:privacy-office@halverra.example: 59c619f4-2db2-5bda-9d1c-1fe6fb40fbdf
+# A dataset whose tables a log sink creates on first write (DECISIONS B15) is catalogued before they exist and
+# listed by the reconciliation as `pending_first_write` instead of drift — until this date (doctrine 6: an
+# exception expires). Afterwards it is "in the catalog, not in GCP" and the gate is red.
+pending_first_write_until: "2026-10-31"
