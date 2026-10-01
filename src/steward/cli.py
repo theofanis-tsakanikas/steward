@@ -142,12 +142,15 @@ def cmd_lineage(args: argparse.Namespace) -> int:
 
     e = pipeline.load()
     jobs_file = Path(args.jobs) if args.jobs else io.REPO / "evals" / "lineage" / "query_history.json"
+    history = json.loads(jobs_file.read_text())
     lk, (findings, graph, _detail) = pipeline.lineage(
-        e, Path(args.lookml) if args.lookml else io.REPO / "lookml", json.loads(jobs_file.read_text())["jobs"]
+        e, Path(args.lookml) if args.lookml else io.REPO / "lookml", history
     )
+    conns = ", ".join(f"{m}→{v['runs_as_role']}" for m, v in lk["models"].items())
     print(
-        f"LookML ({lk['mode']}): {len(lk['views'])} views, {len(lk['explores'])} explores, {len(lk['dashboards'])} dashboards; connection runs as {lk['connection']['runs_as_role']}"
+        f"LookML ({lk['mode']}): {len(lk['views'])} views, {len(lk['explores'])} explores, {len(lk['dashboards'])} dashboards; connections {conns}"
     )
+    print(f"job history: {jobs_file.name}, captured {history['captured_at']} (window {30} days)")
     print(f"lineage graph: {len(graph.nodes)} nodes, {len(graph.edges)} edges")
     code, lines = report("lineage", findings)
     print("\n".join(lines))

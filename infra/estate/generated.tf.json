@@ -27,9 +27,9 @@
       "analytics": {
         "dataset_id": "analytics",
         "delete_contents_on_destroy": true,
-        "description": "Aggregated network usage for planning dashboards — no subscriber-level rows. Owner group:analytics-owners@halverra.example; steward group:data-governance@halverra.example; custodian group:data-platform@halverra.example. Lawful basis: ePrivacy Directive 2002/58/EC Art. 6 and 9 — traffic and location data processed only once aggregated (k >= 5 subscribers per cell-week). Retention: 400 days — GDPR Art. 5(1)(e) storage limitation — one year of weekly aggregates plus a month for year-on-year comparison (illustrative).",
+        "description": "Aggregated network usage for planning dashboards — no subscriber-level rows. Owner group:analytics-owners@halverra.example; steward group:data-governance@halverra.example; custodian group:data-platform@halverra.example. Lawful basis: ePrivacy Directive 2002/58/EC Art. 6 and 9 — traffic and location data, aggregated to cell-weeks with a minimum of 5 subscribers; a frequency threshold, not a guarantee of anonymity (GDPR Recital 26). Retention: 400 days — GDPR Art. 5(1)(e) storage limitation — one year of weekly aggregates plus a month for year-on-year comparison (illustrative).",
         "labels": {
-          "contract-version": "1",
+          "contract-version": "2",
           "managed-by": "steward",
           "owner": "analytics-owners",
           "project": "steward",
@@ -121,9 +121,9 @@
         ],
         "dataset_id": "${google_bigquery_dataset.analytics.dataset_id}",
         "deletion_protection": false,
-        "description": "Events, volume and distinct subscribers per ISO week, country and cell. A cell-week is published only if at least 5 distinct subscribers used it (k-anonymity on the cell × week quasi-identifier); the threshold is a quality rule below, so a smaller group is quarantined, never published.",
+        "description": "Events, volume and distinct subscribers per ISO week, country and cell. A cell-week is published only if at least 5 distinct subscribers used it — a minimum-frequency threshold on the cell × week group, not a proof of anonymity: it does not stop one heavy user dominating `total_mb`, or differencing against other aggregates (no dominance rule, no complementary suppression; Recital 26 is the test, not k). The threshold is a quality rule below, so a smaller group is quarantined, never published.",
         "labels": {
-          "contract-version": "1",
+          "contract-version": "2",
           "managed-by": "steward",
           "project": "steward"
         },

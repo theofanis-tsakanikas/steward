@@ -116,11 +116,20 @@ class ConnectionAccess:
         return self._effective(self._am, self.seat, column)
 
 
-def lineage(e: Estate, lookml_root, jobs: list[dict]):
+def lineage(e: Estate, lookml_root, history: dict):
+    """history = {"captured_at": ..., "jobs": [...]} — the job history and when it was taken."""
     from steward.adapters.looker import parse
     from steward.core.lineage import evaluate
 
     lk = parse(lookml_root)
     catalog = {fqn for c in e.contracts for fqn, _, _, _ in c.iter_columns()}
     tables = {f"{c.dataset}.{t}" for c in e.contracts for t in c.tables}
-    return lk, evaluate(lk, jobs, catalog, tables, ConnectionAccess(e, lk["connection"]["runs_as_role"]))
+    kinds = {fqn: list(col.kinds) for c in e.contracts for fqn, _, _, col in c.iter_columns()}
+    cache: dict[str, ConnectionAccess] = {}
+
+    def access_for(role: str) -> ConnectionAccess:
+        if role not in cache:
+            cache[role] = ConnectionAccess(e, role)
+        return cache[role]
+
+    return lk, evaluate(lk, history["jobs"], catalog, tables, access_for, kinds, history["captured_at"])

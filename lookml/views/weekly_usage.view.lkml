@@ -19,7 +19,8 @@ view: weekly_usage {
     type: sum
     sql: ${TABLE}.total_mb ;;
   }
-  measure: subscribers {
+  measure: subscriber_weeks {
+    description: "Sum of weekly distinct subscribers — a person active in three weeks counts three times. Not a count of people."
     type: sum
     sql: ${TABLE}.subscribers ;;
   }

@@ -12,7 +12,7 @@ view: customers {
     sql: ${TABLE}.segment ;;
   }
   dimension: msisdn {
-    description: "Masked for the BI connection (SHA-256): usable as a key, not readable."
+    description: "Hashed for the BI connection (SHA-256). Pseudonymised, not anonymised: an unsalted hash of a phone number can be reversed by enumeration — a join key, not a display value."
     sql: ${TABLE}.msisdn ;;
   }
   dimension: birth_year {

@@ -11,4 +11,4 @@
     model: steward
     explore: weekly_usage
     type: looker_grid
-    fields: [weekly_usage.country, weekly_usage.cell_id, weekly_usage.total_events, weekly_usage.subscribers]
+    fields: [weekly_usage.country, weekly_usage.cell_id, weekly_usage.total_events, weekly_usage.subscriber_weeks]

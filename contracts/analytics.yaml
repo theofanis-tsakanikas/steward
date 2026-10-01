@@ -1,12 +1,12 @@
 # BigQuery dataset `analytics`: derived, aggregated tables the dashboards read. Built by an analytics
 # job from network.usage_events (lineage edge: usage_events → weekly_usage_by_cell).
 dataset: analytics
-version: 1
+version: 2
 description: Aggregated network usage for planning dashboards — no subscriber-level rows.
 owner: group:analytics-owners@halverra.example
 steward: group:data-governance@halverra.example
 custodian: group:data-platform@halverra.example
-lawful_basis: "ePrivacy Directive 2002/58/EC Art. 6 and 9 — traffic and location data processed only once aggregated (k >= 5 subscribers per cell-week)"
+lawful_basis: "ePrivacy Directive 2002/58/EC Art. 6 and 9 — traffic and location data, aggregated to cell-weeks with a minimum of 5 subscribers; a frequency threshold, not a guarantee of anonymity (GDPR Recital 26)"
 retention:
   period_days: 400
   legal_basis: "GDPR Art. 5(1)(e) storage limitation — one year of weekly aggregates plus a month for year-on-year comparison (illustrative)"
@@ -18,13 +18,16 @@ marketplace:
   grantable_roles: []
 changelog:
   - {version: 1, date: "2026-10-01", change: "first contract"}
+  - {version: 2, date: "2026-10-01", change: "k >= 5 described as a frequency threshold, not anonymity (T020 review)"}
 
 tables:
   weekly_usage_by_cell:
     description: >-
       Events, volume and distinct subscribers per ISO week, country and cell. A cell-week is published only
-      if at least 5 distinct subscribers used it (k-anonymity on the cell × week quasi-identifier); the
-      threshold is a quality rule below, so a smaller group is quarantined, never published.
+      if at least 5 distinct subscribers used it — a minimum-frequency threshold on the cell × week group, not
+      a proof of anonymity: it does not stop one heavy user dominating `total_mb`, or differencing against
+      other aggregates (no dominance rule, no complementary suppression; Recital 26 is the test, not k).
+      The threshold is a quality rule below, so a smaller group is quarantined, never published.
     primary_key: [week_start, country, cell_id]
     retention: {mode: partition, column: week_start}
     row_access: {column: country}

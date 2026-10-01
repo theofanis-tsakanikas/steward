@@ -148,3 +148,18 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   `perf_counter` under `src/steward/core/` (CORE_CLOCK). It catches mistakes, not malice: `__import__`,
   `importlib`, `getattr` with a built string or shelling out to `date` would pass it. "Now" is data: a capture timestamp, a ledger's `as_of`, the
   synthetic anchor. Replaces a narrower AST test the T006 review showed could be bypassed.
+- **B18 — What the lineage cross-check proves offline, and what it does not.** The job history
+  (`evals/lineage/query_history.json`) is a hand-written fixture written *after* the LookML: its clean
+  agreement with LookML is constructed, and only the planted drift exercises the comparison. Independence
+  needs real Looker query jobs in `INFORMATION_SCHEMA.JOBS`, i.e. a Looker instance (D3); without one, any
+  "live" history is still SQL compiled from this LookML. The `looker_dashboard` job label is this
+  fixture's convention; how a real Looker marks its queries (labels or the SQL context comment) is
+  **unverified** and must be read from a live instance before T015 relies on it. What *is* proved offline:
+  every dashboard reference resolves or fails closed (raw SQL, alias.column, unsupported LookML), tagged
+  columns are judged per connection role leaf by leaf, and every dashboard table traces back to a landing
+  source in the history. Dashboards the history knows and LookML does not are blocking
+  (`LINEAGE_UNMODELLED_DASHBOARD`); history older than 30 days is ignored.
+- **B19 — A hashed direct identifier on a dashboard is reported, not refused.** SHA-256 of an MSISDN, IMSI,
+  IMEI, e-mail or IBAN is pseudonymised data (GDPR Art. 4(5)): enumerable, so reversible. It is acceptable
+  as a join key and is reported as `PSEUDONYMISED_ID_ON_DASHBOARD` (warn) wherever it is displayed — the
+  pseudonymisation-vs-anonymisation line the interview rehearses (scenario 158).

@@ -2,40 +2,62 @@
 
 Inputs, all plain data:
   lookml   the parsed LookML project (adapters/looker.py)
-  jobs     BigQuery job history: load jobs, query jobs that write tables, and dashboard queries with the
-           tables they actually referenced (`referenced_tables`). Offline a labelled fixture; live,
-           INFORMATION_SCHEMA.JOBS. **Independent of LookML** — that is the point.
+  jobs     BigQuery job history: load jobs, table-writing queries, and dashboard queries with the tables
+           they referenced. **Offline this is a hand-written fixture**, written after the LookML — clean
+           agreement with LookML is therefore constructed, and only the planted drift tests the cross-check.
+           Independence needs real Looker query jobs, i.e. a Looker instance (DECISIONS D3, B18).
   catalog  every column the contracts declare (dataset.table.path)
-  access   who sees what, from the compiled Terraform (core/simulate.py) — to judge what the Looker
-           connection's role actually reads
+  access   who sees what, from the compiled Terraform (core/simulate.py), per connection role
 
-Gates (blocking):
-  UNRESOLVED_FIELD                a dashboard field that is not in its explore's views, or whose SQL
-                                  reaches a column no contract declares
-  SENSITIVE_UNMASKED_ON_DASHBOARD a tagged column reaching a dashboard in clear for the connection's role
-  DASHBOARD_FIELD_DENIED          a field the connection's role cannot read at all (the tile would fail)
-  LINEAGE_DISAGREEMENT            the tables LookML says a dashboard reads ≠ the tables its queries
-                                  referenced. A disagreement is a finding, never a merge.
-Reported (not blocking): LINEAGE_UNOBSERVED (no query history for a dashboard), GLOSSARY_CONFLICT (one
-business term, two definitions), the end-to-end path source → table → view → dashboard.
+Blocking findings:
+  UNRESOLVED_FIELD                a dashboard reference (field, filter, sort, dynamic field) that is not in
+                                  its explore, or whose SQL reaches no catalogued column, or reaches one by a
+                                  route the parser cannot verify (raw SQL, a backticked table, an alias.column)
+  UNSUPPORTED_LOOKML              extends / refinements / derived tables — refused rather than mis-read
+  SENSITIVE_UNMASKED_ON_DASHBOARD a tagged column (any leaf of a RECORD read whole) in clear for the role
+  DASHBOARD_FIELD_DENIED          a column the connection's role cannot read at all
+  LINEAGE_DISAGREEMENT            tables per LookML ≠ tables the dashboard's recent queries referenced
+  LINEAGE_UNMODELLED_DASHBOARD    a dashboard in the job history that LookML does not have
+  LINEAGE_UNTRACED                a table a dashboard reads with no path back to a landing source
+Reported: LINEAGE_UNOBSERVED, GLOSSARY_CONFLICT, PSEUDONYMISED_ID_ON_DASHBOARD (an enumerable identifier
+shown hashed: pseudonymised, still personal data — GDPR Art. 4(5)).
 """
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 
 from .findings import Finding
 
 GATE = "lineage"
-_TABLE_COL = re.compile(r"\$\{TABLE\}\.([A-Za-z_][A-Za-z0-9_]*)")
-_REF = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?:\.([A-Za-z_][A-Za-z0-9_]*))?\}")
+_TABLE_PATH = re.compile(r"\$\{TABLE\}\.([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)")
+_REF = re.compile(r"\$\{([A-Za-z_]\w*)(?:\.([A-Za-z_]\w*))?\}")
+_LIQUID = re.compile(r"\{%.*?%\}|\{\{.*?\}\}", re.S)
+_STRING = re.compile(r"'(?:[^'\\]|\\.)*'|\"(?:[^\"\\]|\\.)*\"")
+_IDENT = re.compile(r"(?<![\w.$`])[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*")
+_RAW_SQL = re.compile(r"`|\bFROM\b|\bJOIN\b", re.I)
+# FROM that reads no table: EXTRACT(part FROM x) and FROM UNNEST(<a column of this view>)
+_HARMLESS_FROM = re.compile(r"\bEXTRACT\s*\(\s*\w+\s+FROM\b|\bFROM\s+UNNEST\s*\(", re.I)
+_ALIAS = re.compile(r"\bAS\s+([A-Za-z_]\w*)", re.I)
+SQL_WORDS = frozenset(
+    {
+        "select", "from", "where", "and", "or", "not", "null", "is", "in", "as", "on", "case", "when", "then", "else",
+        "end", "exists", "unnest", "count", "distinct", "sum", "avg", "min", "max", "extract", "year", "month", "day",
+        "date", "timestamp", "cast", "safe_cast", "string", "int64", "float64", "numeric", "bool", "true", "false",
+        "yes", "no", "if", "coalesce", "ifnull", "concat", "lower", "upper", "substr", "length", "round", "trunc",
+        "date_trunc", "current_date", "current_timestamp", "interval",
+    }
+)  # fmt: skip
+DIRECT_IDENTIFIERS = frozenset({"msisdn", "imsi", "imei", "email", "iban"})
+HISTORY_WINDOW_DAYS = 30
 
 
 @dataclass
 class Graph:
-    nodes: dict[str, dict] = field(default_factory=dict)  # id -> {kind, label}
-    edges: set[tuple[str, str, str]] = field(default_factory=set)  # (from, to, origin)
+    nodes: dict[str, dict] = field(default_factory=dict)
+    edges: set[tuple[str, str, str]] = field(default_factory=set)
 
     def add(self, a: tuple[str, str], b: tuple[str, str], origin: str) -> None:
         for kind, nid in (a, b):
@@ -49,8 +71,11 @@ class Graph:
         }
 
 
-def resolve(views: dict, view: str, fname: str, _seen: frozenset = frozenset()) -> tuple[set[str], list[str]]:
-    """The catalogued columns a LookML field reads, and any reference that does not resolve."""
+def resolve(
+    views: dict, view: str, fname: str, table_columns: dict[str, set[str]], _seen: frozenset = frozenset()
+) -> tuple[set[str], list[str]]:
+    """Catalogued columns a LookML field reads, and every reason it could not be verified. Fails closed:
+    SQL that reaches nothing the parser can name is an error, never an empty, harmless field."""
     if (view, fname) in _seen:
         return set(), [f"{view}.{fname}: circular reference"]
     v = views.get(view)
@@ -59,36 +84,79 @@ def resolve(views: dict, view: str, fname: str, _seen: frozenset = frozenset()) 
     f = v["fields"].get(fname)
     if f is None:
         return set(), [f"{view}.{fname}: no such field in view {view}"]
+    table = v["sql_table_name"]
+    known = table_columns.get(table, set())
     cols: set[str] = set()
     bad: list[str] = []
     seen = _seen | {(view, fname)}
-    sql = f.get("sql") or ""
-    for col in _TABLE_COL.findall(sql):
-        cols.add(f"{v['sql_table_name']}.{col}")
-    for a, b in _REF.findall(sql.replace("${TABLE}", "")):
+    sql = _LIQUID.sub(" ", f.get("sql") or "")
+    for path in _TABLE_PATH.findall(sql):
+        cols.add(f"{table}.{path}")
+    refs = 0
+    for a, b in _REF.findall(sql):
         if a == "TABLE":
             continue
+        refs += 1
         tv, tf = (a, b) if b else (view, a)
-        c, e = resolve(views, tv, tf, seen)
+        c, e = resolve(views, tv, tf, table_columns, seen)
         cols |= c
         bad += e
+    rest = _STRING.sub(" ", _REF.sub(" ", _TABLE_PATH.sub(" ", sql).replace("${TABLE}", " ")))
+    aliases = set(_ALIAS.findall(rest))
+    if _RAW_SQL.search(_HARMLESS_FROM.sub(" ", rest)):
+        bad.append(f"{view}.{fname}: raw SQL (a subquery or a table reference) reads tables the model does not show")
+    for ident in _IDENT.findall(_ALIAS.sub(" ", rest)):
+        if ident.lower() in SQL_WORDS or ident.split(".")[0] in aliases:
+            continue
+        if ident in known:
+            cols.add(f"{table}.{ident}")  # a bare column name is valid LookML: Looker selects FROM the view's table
+        elif "." in ident:
+            bad.append(f"{view}.{fname}: {ident!r} is an alias.column reference the parser cannot tie to a table")
     for flt in f.get("filters", []):
-        c, e = resolve(views, view, flt, seen)
+        c, e = resolve(views, view, flt, table_columns, seen)
         cols |= c
         bad += e
-    if not sql and f["kind"] == "measure" and f["type"] == "count":
-        cols.add(f"{v['sql_table_name']}.*")  # COUNT(*) reads the table, no column
+    if not sql.strip():
+        if f["kind"] == "measure" and f["type"] == "count":
+            cols.add(f"{table}.*")  # COUNT(*) reads rows, no column
+        elif f["kind"] == "dimension":
+            if fname in known:
+                cols.add(f"{table}.{fname}")
+            else:
+                bad.append(f"{view}.{fname}: no sql and no column of that name")
+    elif not cols and not refs and not bad:
+        bad.append(f"{view}.{fname}: its SQL reaches no catalogued column of {table}")
     return cols, bad
 
 
+def _leaves(col: str, catalog: set[str]) -> list[str]:
+    """A RECORD read whole reads every leaf beneath it."""
+    kids = [c for c in catalog if c.startswith(col + ".")]
+    return [c for c in kids if not any(k.startswith(c + ".") for k in kids)] or [col]
+
+
 def evaluate(
-    lookml: dict, jobs: list[dict], catalog: set[str], tables: set[str], access
+    lookml: dict,
+    jobs: list[dict],
+    catalog: set[str],
+    tables: set[str],
+    access_for,
+    kinds_of: dict[str, list[str]],
+    captured_at: str,
 ) -> tuple[list[Finding], Graph, dict]:
-    """`access(column) -> 'clear' | rule | 'denied…'` for the connection's role; `tables` = contracted tables."""
+    """`access_for(role)(column) -> 'clear' | rule | 'denied…'`, with `.tagged`. `kinds_of[column]` = the
+    contract's declared personal-data kinds."""
     out: list[Finding] = []
     g = Graph()
     views, explores = lookml["views"], lookml["explores"]
-    role = lookml["connection"].get("runs_as_role")
+    table_columns: dict[str, set[str]] = {}
+    for c in catalog:
+        ds, t, path = c.split(".", 2)
+        table_columns.setdefault(f"{ds}.{t}", set()).add(path)
+    for u in lookml.get("unsupported", []):
+        out.append(
+            Finding("UNSUPPORTED_LOOKML", GATE, u.split(":")[0], f"{u} — not parsed, so not verifiable; refused")
+        )
 
     for name, v in views.items():
         g.add(("table", v["sql_table_name"]), ("view", name), "lookml")
@@ -109,18 +177,33 @@ def evaluate(
         rows = []
         for el in d["elements"]:
             e = explores.get(el["explore"])
-            allowed = {e["from"], *e["joins"]} if e else set()
             if e is None:
                 out.append(
                     Finding(
                         "UNRESOLVED_FIELD", GATE, f"{did}/{el['name']}", f"explore {el['explore']!r} does not exist"
                     )
                 )
-            elif e["from"] in views:
-                # Looker always selects FROM the explore's base view; joins appear only when a field needs them
-                lookml_tables[did].add(views[e["from"]]["sql_table_name"])
+                continue
+            model = lookml["models"].get(el.get("model") or e["model"], {})
+            role = model.get("runs_as_role")
+            if not role:
+                out.append(
+                    Finding(
+                        "UNRESOLVED_FIELD",
+                        GATE,
+                        f"{did}/{el['name']}",
+                        f"model {el.get('model') or e['model']!r} has no connection role declared in connection.yaml",
+                    )
+                )
+                continue
+            access = access_for(role)
+            allowed = {e["from"], *e["joins"]}
+            for v in [e["from"], *e.get("always_join", [])]:
+                if v in views:
+                    lookml_tables[did].add(views[v]["sql_table_name"])  # Looker always selects FROM these
             g.add(("explore", el["explore"]), ("dashboard", did), "lookml")
-            for fld in el["fields"]:
+            refs = list(dict.fromkeys(el["refs"] + [f for f in d.get("filters", []) if f.split(".")[0] in allowed]))
+            for fld in refs:
                 view, _, fname = fld.partition(".")
                 target = f"{did}/{el['name']}/{fld}"
                 if view not in allowed:
@@ -130,7 +213,7 @@ def evaluate(
                         )
                     )
                     continue
-                cols, bad = resolve(views, view, fname)
+                cols, bad = resolve(views, view, fname, table_columns)
                 for b in bad:
                     out.append(Finding("UNRESOLVED_FIELD", GATE, target, b))
                 seen_by_role = {}
@@ -150,32 +233,49 @@ def evaluate(
                             )
                         )
                         continue
-                    seen = access(col)
-                    seen_by_role[col] = seen
-                    if seen.startswith("denied"):
-                        out.append(
-                            Finding(
-                                "DASHBOARD_FIELD_DENIED",
-                                GATE,
-                                target,
-                                f"{col} is {seen} for {role}: the tile would fail",
+                    for leaf in _leaves(col, catalog):
+                        seen = access(leaf)
+                        seen_by_role[leaf] = seen
+                        if seen.startswith("denied"):
+                            out.append(
+                                Finding(
+                                    "DASHBOARD_FIELD_DENIED",
+                                    GATE,
+                                    target,
+                                    f"{leaf} is {seen} for {role}: the tile would fail",
+                                )
                             )
-                        )
-                    elif seen == "clear" and col in access.tagged:
-                        out.append(
-                            Finding(
-                                "SENSITIVE_UNMASKED_ON_DASHBOARD",
-                                GATE,
-                                target,
-                                f"{col} is tagged and reaches the dashboard in clear for {role}",
+                        elif seen == "clear" and leaf in access.tagged:
+                            out.append(
+                                Finding(
+                                    "SENSITIVE_UNMASKED_ON_DASHBOARD",
+                                    GATE,
+                                    target,
+                                    f"{leaf} is tagged and reaches the dashboard in clear for {role}",
+                                )
                             )
-                        )
+                        elif seen == "SHA256" and set(kinds_of.get(leaf, [])) & DIRECT_IDENTIFIERS:
+                            out.append(
+                                Finding(
+                                    "PSEUDONYMISED_ID_ON_DASHBOARD",
+                                    GATE,
+                                    target,
+                                    f"{leaf} is shown hashed: an unsalted hash of an enumerable identifier is pseudonymised, still personal data (GDPR Art. 4(5)) — fine as a join key, not as a display value",
+                                    severity="warn",
+                                )
+                            )
                 rows.append(
-                    {"element": el["name"], "field": fld, "columns": sorted(cols), "as_seen_by": {role: seen_by_role}}
+                    {
+                        "element": el["name"],
+                        "field": fld,
+                        "columns": sorted(cols),
+                        "role": role,
+                        "as_seen": seen_by_role,
+                    }
                 )
         per_dashboard[did] = rows
 
-    # independent evidence: what the dashboards' queries actually referenced
+    now = datetime.fromisoformat(captured_at.replace("Z", "+00:00"))
     history: dict[str, set[str]] = {}
     for j in jobs:
         for src in j.get("source_uris", []):
@@ -184,8 +284,22 @@ def evaluate(
             for t in j["referenced_tables"]:
                 g.add(("table", t), ("table", j["destination"]), "bigquery-jobs")
         dash = (j.get("labels") or {}).get("looker_dashboard")
-        if dash:
+        created = j.get("creation_time")
+        if (
+            dash
+            and created
+            and now - datetime.fromisoformat(created.replace("Z", "+00:00")) <= timedelta(days=HISTORY_WINDOW_DAYS)
+        ):
             history.setdefault(dash, set()).update(j.get("referenced_tables", []))
+    for did in sorted(set(history) - set(lookml["dashboards"])):
+        out.append(
+            Finding(
+                "LINEAGE_UNMODELLED_DASHBOARD",
+                GATE,
+                did,
+                f"queries ran for {did!r} reading {sorted(history[did])}, but no LookML dashboard of that name exists — a user-defined dashboard the catalog cannot describe",
+            )
+        )
     for did in lookml["dashboards"]:
         if did not in history:
             out.append(
@@ -193,7 +307,7 @@ def evaluate(
                     "LINEAGE_UNOBSERVED",
                     GATE,
                     did,
-                    "no query in the job history ran for this dashboard — lineage rests on LookML alone",
+                    f"no query in the last {HISTORY_WINDOW_DAYS} days ran for this dashboard — lineage rests on LookML alone",
                     severity="warn",
                 )
             )
@@ -205,30 +319,30 @@ def evaluate(
                     "LINEAGE_DISAGREEMENT",
                     GATE,
                     did,
-                    f"LookML says {sorted(a)}; its queries referenced {sorted(b)}. Not merged: a missing view, a hand-written SQL tile or a PDT is reading something the model does not show",
+                    f"LookML says {sorted(a)}; its queries referenced {sorted(b)}. Not merged: a hand-written SQL tile, a PDT or a missing view is reading something the model does not show",
                     evidence={"lookml": sorted(a), "history": sorted(b)},
                 )
             )
 
-    # one business term, one definition
     terms: dict[str, list[tuple[str, str]]] = {}
     for vname, v in views.items():
         for fname, f in v["fields"].items():
             for t in f.get("tags", []):
                 if t.startswith("glossary:"):
-                    definition = f"{f['type']}({f.get('sql')}) where {f.get('filters')}"
-                    terms.setdefault(t.split(":", 1)[1], []).append((f"{vname}.{fname}", definition))
+                    terms.setdefault(t.split(":", 1)[1], []).append(
+                        (f"{vname}.{fname}", f"{f['type']}({f.get('sql')}) where {f.get('filters')}")
+                    )
     for term, defs in sorted(terms.items()):
         if len({d for _, d in defs}) > 1:
             out.append(
                 Finding("GLOSSARY_CONFLICT", GATE, term, "; ".join(f"{w} = {d}" for w, d in defs), severity="warn")
             )
 
-    paths = {}
-    upstream = {}
+    upstream: dict[str, set[str]] = {}
     for a, b, o in g.edges:
         if o == "bigquery-jobs":
             upstream.setdefault(b, set()).add(a)
+    paths = {}
     for did, ts in lookml_tables.items():
         chain = {}
         for t in sorted(ts):
@@ -238,14 +352,20 @@ def evaluate(
                 seen.add(n)
                 frontier |= upstream.get(n, set()) - seen
             chain[t] = sorted(x for x in seen if x != f"table:{t}")
+            if not any(x.startswith("source:") for x in chain[t]):
+                out.append(
+                    Finding(
+                        "LINEAGE_UNTRACED",
+                        GATE,
+                        f"{did}:{t}",
+                        f"{t} has no path back to a landing source in the job history",
+                    )
+                )
         paths[did] = chain
-    return (
-        out,
-        g,
-        {
-            "dashboards": per_dashboard,
-            "paths": paths,
-            "lookml_tables": {k: sorted(v) for k, v in lookml_tables.items()},
-            "history_tables": {k: sorted(v) for k, v in history.items()},
-        },
-    )
+    detail = {
+        "dashboards": per_dashboard,
+        "paths": paths,
+        "lookml_tables": {k: sorted(v) for k, v in lookml_tables.items()},
+        "history_tables": {k: sorted(v) for k, v in history.items()},
+    }
+    return out, g, detail
