@@ -129,15 +129,22 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   listed. What it does not do is enumerate columns: Cloud Logging creates and owns the tables on first
   write. The contract declares `log_sink.personal_kinds: [email]`; the classification gate accepts those
   kinds there (info) and blocks any other; the drift check does not report Logging's tables as undeclared.
+  Kept narrow so it is not a key to doctrine 7: only tables named `cloudaudit_googleapis_com_*` are exempt
+  (any other table in the dataset is undeclared), `personal_kinds` may only be `[email]`, exactly one
+  contract may declare a sink (LOG_SINK_DUPLICATE), and the writer identity allowed `dataEditor` is the
+  one captured with the IAM snapshot, not any logging service account.
   Column-level tags on sink-created tables are **not** claimed. Found by the T006 review.
 - **B16 — A marketplace grant goes to the person who asked, and only a member of the seat may ask.**
   `_roles.yaml → seat_groups` names the directory group behind each requestable seat; a request from
   anyone outside it is REQUESTER_NOT_IN_SEAT, and the compiled IAM binding is the requester's own principal
-  (`var.principals["user:…"]`), not the seat's. Principals compare case-insensitively. The ledger is a
+  (`var.grantees["user:…"]`, a variable distinct from governance's seat-keyed `principals`, whose values
+  must be `user:` or `serviceAccount:` — never a group), not the seat's. Seat membership is the
+  hand-declared `directory` in `_roles.yaml`, not Cloud Identity: offline it is checked against that file. Principals compare case-insensitively. The ledger is a
   strict model (integer days > 0, unique ids, decisions only for known requests); an invalid ledger grants
   nothing. A decision later than `max_grant_days` after its request is stale. `finance` is not listed
   (contract v3): it is reached by standing readers only. Found by the T006 review.
 - **B17 — The core reads no clock.** `scripts/check_core_purity.py` refuses a `time` import and any
-  reference to `now`, `today`, `utcnow`, `fromtimestamp`, `time_ns`, `monotonic` or `perf_counter` anywhere
-  under `src/steward/core/` (CORE_CLOCK). "Now" is data: a capture timestamp, a ledger's `as_of`, the
+  attribute reference to `now`, `today`, `utcnow`, `fromtimestamp`, `time_ns`, `monotonic` or
+  `perf_counter` under `src/steward/core/` (CORE_CLOCK). It catches mistakes, not malice: `__import__`,
+  `importlib`, `getattr` with a built string or shelling out to `date` would pass it. "Now" is data: a capture timestamp, a ledger's `as_of`, the
   synthetic anchor. Replaces a narrower AST test the T006 review showed could be bypassed.

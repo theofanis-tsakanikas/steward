@@ -26,7 +26,6 @@ GATE = "marketplace"
 VIEWER = "roles/bigquery.dataViewer"
 EDITOR = "roles/bigquery.dataEditor"
 _CONDITION = re.compile(r'^request\.time < timestamp\("(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)"\)$')
-_LOGGING_SA = re.compile(r"^serviceAccount:service-\d+@gcp-sa-logging\.iam\.gserviceaccount\.com$")
 
 
 def ts(s: str) -> datetime:
@@ -40,6 +39,13 @@ def iso(d: datetime) -> str:
 def norm(principal: str) -> str:
     """IAM principals compare case-insensitively and without stray whitespace."""
     return principal.strip().casefold()
+
+
+def _utc(v: str) -> str:
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", v):
+        raise ValueError(f"timestamps are UTC, written YYYY-MM-DDTHH:MM:SSZ: {v!r}")
+    ts(v)
+    return v
 
 
 # ── the ledger, strictly typed ────────────────────────────────────────────────────────────────────
@@ -61,7 +67,13 @@ class Request(_M):
     @field_validator("at")
     @classmethod
     def _t(cls, v: str) -> str:
-        ts(v)
+        return _utc(v)
+
+    @field_validator("requester")
+    @classmethod
+    def _p(cls, v: str) -> str:
+        if not re.fullmatch(r"(user|group|serviceAccount):[^@\s]+@[^@\s]+", v.strip()):
+            raise ValueError(f"not an IAM principal (lower-case prefix): {v!r}")
         return v
 
 
@@ -74,7 +86,13 @@ class Decision(_M):
     @field_validator("at")
     @classmethod
     def _t(cls, v: str) -> str:
-        ts(v)
+        return _utc(v)
+
+    @field_validator("by")
+    @classmethod
+    def _p(cls, v: str) -> str:
+        if not re.fullmatch(r"(user|group|serviceAccount):[^@\s]+@[^@\s]+", v.strip()):
+            raise ValueError(f"not an IAM principal (lower-case prefix): {v!r}")
         return v
 
 
@@ -82,6 +100,11 @@ class Ledger(_M):
     as_of: str
     requests: list[Request]
     decisions: list[Decision]
+
+    @field_validator("as_of")
+    @classmethod
+    def _t(cls, v: str) -> str:
+        return _utc(v)
 
     @model_validator(mode="after")
     def _refs(self) -> Ledger:
@@ -333,16 +356,15 @@ def gate(snapshot: dict, outcomes: list[Outcome], contracts: list[Contract], rol
     for b in snapshot["bindings"]:
         ds, member, role = b["dataset"], b["member"], b["role"]
         target = f"{ds}:{member}"
-        if not role.startswith("roles/bigquery."):
-            continue
         c = by_ds.get(ds)
         if c is None:
             out.append(Finding("GRANT_ON_UNCONTRACTED", GATE, target, f"{role} on {ds}, which no contract declares"))
             continue
         standing_viewers = {s for r in c.readers for s in seats_for(roles, r, c)}
         cond = (b.get("condition") or {}).get("expression")
-        if role == EDITOR and not cond and (member == c.custodian or (c.log_sink and _LOGGING_SA.match(member))):
-            continue  # B12 custodian; B15 the sink's own writer identity
+        writer = snapshot.get("sink_writer_identity")
+        if role == EDITOR and not cond and (member == c.custodian or (c.log_sink and writer and member == writer)):
+            continue  # B12 custodian; B15 this project's sink writer identity, as captured with the snapshot
         if role != VIEWER:
             out.append(
                 Finding("GRANT_ROLE_UNEXPECTED", GATE, target, f"{role} is granted by no contract and no request")
@@ -370,7 +392,15 @@ def gate(snapshot: dict, outcomes: list[Outcome], contracts: list[Contract], rol
                 )
             )
             continue
-        expiry = ts(m.group(1))
+        try:
+            expiry = ts(m.group(1))
+        except ValueError:
+            out.append(
+                Finding(
+                    "GRANT_CONDITION_UNRECOGNISED", GATE, target, f"condition date {m.group(1)!r} is not a real date"
+                )
+            )
+            continue
         if expiry <= now:
             out.append(
                 Finding(

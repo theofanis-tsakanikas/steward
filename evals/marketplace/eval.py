@@ -52,10 +52,12 @@ def evaluate() -> dict:
         if got.get(rid) != (exp[0], sorted(exp[1]))
     }
     # a grant is bound to the person who asked — read back from the compiled Terraform, not from Outcome
-    compiled = e.compiled["infra/marketplace/generated.tf.json"]["resource"].get("google_bigquery_dataset_iam_member", {})
+    compiled = e.compiled["infra/marketplace/generated.tf.json"]["resource"].get(
+        "google_bigquery_dataset_iam_member", {}
+    )
     for o in outcomes:
         node = compiled.get(o.request["id"].lower().replace("-", "_"))
-        if node is not None and node["member"] != f'${{var.principals["{o.request["requester"]}"]}}':
+        if node is not None and node["member"] != f'${{var.grantees["{o.request["requester"]}"]}}':
             wrong[o.request["id"]] = {"expected": f"member {o.request['requester']}", "got": f"member {node['member']}"}
 
     clean = pipeline.iam_snapshot(e, CAPTURED)

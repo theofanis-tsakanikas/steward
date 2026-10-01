@@ -219,11 +219,18 @@ class Marketplace(Strict):
     _p = field_validator("approvers")(classmethod(lambda cls, v: _principal(v)))
 
 
+LOG_SINK_TABLE = re.compile(r"^cloudaudit_googleapis_com_[a-z_]+$")
+
+
 class LogSink(Strict):
-    """A dataset filled by a Cloud Logging sink: its tables and columns are Logging's (B15)."""
+    """A dataset filled by a Cloud Logging sink: its tables and columns are Logging's (B15).
+
+    Narrow on purpose — this must not become a key to doctrine 7. Only tables named the way Cloud
+    Logging names audit-log tables are exempt from declaration, and the only personal data such a
+    dataset may hold is principals' e-mail addresses."""
 
     source: str = Field(min_length=10)
-    personal_kinds: list[Kind] = Field(min_length=1)
+    personal_kinds: list[Literal["email"]] = Field(min_length=1)
 
 
 class Change(Strict):
