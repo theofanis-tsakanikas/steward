@@ -126,6 +126,16 @@ MUTATIONS: list[Mutation] = [
         "7",
     ),
     Mutation(
+        "destroy runs as the identity the budget guard switches off",
+        "workflows",
+        ".github/workflows/destroy.yml",
+        "vars.GCP_DESTROYER_SERVICE_ACCOUNT",
+        "vars.GCP_DEPLOYER_SERVICE_ACCOUNT",
+        ("WORKFLOW_IDENTITY", ".github/workflows/destroy.yml"),
+        "a spend stop must never close the way to take the estate down",
+        "7",
+    ),
+    Mutation(
         "a key in the deploy workflow",
         "workflows",
         ".github/workflows/deploy.yml",

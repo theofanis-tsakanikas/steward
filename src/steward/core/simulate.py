@@ -46,7 +46,16 @@ ALLOWED = {
     "google_bigquery_datapolicy_data_policy_iam_member": {"roles/bigquerydatapolicy.maskedReader"},
     "google_data_catalog_policy_tag_iam_member": {"roles/datacatalog.categoryFineGrainedReader"},
     "google_bigquery_dataset_iam_member": {"roles/bigquery.dataViewer", "roles/bigquery.dataEditor"},
-    "google_project_iam_member": {"roles/bigquery.jobUser"},
+    "google_project_iam_member": {"roles/bigquery.jobUser", "roles/iam.serviceAccountShortTermTokenMinter"},
+}
+
+# A role that is modelled only for one kind of member. The token minter lets the BigQuery Data Transfer service
+# agent run the scheduled retention queries as the custodian; it reads nothing and gives no seat anything. Granted
+# to any other member it would be an unmodelled path to impersonation, so it is refused.
+_ONLY_FOR = {
+    "roles/iam.serviceAccountShortTermTokenMinter": re.compile(
+        r"^serviceAccount:service-\$\{data\.google_project\.this\.number\}@gcp-sa-bigquerydatatransfer\.iam\.gserviceaccount\.com$"
+    )
 }
 
 
@@ -104,6 +113,13 @@ def _allowlisted(doc: dict, layer: str) -> None:
                 raise Unmodelled(f"{where}: keys {sorted(extra)} are not modelled")
             if node.get("role") not in roles:
                 raise Unmodelled(f"{where}: role {node.get('role')} is not modelled")
+            only = _ONLY_FOR.get(node.get("role"))
+            if only and not only.match(str(node.get("member", ""))):
+                raise Unmodelled(
+                    f"{where}: role {node.get('role')} is modelled only for the Data Transfer service agent"
+                )
+            if only:
+                continue
             if not _VAR.match(str(node.get("member", ""))):
                 raise Unmodelled(f"{where}: member {node.get('member')!r} is not a seat variable")
 

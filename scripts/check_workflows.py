@@ -5,6 +5,8 @@ WORKFLOW_TRIGGER        deploy.yml / destroy.yml must be triggered by workflow_d
 WORKFLOW_NO_ENVIRONMENT a job that authenticates to Google must run in the `deploy` / `destroy` environment
                         (it is what the federation trust names) and may request id-token only there
 WORKFLOW_CANCELS_APPLY  no cancel-in-progress on an apply or a destroy (a cancelled apply leaves a lock)
+WORKFLOW_IDENTITY       deploy.yml runs as the deployer and destroy.yml as the destroyer, each only as its own: the budget
+                        guard switches the deployer off, and the way to take the estate down must stay open
 WORKFLOW_KEY            no credentials_json, no secret holding a key: federation only
 WORKFLOW_LAYER_MISSING  every infra layer with a remote state must be applied by deploy.yml and destroyed by destroy.yml
                         under the same state prefix (a layer left out of destroy outlives the estate)
@@ -22,6 +24,7 @@ import yaml
 
 REPO = Path(__file__).resolve().parent.parent
 GATED = {"deploy.yml": "deploy", "destroy.yml": "destroy"}
+IDENTITY = {"deploy.yml": "GCP_DEPLOYER_SERVICE_ACCOUNT", "destroy.yml": "GCP_DESTROYER_SERVICE_ACCOUNT"}
 
 
 def _on(doc: dict) -> dict:
@@ -52,6 +55,10 @@ def problems(root: Path = REPO) -> list[str]:
             out.append(f"ERROR WORKFLOW_CANCELS_APPLY {rel} — cancel-in-progress must be false")
         if re.search(r"credentials_json|secrets\.[A-Z_]*(KEY|CREDENTIAL|JSON)", text):
             out.append(f"ERROR WORKFLOW_KEY {rel} — a key or credential file is referenced; use federation")
+        mine = IDENTITY[name]
+        other = next(v for v in IDENTITY.values() if v != mine)
+        if f"vars.{mine}" not in text or f"vars.{other}" in text:
+            out.append(f"ERROR WORKFLOW_IDENTITY {rel} — must authenticate as vars.{mine} and never as vars.{other}")
         for jname, job in doc["jobs"].items():
             wants_token = (job.get("permissions") or {}).get("id-token") == "write"
             if (_uses_auth(job) or wants_token) and job.get("environment") != env:

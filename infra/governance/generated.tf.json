@@ -6,6 +6,11 @@
         "parameter": "steward-estate",
         "parameter_version_id": "${var.estate_version}"
       }
+    },
+    "google_project": {
+      "this": {
+        "project_id": "${var.project_id}"
+      }
     }
   },
   "locals": {
@@ -1155,6 +1160,11 @@
         "member": "${var.principals[\"bi_service\"]}",
         "project": "${var.project_id}",
         "role": "roles/bigquery.jobUser"
+      },
+      "data_transfer_agent": {
+        "member": "serviceAccount:service-${data.google_project.this.number}@gcp-sa-bigquerydatatransfer.iam.gserviceaccount.com",
+        "project": "${var.project_id}",
+        "role": "roles/iam.serviceAccountShortTermTokenMinter"
       },
       "fraud_investigator": {
         "member": "${var.principals[\"fraud_investigator\"]}",
