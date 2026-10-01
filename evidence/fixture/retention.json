@@ -1,0 +1,235 @@
+{
+ "data": {
+  "findings": [],
+  "report": {
+   "caveat": "Deletion is not immediate: deleted and expired data stays recoverable through BigQuery time travel (48 h here, the minimum; 7 days by default) and then fail-safe (7 days, not configurable, via Cloud Customer Care only) — up to 9 days after the date shown.",
+   "rows": [
+    {
+     "column": "week_start",
+     "dataset": "analytics",
+     "evidenced": null,
+     "legal_basis": "GDPR Art. 5(1)(e) storage limitation — one year of weekly aggregates plus a month for year-on-year comparison (illustrative)",
+     "mechanism": {
+      "expiration_ms": 34560000000,
+      "kind": "partition_expiration"
+     },
+     "mode": "partition",
+     "period_days": 400,
+     "rule": null,
+     "status": "compiled (not yet evidenced live — T011/T017)",
+     "table": "weekly_usage_by_cell"
+    },
+    {
+     "column": "_quarantined_at",
+     "dataset": "analytics",
+     "evidenced": null,
+     "legal_basis": "GDPR Art. 5(1)(e) storage limitation — one year of weekly aggregates plus a month for year-on-year comparison (illustrative)",
+     "mechanism": {
+      "kind": "scheduled_delete",
+      "schedule": "every 24 hours",
+      "sql": "DELETE FROM `${var.project_id}.analytics.weekly_usage_by_cell__quarantine` WHERE _quarantined_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 400 DAY)"
+     },
+     "mode": "row",
+     "period_days": 400,
+     "rule": "a quarantined row is kept no longer than its source",
+     "status": "compiled (not yet evidenced live — T011/T017)",
+     "table": "weekly_usage_by_cell__quarantine"
+    },
+    {
+     "column": "(Logging's partitioning)",
+     "dataset": "audit",
+     "evidenced": null,
+     "legal_basis": "GDPR Art. 5(1)(e) storage limitation; 90 days covers a quarterly access review (illustrative)",
+     "mechanism": {
+      "expiration_ms": 7776000000,
+      "kind": "dataset_default_partition_expiration"
+     },
+     "mode": "partition",
+     "period_days": 90,
+     "rule": "Cloud Logging writes partitioned tables; the dataset's default partition expiry ages them out (B15)",
+     "status": "compiled (not yet evidenced live — T011/T017)",
+     "table": "* (log sink tables)"
+    },
+    {
+     "column": "contracts.end_date",
+     "dataset": "crm",
+     "evidenced": null,
+     "legal_basis": "GDPR Art. 5(1)(e) storage limitation; 7 years after the last contract ends (illustrative, not a legal determination)",
+     "mechanism": {
+      "kind": "scheduled_delete",
+      "schedule": "every 24 hours",
+      "sql": "DELETE FROM `${var.project_id}.crm.customers` WHERE ARRAY_LENGTH(contracts) > 0 AND NOT EXISTS (SELECT 1 FROM UNNEST(contracts) AS x WHERE x.end_date IS NULL OR x.end_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 2555 DAY))"
+     },
+     "mode": "row",
+     "period_days": 2555,
+     "rule": "delete a customer once every contract has ended more than period_days ago",
+     "status": "compiled (not yet evidenced live — T011/T017)",
+     "table": "customers"
+    },
+    {
+     "column": "_quarantined_at",
+     "dataset": "crm",
+     "evidenced": null,
+     "legal_basis": "GDPR Art. 5(1)(e) storage limitation; 7 years after the last contract ends (illustrative, not a legal determination)",
+     "mechanism": {
+      "kind": "scheduled_delete",
+      "schedule": "every 24 hours",
+      "sql": "DELETE FROM `${var.project_id}.crm.customers__quarantine` WHERE _quarantined_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 2555 DAY)"
+     },
+     "mode": "row",
+     "period_days": 2555,
+     "rule": "a quarantined row is kept no longer than its source",
+     "status": "compiled (not yet evidenced live — T011/T017)",
+     "table": "customers__quarantine"
+    },
+    {
+     "column": "opened_at",
+     "dataset": "crm",
+     "evidenced": null,
+     "legal_basis": "GDPR Art. 5(1)(e) storage limitation; 7 years after the last contract ends (illustrative, not a legal determination)",
+     "mechanism": {
+      "kind": "scheduled_delete",
+      "schedule": "every 24 hours",
+      "sql": "DELETE FROM `${var.project_id}.crm.support_tickets` WHERE opened_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 730 DAY)"
+     },
+     "mode": "row",
+     "period_days": 730,
+     "rule": "delete tickets opened more than period_days ago",
+     "status": "compiled (not yet evidenced live — T011/T017)",
+     "table": "support_tickets"
+    },
+    {
+     "column": "_quarantined_at",
+     "dataset": "crm",
+     "evidenced": null,
+     "legal_basis": "GDPR Art. 5(1)(e) storage limitation; 7 years after the last contract ends (illustrative, not a legal determination)",
+     "mechanism": {
+      "kind": "scheduled_delete",
+      "schedule": "every 24 hours",
+      "sql": "DELETE FROM `${var.project_id}.crm.support_tickets__quarantine` WHERE _quarantined_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 730 DAY)"
+     },
+     "mode": "row",
+     "period_days": 730,
+     "rule": "a quarantined row is kept no longer than its source",
+     "status": "compiled (not yet evidenced live — T011/T017)",
+     "table": "support_tickets__quarantine"
+    },
+    {
+     "column": "issue_date",
+     "dataset": "finance",
+     "evidenced": null,
+     "legal_basis": "Tax and accounting record-keeping obligation, 10 years (illustrative; varies by country)",
+     "mechanism": {
+      "expiration_ms": 315360000000,
+      "kind": "partition_expiration"
+     },
+     "mode": "partition",
+     "period_days": 3650,
+     "rule": null,
+     "status": "compiled (not yet evidenced live — T011/T017)",
+     "table": "billing"
+    },
+    {
+     "column": "_quarantined_at",
+     "dataset": "finance",
+     "evidenced": null,
+     "legal_basis": "Tax and accounting record-keeping obligation, 10 years (illustrative; varies by country)",
+     "mechanism": {
+      "kind": "scheduled_delete",
+      "schedule": "every 24 hours",
+      "sql": "DELETE FROM `${var.project_id}.finance.billing__quarantine` WHERE _quarantined_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3650 DAY)"
+     },
+     "mode": "row",
+     "period_days": 3650,
+     "rule": "a quarantined row is kept no longer than its source",
+     "status": "compiled (not yet evidenced live — T011/T017)",
+     "table": "billing__quarantine"
+    },
+    {
+     "column": "event_date",
+     "dataset": "network",
+     "evidenced": null,
+     "legal_basis": "ePrivacy Art. 6(1): erase or anonymise when no longer needed; 180 days for billing disputes (illustrative)",
+     "mechanism": {
+      "expiration_ms": 7776000000,
+      "kind": "partition_expiration"
+     },
+     "mode": "partition",
+     "period_days": 90,
+     "rule": null,
+     "status": "compiled (not yet evidenced live — T011/T017)",
+     "table": "network_events"
+    },
+    {
+     "column": "_quarantined_at",
+     "dataset": "network",
+     "evidenced": null,
+     "legal_basis": "ePrivacy Art. 6(1): erase or anonymise when no longer needed; 180 days for billing disputes (illustrative)",
+     "mechanism": {
+      "kind": "scheduled_delete",
+      "schedule": "every 24 hours",
+      "sql": "DELETE FROM `${var.project_id}.network.network_events__quarantine` WHERE _quarantined_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)"
+     },
+     "mode": "row",
+     "period_days": 90,
+     "rule": "a quarantined row is kept no longer than its source",
+     "status": "compiled (not yet evidenced live — T011/T017)",
+     "table": "network_events__quarantine"
+    },
+    {
+     "column": "event_date",
+     "dataset": "network",
+     "evidenced": null,
+     "legal_basis": "ePrivacy Art. 6(1): erase or anonymise when no longer needed; 180 days for billing disputes (illustrative)",
+     "mechanism": {
+      "expiration_ms": 15552000000,
+      "kind": "partition_expiration"
+     },
+     "mode": "partition",
+     "period_days": 180,
+     "rule": null,
+     "status": "compiled (not yet evidenced live — T011/T017)",
+     "table": "usage_events"
+    },
+    {
+     "column": "_quarantined_at",
+     "dataset": "network",
+     "evidenced": null,
+     "legal_basis": "ePrivacy Art. 6(1): erase or anonymise when no longer needed; 180 days for billing disputes (illustrative)",
+     "mechanism": {
+      "kind": "scheduled_delete",
+      "schedule": "every 24 hours",
+      "sql": "DELETE FROM `${var.project_id}.network.usage_events__quarantine` WHERE _quarantined_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 180 DAY)"
+     },
+     "mode": "row",
+     "period_days": 180,
+     "rule": "a quarantined row is kept no longer than its source",
+     "status": "compiled (not yet evidenced live — T011/T017)",
+     "table": "usage_events__quarantine"
+    },
+    {
+     "dataset": "legacy",
+     "legal_basis": null,
+     "mechanism": {
+      "kind": "none — held at `restricted`"
+     },
+     "mode": null,
+     "period_days": null,
+     "status": "NO DECLARATION — waived by W-001 until 2026-11-30",
+     "table": "legacy_crm_export"
+    }
+   ]
+  }
+ },
+ "meta": {
+  "as_of": "2026-09-30",
+  "claim": "7",
+  "data": "synthetic",
+  "digest": "7477682ad735915cdea18d538e7ab41f3daf3e8188620c7986380b9e5a1241b2",
+  "mode": "fixture",
+  "name": "retention",
+  "operator": "fictional (Halverra Telecom)",
+  "origin": "evals/retention/eval.py evaluate()",
+  "schema": 1
+ }
+}

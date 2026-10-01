@@ -1,0 +1,331 @@
+{
+ "data": {
+  "by_rule": {
+   "Q-FIN-002": 2,
+   "Q-FIN-003": 2,
+   "Q-FIN-004": 3,
+   "Q-NET-004": 3,
+   "Q-NET-006": 4
+  },
+  "counts": {
+   "analytics.weekly_usage_by_cell": {
+    "loaded": 570,
+    "quarantined": 0,
+    "source": 570
+   },
+   "crm.customers": {
+    "loaded": 600,
+    "quarantined": 0,
+    "source": 600
+   },
+   "crm.support_tickets": {
+    "loaded": 400,
+    "quarantined": 0,
+    "source": 400
+   },
+   "finance.billing": {
+    "loaded": 1795,
+    "quarantined": 7,
+    "source": 1802
+   },
+   "network.network_events": {
+    "loaded": 3000,
+    "quarantined": 0,
+    "source": 3000
+   },
+   "network.usage_events": {
+    "loaded": 5993,
+    "quarantined": 7,
+    "source": 6000
+   }
+  },
+  "findings": [],
+  "missed": [],
+  "planted": 14,
+  "quarantine_sample": [
+   {
+    "failures": [
+     {
+      "column": "amount",
+      "kind": "validity",
+      "reason": "-38.06 < 0.0",
+      "rule_id": "Q-FIN-004"
+     }
+    ],
+    "offset": 135,
+    "routed_to": "group:finance-owners@halverra.example",
+    "row_key": "INV-2026-000136@135",
+    "rule_ids": [
+     "Q-FIN-004"
+    ],
+    "run_id": "run-20260930T060000Z-finance-billing",
+    "steward": "group:finance-stewards@halverra.example",
+    "table": "finance.billing"
+   },
+   {
+    "failures": [
+     {
+      "column": "amount",
+      "kind": "validity",
+      "reason": "-57.57 < 0.0",
+      "rule_id": "Q-FIN-004"
+     }
+    ],
+    "offset": 376,
+    "routed_to": "group:finance-owners@halverra.example",
+    "row_key": "INV-2026-000377@376",
+    "rule_ids": [
+     "Q-FIN-004"
+    ],
+    "run_id": "run-20260930T060000Z-finance-billing",
+    "steward": "group:finance-stewards@halverra.example",
+    "table": "finance.billing"
+   },
+   {
+    "failures": [
+     {
+      "column": "customer_id",
+      "kind": "referential",
+      "reason": "'C998587' not found in crm.customers.customer_id",
+      "rule_id": "Q-FIN-003"
+     }
+    ],
+    "offset": 567,
+    "routed_to": "group:finance-owners@halverra.example",
+    "row_key": "INV-2026-000568@567",
+    "rule_ids": [
+     "Q-FIN-003"
+    ],
+    "run_id": "run-20260930T060000Z-finance-billing",
+    "steward": "group:finance-stewards@halverra.example",
+    "table": "finance.billing"
+   },
+   {
+    "failures": [
+     {
+      "column": "customer_id",
+      "kind": "referential",
+      "reason": "'C913539' not found in crm.customers.customer_id",
+      "rule_id": "Q-FIN-003"
+     }
+    ],
+    "offset": 1045,
+    "routed_to": "group:finance-owners@halverra.example",
+    "row_key": "INV-2026-001046@1045",
+    "rule_ids": [
+     "Q-FIN-003"
+    ],
+    "run_id": "run-20260930T060000Z-finance-billing",
+    "steward": "group:finance-stewards@halverra.example",
+    "table": "finance.billing"
+   },
+   {
+    "failures": [
+     {
+      "column": "amount",
+      "kind": "validity",
+      "reason": "-119.59 < 0.0",
+      "rule_id": "Q-FIN-004"
+     }
+    ],
+    "offset": 1452,
+    "routed_to": "group:finance-owners@halverra.example",
+    "row_key": "INV-2026-001453@1452",
+    "rule_ids": [
+     "Q-FIN-004"
+    ],
+    "run_id": "run-20260930T060000Z-finance-billing",
+    "steward": "group:finance-stewards@halverra.example",
+    "table": "finance.billing"
+   },
+   {
+    "failures": [
+     {
+      "column": "invoice_id",
+      "kind": "uniqueness",
+      "reason": "'INV-2026-000550' already loaded earlier in this run",
+      "rule_id": "Q-FIN-002"
+     }
+    ],
+    "offset": 1800,
+    "routed_to": "group:finance-owners@halverra.example",
+    "row_key": "INV-2026-000550@1800",
+    "rule_ids": [
+     "Q-FIN-002"
+    ],
+    "run_id": "run-20260930T060000Z-finance-billing",
+    "steward": "group:finance-stewards@halverra.example",
+    "table": "finance.billing"
+   },
+   {
+    "failures": [
+     {
+      "column": "invoice_id",
+      "kind": "uniqueness",
+      "reason": "'INV-2026-000982' already loaded earlier in this run",
+      "rule_id": "Q-FIN-002"
+     }
+    ],
+    "offset": 1801,
+    "routed_to": "group:finance-owners@halverra.example",
+    "row_key": "INV-2026-000982@1801",
+    "rule_ids": [
+     "Q-FIN-002"
+    ],
+    "run_id": "run-20260930T060000Z-finance-billing",
+    "steward": "group:finance-stewards@halverra.example",
+    "table": "finance.billing"
+   },
+   {
+    "failures": [
+     {
+      "column": "event_type",
+      "kind": "validity",
+      "reason": "'unknwn' not in ['voice', 'sms', 'data']",
+      "rule_id": "Q-NET-006"
+     }
+    ],
+    "offset": 1976,
+    "routed_to": "group:network-owners@halverra.example",
+    "row_key": "E00001977@1976",
+    "rule_ids": [
+     "Q-NET-006"
+    ],
+    "run_id": "run-20260930T060000Z-network-usage_events",
+    "steward": "group:network-stewards@halverra.example",
+    "table": "network.usage_events"
+   },
+   {
+    "failures": [
+     {
+      "column": "event_type",
+      "kind": "validity",
+      "reason": "'unknwn' not in ['voice', 'sms', 'data']",
+      "rule_id": "Q-NET-006"
+     }
+    ],
+    "offset": 2120,
+    "routed_to": "group:network-owners@halverra.example",
+    "row_key": "E00002121@2120",
+    "rule_ids": [
+     "Q-NET-006"
+    ],
+    "run_id": "run-20260930T060000Z-network-usage_events",
+    "steward": "group:network-stewards@halverra.example",
+    "table": "network.usage_events"
+   },
+   {
+    "failures": [
+     {
+      "column": "msisdn",
+      "kind": "completeness",
+      "reason": "missing value",
+      "rule_id": "Q-NET-004"
+     }
+    ],
+    "offset": 3831,
+    "routed_to": "group:network-owners@halverra.example",
+    "row_key": "E00003832@3831",
+    "rule_ids": [
+     "Q-NET-004"
+    ],
+    "run_id": "run-20260930T060000Z-network-usage_events",
+    "steward": "group:network-stewards@halverra.example",
+    "table": "network.usage_events"
+   },
+   {
+    "failures": [
+     {
+      "column": "msisdn",
+      "kind": "completeness",
+      "reason": "missing value",
+      "rule_id": "Q-NET-004"
+     }
+    ],
+    "offset": 4055,
+    "routed_to": "group:network-owners@halverra.example",
+    "row_key": "E00004056@4055",
+    "rule_ids": [
+     "Q-NET-004"
+    ],
+    "run_id": "run-20260930T060000Z-network-usage_events",
+    "steward": "group:network-stewards@halverra.example",
+    "table": "network.usage_events"
+   },
+   {
+    "failures": [
+     {
+      "column": "event_type",
+      "kind": "validity",
+      "reason": "'unknwn' not in ['voice', 'sms', 'data']",
+      "rule_id": "Q-NET-006"
+     }
+    ],
+    "offset": 4171,
+    "routed_to": "group:network-owners@halverra.example",
+    "row_key": "E00004172@4171",
+    "rule_ids": [
+     "Q-NET-006"
+    ],
+    "run_id": "run-20260930T060000Z-network-usage_events",
+    "steward": "group:network-stewards@halverra.example",
+    "table": "network.usage_events"
+   },
+   {
+    "failures": [
+     {
+      "column": "msisdn",
+      "kind": "completeness",
+      "reason": "missing value",
+      "rule_id": "Q-NET-004"
+     }
+    ],
+    "offset": 4676,
+    "routed_to": "group:network-owners@halverra.example",
+    "row_key": "E00004677@4676",
+    "rule_ids": [
+     "Q-NET-004"
+    ],
+    "run_id": "run-20260930T060000Z-network-usage_events",
+    "steward": "group:network-stewards@halverra.example",
+    "table": "network.usage_events"
+   },
+   {
+    "failures": [
+     {
+      "column": "event_type",
+      "kind": "validity",
+      "reason": "'unknwn' not in ['voice', 'sms', 'data']",
+      "rule_id": "Q-NET-006"
+     }
+    ],
+    "offset": 5966,
+    "routed_to": "group:network-owners@halverra.example",
+    "row_key": "E00005967@5966",
+    "rule_ids": [
+     "Q-NET-006"
+    ],
+    "run_id": "run-20260930T060000Z-network-usage_events",
+    "steward": "group:network-stewards@halverra.example",
+    "table": "network.usage_events"
+   }
+  ],
+  "routed_to": {
+   "group:finance-owners@halverra.example": 7,
+   "group:network-owners@halverra.example": 7
+  },
+  "today": "2026-09-30",
+  "unexpected": []
+ },
+ "meta": {
+  "as_of": "2026-09-30",
+  "claim": "5",
+  "data": "synthetic",
+  "digest": "a92ace62f11325a360a401dae33e9752a07ae4b3019660d474c547ae1bb7021d",
+  "mode": "fixture",
+  "name": "quality",
+  "operator": "fictional (Halverra Telecom)",
+  "origin": "evals/quality/eval.py evaluate()",
+  "schema": 1
+ }
+}

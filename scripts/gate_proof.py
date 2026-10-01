@@ -52,6 +52,8 @@ GATES: dict[str, list[str]] = {
     "lineage-eval": [PY, "evals/run.py", "lineage"],
     "catalog": [PY, "-m", "steward.cli", "catalog"],
     "catalog-eval": [PY, "evals/run.py", "catalog"],
+    "evidence": [PY, "-m", "steward.cli", "evidence-check"],
+    "demo-figures": [PY, "scripts/check_demo_numbers.py"],
 }
 
 
@@ -779,6 +781,66 @@ MUTATIONS: list[Mutation] = [
         "4",
     ),
     Mutation(
+        "evidence edited by hand",
+        "evidence",
+        "evidence/fixture/quality.json",
+        '"source": 1802',
+        '"source": 1795',
+        ("EVIDENCE_DIGEST_MISMATCH", "fixture/quality.json"),
+        "the demo shows only evidence whose digest still matches its payload",
+        "5",
+    ),
+    Mutation(
+        "the repository changed, the evidence did not",
+        "evidence",
+        "contracts/crm.yaml",
+        "description: Customer master data",
+        "description: Customer master data (reworded)",
+        ("EVIDENCE_STALE", "fixture/estate.json"),
+        "evidence is a function of the repository: a change that moves it must be re-recorded",
+        "4",
+    ),
+    Mutation(
+        "an evidence file the manifest does not vouch for",
+        "evidence",
+        "evidence/MANIFEST.json",
+        '"fixture/retention.json": "',
+        '"fixture/retention.json": "0',
+        ("EVIDENCE_UNLISTED", "fixture/retention.json"),
+        "every evidence file is listed in the manifest with its digest",
+        "7",
+    ),
+    Mutation(
+        "a gate-proof mutation renamed after the run was recorded",
+        "evidence",
+        "scripts/gate_proof.py",
+        '        "owner deleted",\n        "contracts",',
+        '        "owner removed",\n        "contracts",',
+        ("GATES_STALE", "gates"),
+        "the Gates page shows a recorded run: it must still list exactly today's mutations",
+        "4",
+    ),
+    Mutation(
+        "a figure typed into a page",
+        "demo-figures",
+        "app/pages/4_Quality.py",
+        'a.metric("Failures planted in the sources", q["planted"])',
+        'a.metric("Failures planted in the sources", 14)',
+        ("DEMO_FIGURE_HARDCODED", "app/pages/4_Quality.py"),
+        "every number the demo shows comes from an evidence file",
+        "5",
+    ),
+    Mutation(
+        "a date typed into a page",
+        "demo-figures",
+        "app/pages/7_Retention.py",
+        'st.caption("A dataset with no retention period fails the build; there is no default period.")',
+        'st.caption("Checked 2026-10-01: a dataset with no retention period fails the build.")',
+        ("DEMO_FIGURE_HARDCODED", "app/pages/7_Retention.py"),
+        "a date or a count in prose is a figure too",
+        "7",
+    ),
+    Mutation(
         "generated Terraform edited by hand",
         "generated",
         "infra/estate/generated.tf.json",
@@ -985,10 +1047,16 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--json", type=Path)
     ap.add_argument("--only", help="run only mutations whose gate matches")
     ap.add_argument(
+        "--skip",
+        help="run every mutation except those of these gates (comma-separated). Used to record the run the Gates"
+        " page shows: the evidence gate checks that record, so it cannot be part of it (CI runs it every time)",
+    )
+    ap.add_argument(
         "--worktree", action="store_true", help="prove the working tree instead of git HEAD (local iteration)"
     )
     args = ap.parse_args(argv)
-    selected = [m for m in MUTATIONS if not args.only or m.gate == args.only]
+    skip = set(filter(None, (args.skip or "").split(",")))
+    selected = [m for m in MUTATIONS if (not args.only or m.gate == args.only) and m.gate not in skip]
     if args.list:
         for m in selected:
             print(f"[{m.gate}] {m.name} → {m.marker[0]}")
@@ -1000,7 +1068,7 @@ def main(argv: list[str] | None = None) -> int:
     if missing:
         print(f"UNPROVEN gates (no mutation): {missing}")
         ok = False
-    if uncovered and not args.only:
+    if uncovered and not args.only and not skip:
         print(f"UNGATED commands (in make check / evals, neither a gate here nor EXCLUDED): {uncovered}")
         ok = False
     if args.json:

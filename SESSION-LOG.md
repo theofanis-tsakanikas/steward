@@ -198,3 +198,22 @@
   πραγματική μη-ιδεμποτένσια (`if False:` στη σύγκριση) αντί να ταυτίζεται με τη VOLATILE.
 - **Ανοιχτό:** πραγματικό Collibra μόνο με trial (T024)· το operating model είναι δικό μας, όχι παρατηρημένο·
   `client.current()` δεν υλοποιείται (T024).
+
+### 2026-10-01 · T022 — το demo (Streamlit, recorded mode, από fixtures)
+- **Έκλεισε:** `app/Home.py` + 8 σελίδες (Estate & contracts · Privacy · Lineage · Data quality · Catalog sync ·
+  Data Marketplace · Retention · Gates) που διαβάζουν **μόνο** `evidence/`. Banner σε κάθε σελίδα: RECORDED mode,
+  πηγή evidence, ημερομηνία δεδομένων, **Collibra mode: MOCK**, φανταστικός operator. `steward evidence`
+  γράφει `evidence/fixture/*.json` (τα αποτελέσματα των harness κάθε claim + το estate των contracts) με digest·
+  `steward evidence-check` (στο `make check`) απορρίπτει αλλοιωμένο payload, αδήλωτο αρχείο, ή evidence που δεν
+  συμφωνεί πια με το repo. Η σελίδα Gates δείχνει καταγεγραμμένο gate-proof (`make evidence-gates`).
+- **Απόδειξη:** `make evidence-check` · `scripts/check_demo_numbers.py` (κανένας αριθμός δεν είναι γραμμένος στις
+  σελίδες) · `tests/test_demo.py` (κάθε σελίδα ανοίγει με AppTest, το banner λέει mode, αλλοιωμένο evidence
+  απορρίπτεται και δεν σχεδιάζεται τίποτα) · gate-proof με 4 νέες μεταλλάξεις για `evidence` και 2 για
+  `demo-figures`. Άνοιξα και με πραγματικό browser: Privacy και Lineage (το γράφημα graphviz σχεδιάζεται χωρίς δίκτυο).
+- **Αποφάσεις:** DECISIONS B28–B31 — το evidence είναι τα ίδια τα αποτελέσματα των harness· το «record» του
+  gate-proof δεν μπορεί να περιέχει τον έλεγχο που το διαβάζει· ο έλεγχος «χωρίς hard-coded αριθμούς» είναι
+  λεξικός (δεν πιάνει αριθμό που υπολογίστηκε από λάθος πεδίο)· μόνο recorded mode (το live περιμένει T017).
+- **Μάθημα:** το πρώτο test αλλοίωσης δεν άλλαζε τίποτα (το πρώτο entry είχε ήδη `quarantined: 0`)· τώρα
+  διαλέγει τον πίνακα με το μεγαλύτερο quarantine και ισχυρίζεται ότι είναι > 0 πριν το πειράξει.
+- **Ανοιχτό:** `stop_at` — ο συγγραφέας να κάνει click-through στις οκτώ σελίδες (`make demo`)· live mode (T017)·
+  hosting (T030).
