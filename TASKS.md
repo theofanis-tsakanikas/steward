@@ -159,7 +159,7 @@ closes        a small LookML project (≥4 views, 2 explores, 3 dashboards) over
 out_of_scope  Looker API
 stop_at       lineage graph rendered
 review        yes
-status        open
+status        closed 2026-10-01 — PR #11 (review + verification pass; make preflight green, gate-proof 39/39)
 ```
 
 ```

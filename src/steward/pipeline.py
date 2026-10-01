@@ -95,3 +95,41 @@ def iam_snapshot(e: Estate, captured_at: str) -> dict:
         "source": "compiled Terraform (offline) — not evidence; a live getIamPolicy capture replaces it in T016",
         "bindings": sorted(bindings, key=lambda b: (b["dataset"], b["member"], b["role"])),
     }
+
+
+class ConnectionAccess:
+    """What the Looker connection's role sees, column by column, from the compiled Terraform."""
+
+    def __init__(self, e: Estate, role: str):
+        from steward.core.compile import seats_for
+        from steward.core.simulate import effective, model
+
+        self._am = model(e.compiled["infra/estate/generated.tf.json"], e.compiled["infra/governance/generated.tf.json"])
+        self._effective = effective
+        seats = {s for c in e.contracts for s in seats_for(e.roles, role, c)}
+        if len(seats) != 1:
+            raise ValueError(f"the connection role {role!r} must be a single seat, got {sorted(seats)}")
+        self.seat = seats.pop()
+        self.tagged = {c for c, t in self._am.column_tag.items() if t}
+
+    def __call__(self, column: str) -> str:
+        return self._effective(self._am, self.seat, column)
+
+
+def lineage(e: Estate, lookml_root, history: dict):
+    """history = {"captured_at": ..., "jobs": [...]} — the job history and when it was taken."""
+    from steward.adapters.looker import parse
+    from steward.core.lineage import evaluate
+
+    lk = parse(lookml_root)
+    catalog = {fqn for c in e.contracts for fqn, _, _, _ in c.iter_columns()}
+    tables = {f"{c.dataset}.{t}" for c in e.contracts for t in c.tables}
+    kinds = {fqn: list(col.kinds) for c in e.contracts for fqn, _, _, col in c.iter_columns()}
+    cache: dict[str, ConnectionAccess] = {}
+
+    def access_for(role: str) -> ConnectionAccess:
+        if role not in cache:
+            cache[role] = ConnectionAccess(e, role)
+        return cache[role]
+
+    return lk, evaluate(lk, history["jobs"], catalog, tables, access_for, kinds, history["captured_at"])
