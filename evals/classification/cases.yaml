@@ -1,0 +1,67 @@
+# Hand-labelled values, written independently of the synthetic generator: formats it never emits,
+# and things that look like personal data but are not. Each case: value -> expected kinds (exact set).
+# Scored per value by scan_value().
+# IMSI/IMEI are scored as single values too (the prefix decides IMSI, Luhn decides IMEI).
+positives:
+  - {value: "+30 694 123 4567", kinds: [msisdn]}
+  - {value: "0049-171-2345678", kinds: [msisdn]}
+  - {value: "call me at 00393471234567 tomorrow", kinds: [msisdn]}
+  - {value: "first.last+promo@sub.example.co.uk", kinds: [email]}
+  - {value: "pay to DE89370400440532013000 please", kinds: [iban]}
+  - {value: "GB82WEST12345698765432", kinds: [iban]}
+  - {value: "born 03.11.1975", kinds: [birth_date]}
+  - {value: "Viale Monza 221", kinds: [address]}
+  - {value: "Am Lindenplatz 4", kinds: [address]}
+  - {value: "Kaiserring 12", kinds: [address]}
+  - {value: "12 Baker Street", kinds: [address]}
+  # added after the T003 review: formats real CRM free text and exports use that the generator never emits
+  - {value: "6912345678", kinds: [msisdn]}
+  - {value: "3471234567", kinds: [msisdn]}
+  - {value: "(+30) 691 234 5678", kinds: [msisdn]}
+  - {value: "+30.691.234.5678", kinds: [msisdn]}
+  - {value: "+33 6 12 34 56 78", kinds: [msisdn]}
+  - {value: "+41 79 123 45 67", kinds: [msisdn]}
+  - {value: "+302101234567", kinds: [msisdn], why: a landline is a person's phone number too}
+  - {value: "GR16 0110 1250 0000 0001 2300 695", kinds: [iban]}
+  - {value: "gr1601101250000000012300695", kinds: [iban]}
+  - {value: "12 March 1984", kinds: [birth_date]}
+  - {value: "12-03-1984", kinds: [birth_date]}
+  - {value: "1984/03/12", kinds: [birth_date]}
+  - {value: "12.3.1984", kinds: [birth_date]}
+  - {value: "Οδός Ερμού 12", kinds: [address]}
+  - {value: "Hauptstr. 5", kinds: [address]}
+  - {value: "Via Roma, 10", kinds: [address]}
+  - {value: "write to <a.b@example.org> today", kinds: [email]}
+  # added after the T003 verification pass
+  - {value: "Berliner Straße 12", kinds: [address]}
+  - {value: "697 123 4567", kinds: [msisdn]}
+  - {value: "0170 1234567", kinds: [msisdn]}
+  - {value: "00 30 697 123 4567", kinds: [msisdn]}
+  - {value: "12 Μαρτίου 1984", kinds: [birth_date]}
+  - {value: "March 12, 1984", kinds: [birth_date]}
+negatives:
+  - {value: "INV-2026-000123", why: invoice number}
+  - {value: "DE89370400440532013001", why: IBAN shape with a wrong check digit}
+  - {value: "2026-09-12", why: a recent date (contract start), not a birth date}
+  - {value: "1890-01-01", why: older than 110 years}
+  - {value: "ticket escalated, see note@ 14:00", why: an at-sign is not an e-mail}
+  - {value: "REF-37095", why: internal reference}
+  - {value: "GR-ATH-0042", why: cell id}
+  - {value: "Version 2 street level view", why: the word street without a number}
+  - {value: "2017-02-27T12:00:00Z", why: the date part of a timestamp is not a birth date}
+  - {value: "0000 0001 2300 695", why: digit groups with no country code}
+fifteen_digit:
+  - {value: "490154203237518", expect: imei, why: a valid IMEI (Luhn ok)}
+  - {value: "35-209900-176148-1", expect: imei, why: grouped IMEI}
+  - {value: "262011234567890", expect: imsi, why: German MCC, Luhn fails}
+  - {value: "123456789012345", expect: none, why: neither Luhn-valid nor a European MCC}
+
+# Values that ARE flagged and are NOT personal data — the declared cost of "one hit is enough"
+# (doctrine 1). Measured and printed by the eval so the cost is visible; they do not fail the build.
+known_over_flags:
+  - {value: "3000000001", kind: msisdn, why: a 10-digit id starting with 3 reads as an Italian mobile}
+  - {value: "6912345678", kind: msisdn, why: identical to a Greek mobile in national form — genuinely ambiguous}
+  - {value: "invoice 0049 1234 5678", kind: msisdn, why: digit groups after 00 + country code}
+  - {value: "+1 555 0100", kind: msisdn, why: a fictional US number is still a phone number}
+  - {value: "Bring 2", kind: address, why: a German word ending in -ring followed by a number}
+  - {value: "created 2001-01-01", kind: birth_date, why: a 25-year-old date in free text}

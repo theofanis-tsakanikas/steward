@@ -1,6 +1,6 @@
 # BigQuery dataset `finance`: invoices. Retention is driven by tax law, not by GDPR alone.
 dataset: finance
-version: 1
+version: 2
 description: Invoices of Halverra Telecom (fictional).
 owner: group:finance-owners@halverra.example
 steward: group:finance-stewards@halverra.example
@@ -9,6 +9,9 @@ lawful_basis: "GDPR Art. 6(1)(c) — legal obligation (tax and accounting record
 retention:
   period_days: 3650
   legal_basis: "Tax and accounting record-keeping obligation, 10 years (illustrative; varies by country)"
+# Roles with standing read access. Every other role reaches this dataset only through an approved,
+# expiring marketplace grant (claim 6) — and a role in neither list never does.
+readers: [steward, bi_service]
 marketplace:
   listable: false
   approvers: group:finance-owners@halverra.example
@@ -16,6 +19,7 @@ marketplace:
   grantable_roles: [analyst]
 changelog:
   - {version: 1, date: "2026-10-01", change: "first contract"}
+  - {version: 2, date: "2026-10-01", change: "declare standing readers; marketplace grants only roles that are not readers; drop masking for fraud_investigator, who never reads finance"}
 
 tables:
   billing:
@@ -29,11 +33,11 @@ tables:
          quality: [{id: Q-FIN-001, kind: completeness}, {id: Q-FIN-002, kind: uniqueness}]}
       customer_id:
         {type: STRING, classification: personal, kinds: [customer_key], description: "The invoiced customer.",
-         masking: {analyst: hash, fraud_investigator: clear, steward: hash, bi_service: hash},
+         masking: {analyst: hash, steward: hash, bi_service: hash},
          quality: [{id: Q-FIN-003, kind: referential, references: crm.customers.customer_id}]}
       iban:
         {type: STRING, classification: personal, kinds: [iban], description: "Direct-debit bank account.",
-         masking: {analyst: last_four, fraud_investigator: nullify, steward: last_four, bi_service: nullify}}
+         masking: {analyst: last_four, steward: last_four, bi_service: nullify}}
       amount:
         {type: NUMERIC, classification: internal, description: "Invoice amount, EUR.",
          quality: [{id: Q-FIN-004, kind: validity, min: 0}]}

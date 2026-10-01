@@ -1,7 +1,7 @@
 # BigQuery dataset `network`: traffic and location data. ePrivacy Directive Art. 6 and 9 make this
 # stricter than ordinary personal data, so identifiers here are `sensitive-network`.
 dataset: network
-version: 1
+version: 2
 description: Usage (traffic) events and device attach events of Halverra Telecom (fictional).
 owner: group:network-owners@halverra.example
 steward: group:network-stewards@halverra.example
@@ -10,13 +10,17 @@ lawful_basis: "ePrivacy Directive 2002/58/EC Art. 6(2) — traffic data for bill
 retention:
   period_days: 180
   legal_basis: "ePrivacy Art. 6(1): erase or anonymise when no longer needed; 180 days for billing disputes (illustrative)"
+# Roles with standing read access. Every other role reaches this dataset only through an approved,
+# expiring marketplace grant (claim 6) — and a role in neither list never does.
+readers: [fraud_investigator, steward, bi_service]
 marketplace:
   listable: true
   approvers: group:network-owners@halverra.example
   max_grant_days: 14
-  grantable_roles: [analyst, fraud_investigator]
+  grantable_roles: [analyst]
 changelog:
   - {version: 1, date: "2026-10-01", change: "first contract"}
+  - {version: 2, date: "2026-10-01", change: "declare standing readers; marketplace grants only roles that are not readers"}
 
 tables:
   usage_events:

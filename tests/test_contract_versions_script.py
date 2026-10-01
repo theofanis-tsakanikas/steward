@@ -34,8 +34,8 @@ def edit(repo, bump: bool):
     doc = yaml.safe_load(p.read_text())
     doc["tables"]["support_tickets"]["columns"]["ref_2"]["description"] = "changed"
     if bump:
-        doc["version"] = 2
-        doc["changelog"].append({"version": 2, "date": "2026-10-02", "change": "describe ref_2"})
+        doc["version"] += 1
+        doc["changelog"].append({"version": doc["version"], "date": "2026-10-02", "change": "describe ref_2"})
     p.write_text(yaml.safe_dump(doc))
 
 

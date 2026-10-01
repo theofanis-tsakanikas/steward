@@ -228,6 +228,7 @@ class Contract(Strict):
     custodian: str
     lawful_basis: str = Field(min_length=10)
     retention: Retention
+    readers: list[str]  # roles with standing read access; [] is allowed and means "only via the marketplace"
     marketplace: Marketplace
     changelog: list[Change] = Field(min_length=1)
     tables: dict[str, Table] = Field(min_length=1)
@@ -266,16 +267,25 @@ class Role(Strict):
     description: str = Field(min_length=3)
     scoped_by: str | None = None
     scopes: list[str] | None = None
+    # A role whose seat on each dataset is that contract's own principal for this field.
+    bound_from: Literal["steward", "custodian"] | None = None
 
     @model_validator(mode="after")
     def _scoped(self) -> Role:
         if (self.scoped_by is None) != (self.scopes is None):
             raise ValueError("scoped_by and scopes come together")
+        if self.bound_from and self.scoped_by:
+            raise ValueError("a role is either scoped or bound to a contract field, not both")
         return self
+
+
+class Ceiling(Strict):
+    clear_kinds: list[Kind]
 
 
 class Roles(Strict):
     roles: dict[str, Role]
+    ceilings: dict[str, Ceiling]
     waiver_approvers: str
     directory: dict[str, list[str]]
 
@@ -295,6 +305,22 @@ class Roles(Strict):
                     # this file says, and "who is in this group" has one answer a reviewer can read.
                     raise ValueError(f"{g} contains group {m}: nested groups are not allowed")
         return v
+
+    @model_validator(mode="after")
+    def _every_role_has_a_ceiling(self) -> Roles:
+        missing = sorted(set(self.roles) - set(self.ceilings))
+        extra = sorted(set(self.ceilings) - set(self.roles))
+        if missing or extra:
+            raise ValueError(f"ceilings must cover exactly the roles (missing {missing}, unknown {extra})")
+        return self
+
+    def seats(self, role: str) -> list[str]:
+        """'analyst' → ['analyst@GR', 'analyst@IT', 'analyst@DE']; unscoped → ['fraud_investigator'].
+        Bound roles have no seat of their own — use core.compile.seats_for(roles, role, contract)."""
+        r = self.roles[role]
+        if r.bound_from:
+            raise ValueError(f"{role} is bound to each contract's {r.bound_from}; its seats depend on the contract")
+        return [f"{role}@{s}" for s in r.scopes] if r.scopes else [role]
 
     def members(self, group: str) -> list[str]:
         return self.directory.get(group, [])

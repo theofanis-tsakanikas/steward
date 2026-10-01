@@ -53,3 +53,20 @@ def waivers_doc(root: Path = CONTRACTS) -> dict:
 def harvest(root: Path = SYNTHETIC) -> dict:
     """The offline harvest: the generator's schema, which knows nothing about contracts."""
     return json.loads((root / "data" / "_schema.json").read_text())
+
+
+def synthetic_rows(table: str, root: Path = SYNTHETIC) -> list[dict]:
+    return [json.loads(line) for line in (root / "data" / f"{table}.jsonl").read_text().splitlines()]
+
+
+def synthetic_columns(root: Path = SYNTHETIC, limit: int | None = None) -> dict[str, list]:
+    """{'dataset.table.path': [values]} for every synthetic table. `limit` samples the first N rows,
+    the way a DLP inspection job is row-limited."""
+    from steward.core.classify import column_values
+
+    out: dict[str, list] = {}
+    for table, spec in harvest(root).items():
+        rows = synthetic_rows(table, root)[:limit] if limit else synthetic_rows(table, root)
+        for path, vals in column_values(rows, spec["fields"]).items():
+            out[f"{table}.{path}"] = vals
+    return out
