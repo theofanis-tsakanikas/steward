@@ -1,7 +1,11 @@
 # GitHub Actions -> Google Cloud with no key anywhere. The trust condition is the whole security boundary, so
-# it is written to be read: this repository (by its immutable numeric id, not only its name), this owner (by
-# id), and only a job that runs in the `deploy` or `destroy` environment. No value contains a wildcard
-# (scripts/check_oidc_subjects.py fails CI if one ever does).
+# it is written to be read: this repository (by its immutable numeric id and by name), this owner (by id), the
+# `main` branch, and only a job that runs in the `deploy` or `destroy` environment. Clauses are joined by AND,
+# match exactly, and no value is a pattern. scripts/check_oidc_subjects.py compares this block with the
+# expected text clause by clause; changing the boundary is changing that script in the same commit.
+#
+# What the condition does NOT do: GitHub decides who may start a run on `main` and whether the environment
+# needs a reviewer. Those are repository settings (docs/DAY-ONE.md step 5), not Terraform.
 locals {
   trusted_environments = ["deploy", "destroy"]
 
@@ -9,6 +13,7 @@ locals {
     "assertion.repository_owner_id == '${var.github_owner_id}'",
     "assertion.repository_id == '${var.github_repository_id}'",
     "assertion.repository == '${var.github_owner}/${var.github_repo}'",
+    "assertion.ref == 'refs/heads/main'",
     "assertion.environment in [${join(", ", [for e in local.trusted_environments : "'${e}'"])}]",
   ])
 }
@@ -29,6 +34,7 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   attribute_mapping = {
     "google.subject"                = "assertion.sub"
     "attribute.repository"          = "assertion.repository"
+    "attribute.ref"                 = "assertion.ref"
     "attribute.repository_id"       = "assertion.repository_id"
     "attribute.repository_owner_id" = "assertion.repository_owner_id"
     "attribute.environment"         = "assertion.environment"
@@ -41,9 +47,17 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   }
 }
 
-# Only identities that passed the provider's condition AND belong to this repository id may become the deployer.
+# The pool admits only tokens that passed the provider's condition (this repository, `main`, an environment).
+# Each service account is then bound to ONE environment: a job in `destroy` can become the destroyer and never
+# the deployer, so disabling the deployer (the budget guard) cannot close the way to take the estate down.
 resource "google_service_account_iam_member" "deployer_federation" {
   service_account_id = google_service_account.deployer.name
   role               = "roles/iam.workloadIdentityUser"
-  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository_id/${var.github_repository_id}"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.environment/deploy"
+}
+
+resource "google_service_account_iam_member" "destroyer_federation" {
+  service_account_id = google_service_account.destroyer.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.environment/destroy"
 }

@@ -1,6 +1,9 @@
 # Cost control (2 of 3, with the labels and the reaper): the alarm is created before anything that costs.
 data "google_project" "this" {
   project_id = var.project_id
+
+  # With user_project_override the read is billed to this project, whose Resource Manager API must be on.
+  depends_on = [google_project_service.api]
 }
 
 resource "google_pubsub_topic" "budget" {
@@ -37,9 +40,13 @@ resource "google_billing_budget" "steward" {
   }
 
   # "30" and "50" are spend levels, not percentages: the thresholds are derived so the alert levels stay what
-  # the variable says they are.
+  # the variable says they are. The guard's stop level sends an alert too.
+  #
+  # The period is the default, one calendar month. The estate lives days, so it is one month except across a
+  # month boundary, where the count restarts: docs/DECISIONS.md records it. costAmount includes credits
+  # (INCLUDE_ALL_CREDITS): the guard compares what would actually be billed.
   dynamic "threshold_rules" {
-    for_each = toset(var.alert_at)
+    for_each = toset(concat(var.alert_at, [var.stop_at]))
     content {
       threshold_percent = threshold_rules.value / var.budget_total
       spend_basis       = "CURRENT_SPEND"

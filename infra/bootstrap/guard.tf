@@ -1,6 +1,9 @@
 # Cost control (3 of 3): the budget acts, the reaper sweeps. Two Cloud Run functions built from ./guard.
-#   guard   - on the last budget alert, disables the deployer service account (reversible by hand)
+#   guard   - at the stop level (or on a notification it cannot read), disables the deployer service account
+#             (reversible by hand; the destroyer is a different identity and is never touched)
 #   reaper  - daily; deletes BigQuery datasets whose expires-at label has passed
+# Each has its own service account: the guard can switch one identity off and read events, nothing else; the
+# reaper can delete datasets and nothing else (its code additionally only touches project=steward datasets).
 locals {
   guard_enabled = var.enable_guard ? toset(["on"]) : toset([])
 }
@@ -23,7 +26,16 @@ resource "google_service_account" "guard" {
   for_each     = local.guard_enabled
   account_id   = "steward-guard"
   display_name = "Steward budget guard and reaper"
-  description  = "Disables the deployer at the last budget level; deletes expired datasets."
+  description  = "Disables the deployer at the stop level. Holds a custom role that can only get, enable and disable it."
+
+  depends_on = [google_project_service.api]
+}
+
+resource "google_service_account" "reaper" {
+  for_each     = local.guard_enabled
+  account_id   = "steward-reaper"
+  display_name = "Steward reaper"
+  description  = "Deletes BigQuery datasets whose expires-at label has passed."
 
   depends_on = [google_project_service.api]
 }
@@ -44,20 +56,38 @@ resource "google_project_iam_member" "build" {
   member   = "serviceAccount:${google_service_account.build["on"].email}"
 }
 
-# The guard may disable the deployer and nothing else...
+# The guard may switch the deployer off and on, and read it. Not serviceAccountAdmin: that role can also rewrite
+# the deployer's IAM policy, which would let a compromised guard become the deployer.
+resource "google_project_iam_custom_role" "sa_switch" {
+  role_id     = "stewardServiceAccountSwitch"
+  title       = "Steward: switch one service account off or on"
+  description = "get, enable, disable. Nothing else."
+  permissions = ["iam.serviceAccounts.get", "iam.serviceAccounts.enable", "iam.serviceAccounts.disable"]
+
+  depends_on = [google_project_service.api]
+}
+
 resource "google_service_account_iam_member" "guard_may_disable_deployer" {
   for_each           = local.guard_enabled
   service_account_id = google_service_account.deployer.name
-  role               = "roles/iam.serviceAccountAdmin"
+  role               = google_project_iam_custom_role.sa_switch.id
   member             = "serviceAccount:${google_service_account.guard["on"].email}"
 }
 
-# ...and the reaper may delete datasets (dataOwner includes bigquery.datasets.delete) and receive events.
-resource "google_project_iam_member" "guard" {
-  for_each = var.enable_guard ? toset(["roles/bigquery.dataOwner", "roles/eventarc.eventReceiver"]) : toset([])
+resource "google_project_iam_member" "guard_events" {
+  for_each = local.guard_enabled
   project  = var.project_id
-  role     = each.key
+  role     = "roles/eventarc.eventReceiver"
   member   = "serviceAccount:${google_service_account.guard["on"].email}"
+}
+
+# The reaper deletes datasets (dataOwner includes bigquery.datasets.delete). It is project-wide by IAM; the code
+# filters on project=steward and an expired label (guard/logic.py), and the project holds nothing else.
+resource "google_project_iam_member" "reaper" {
+  for_each = local.guard_enabled
+  project  = var.project_id
+  role     = "roles/bigquery.dataOwner"
+  member   = "serviceAccount:${google_service_account.reaper["on"].email}"
 }
 
 resource "google_cloudfunctions2_function" "guard" {
@@ -85,7 +115,7 @@ resource "google_cloudfunctions2_function" "guard" {
     environment_variables = {
       PROJECT_ID     = var.project_id
       DEPLOYER_EMAIL = google_service_account.deployer.email
-      GUARD_STOP_AT  = tostring(max(var.alert_at...))
+      GUARD_STOP_AT  = tostring(var.stop_at)
     }
   }
 
@@ -97,7 +127,7 @@ resource "google_cloudfunctions2_function" "guard" {
     service_account_email = google_service_account.guard["on"].email
   }
 
-  depends_on = [google_project_iam_member.build, google_project_iam_member.guard]
+  depends_on = [google_project_iam_member.build, google_project_iam_member.guard_events, google_billing_budget.steward]
 }
 
 resource "google_cloud_run_v2_service_iam_member" "guard_invoker" {
@@ -129,14 +159,14 @@ resource "google_cloudfunctions2_function" "reaper" {
     max_instance_count    = 1
     available_memory      = "256M"
     timeout_seconds       = 120
-    service_account_email = google_service_account.guard["on"].email
+    service_account_email = google_service_account.reaper["on"].email
     ingress_settings      = "ALLOW_ALL"
     environment_variables = {
       PROJECT_ID = var.project_id
     }
   }
 
-  depends_on = [google_project_iam_member.build, google_project_iam_member.guard]
+  depends_on = [google_project_iam_member.build, google_project_iam_member.reaper, google_billing_budget.steward]
 }
 
 resource "google_cloud_run_v2_service_iam_member" "reaper_invoker" {
@@ -144,7 +174,7 @@ resource "google_cloud_run_v2_service_iam_member" "reaper_invoker" {
   location = var.region
   name     = google_cloudfunctions2_function.reaper["on"].name
   role     = "roles/run.invoker"
-  member   = "serviceAccount:${google_service_account.guard["on"].email}"
+  member   = "serviceAccount:${google_service_account.reaper["on"].email}"
 }
 
 resource "google_cloud_scheduler_job" "reaper" {
@@ -158,10 +188,10 @@ resource "google_cloud_scheduler_job" "reaper" {
     uri         = google_cloudfunctions2_function.reaper["on"].service_config[0].uri
     http_method = "POST"
     oidc_token {
-      service_account_email = google_service_account.guard["on"].email
+      service_account_email = google_service_account.reaper["on"].email
       audience              = google_cloudfunctions2_function.reaper["on"].service_config[0].uri
     }
   }
 
-  depends_on = [google_project_service.api]
+  depends_on = [google_project_service.api, google_billing_budget.steward]
 }

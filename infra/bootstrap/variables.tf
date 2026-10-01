@@ -20,7 +20,7 @@ variable "location" {
 }
 
 variable "expires_at" {
-  description = "ISO date (YYYY-MM-DD) after which the reaper destroys the estate. Required: no estate stands without an end."
+  description = "ISO date (YYYY-MM-DD) the estate is meant to end by. The reaper deletes BigQuery datasets after it (only datasets; destroy.yml removes the rest). Required: no estate stands without an end."
   type        = string
   validation {
     condition     = can(regex("^\\d{4}-\\d{2}-\\d{2}$", var.expires_at))
@@ -48,7 +48,7 @@ variable "github_repo" {
 }
 
 variable "github_owner_id" {
-  description = "Numeric GitHub owner id (gh api repos/OWNER/REPO --jq .owner.id). Pinned in the trust condition: it survives a rename and refuses a transferred repository that reuses the old name."
+  description = "Numeric GitHub owner id (gh api repos/OWNER/REPO --jq .owner.id). Pinned in the trust condition next to the repository id, so a transferred repository that reuses the old name is refused."
   type        = string
   validation {
     condition     = can(regex("^[0-9]+$", var.github_owner_id))
@@ -57,7 +57,7 @@ variable "github_owner_id" {
 }
 
 variable "github_repository_id" {
-  description = "Numeric GitHub repository id (gh api repos/OWNER/REPO --jq .id)."
+  description = "Numeric GitHub repository id (gh api repos/OWNER/REPO --jq .id). The name is pinned as well, so a rename stops the deployer until the variables are updated: that is the intended failure."
   type        = string
   validation {
     condition     = can(regex("^[0-9]+$", var.github_repository_id))
@@ -82,7 +82,7 @@ variable "budget_total" {
 }
 
 variable "alert_at" {
-  description = "Spend levels, in budget_currency, that send an alert. The last one is where the guard disables the deploy path."
+  description = "Spend levels, in budget_currency, that send an alert (CLAUDE.md: 30 and 50). The guard stops at stop_at, which also sends one."
   type        = list(number)
   default     = [30, 50]
   validation {
@@ -95,6 +95,16 @@ variable "alert_emails" {
   description = "Addresses that receive budget alerts, in addition to the billing account's administrators."
   type        = list(string)
   default     = []
+}
+
+variable "stop_at" {
+  description = "Spend level, in budget_currency, at which the guard disables the deployer. Below budget_total on purpose: budget data lags by hours, so a stop at the ceiling is already over it."
+  type        = number
+  default     = 45
+  validation {
+    condition     = var.stop_at > 0 && var.stop_at < var.budget_total
+    error_message = "stop_at must be positive and strictly below budget_total."
+  }
 }
 
 variable "enable_guard" {

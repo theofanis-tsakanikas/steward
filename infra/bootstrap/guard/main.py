@@ -1,7 +1,10 @@
 """Cost control, the floor under `make destroy` (Cloud Run functions, Python 3.12).
 
-  budget_guard  fires on every budget notification. At the last alert level it DISABLES the deployer service
-                account: nothing can be applied until the author re-enables it by hand. Disabled, not deleted.
+  budget_guard  fires on every budget notification. At the stop level (or on a notification it cannot read) it
+                DISABLES the deployer service account: nothing new can be applied until the author re-enables it
+                by hand. Disabled, not deleted. The destroyer service account is a different identity that is
+                never disabled, so the way to take the estate down stays open. A token already issued to the
+                deployer lives out its hour.
   reaper        runs daily. It deletes BigQuery datasets labelled project=steward whose expires-at has passed.
                 Datasets only (that is where data and cost live); everything else is removed by destroy.yml.
 
@@ -14,14 +17,15 @@ import os
 from datetime import UTC, datetime
 
 import functions_framework
-from logic import decode_budget_message, expired, spend_reached
+from logic import decode_budget_message, expired, parse_stop_at, spend_reached
 
 
 @functions_framework.cloud_event
 def budget_guard(cloud_event) -> None:
     message = decode_budget_message(cloud_event.data)
-    stop_at = float(os.environ["GUARD_STOP_AT"])
-    print(f"budget notification: {message.get('budgetDisplayName')} cost {message.get('costAmount')} stop at {stop_at}")
+    stop_at = parse_stop_at(os.environ.get("GUARD_STOP_AT"))
+    shown = message.get("costAmount") if message else "UNREADABLE"
+    print(f"budget notification: cost {shown} stop at {stop_at}")
     if not spend_reached(message, stop_at):
         return
     from googleapiclient import discovery
