@@ -219,6 +219,8 @@ def test_log_sink_is_not_a_key_for_an_ordinary_dataset():
     net = docs["network"]
     net["log_sink"] = {"source": "pretend this is a sink", "personal_kinds": ["email"]}
     net["tables"] = {}
+    net["readers"] = ["steward"]
+    net["marketplace"].update(listable=False, grantable_roles=[])
     _, findings = validate_all(docs, io.roles_doc(), io.waivers_doc(), io.harvest(), date(2026, 10, 1))
     assert ("TABLE_UNDECLARED", "network.usage_events") in {(f.code, f.target) for f in findings if f.blocking}
     e2 = pipeline.load(contract_docs=docs)

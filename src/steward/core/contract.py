@@ -260,6 +260,8 @@ class Contract(Strict):
             raise ValueError("a contract declares at least one table (or `log_sink` for a sink-filled dataset)")
         if self.log_sink is not None and self.tables:
             raise ValueError("a log-sink dataset's tables belong to Cloud Logging; declare none")
+        if self.log_sink is not None and (set(self.readers) - {"steward"} or self.marketplace.grantable_roles):
+            raise ValueError("a log-sink dataset's tables cannot carry tags, so its steward alone may read it")
         return self
 
     _p = field_validator("owner", "steward", "custodian")(classmethod(lambda cls, v: _principal(v)))
@@ -312,7 +314,31 @@ class Ceiling(Strict):
     clear_kinds: list[Kind]
 
 
+class CeilingAdded(Strict):
+    role: str
+    kinds: list[Kind] = Field(min_length=1)
+
+
+class RolesChange(Strict):
+    """One version of _roles.yaml: who asked, who approved, and — explicitly — any ceiling it raises.
+
+    An attestation, not a signature: the file records names; it cannot prove the named person clicked
+    anything (ADR 0007). What it can prove offline: the approver was, in the BASE commit's directory, a
+    member of the approver group, and is not the requester."""
+
+    version: int = Field(ge=1)
+    date: date_t
+    change: str = Field(min_length=10)
+    requested_by: str
+    approved_by: str
+    ceilings_added: list[CeilingAdded]
+
+    _p = field_validator("requested_by", "approved_by")(classmethod(lambda cls, v: _principal(v)))
+
+
 class Roles(Strict):
+    version: int = Field(ge=1)
+    changes: list[RolesChange] = Field(min_length=1)
     roles: dict[str, Role]
     ceilings: dict[str, Ceiling]
     seat_groups: dict[str, str]
@@ -344,6 +370,24 @@ class Roles(Strict):
         missing = sorted(g for g in self.seat_groups.values() if g not in self.directory)
         if missing:
             raise ValueError(f"seat groups not in the directory: {missing}")
+        return self
+
+    @model_validator(mode="after")
+    def _versioned(self) -> Roles:
+        versions = [c.version for c in self.changes]
+        if versions != list(range(1, len(versions) + 1)) or versions[-1] != self.version:
+            raise ValueError(
+                f"_roles.yaml changes must be versions 1..n ending at version {self.version}, got {versions}"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _bound_roles_see_nothing_clear(self) -> Roles:
+        for name, r in self.roles.items():
+            if r.bound_from and self.ceilings.get(name) and self.ceilings[name].clear_kinds:
+                raise ValueError(
+                    f"{name} is bound to each contract's {r.bound_from}; a bound role may see no tagged column in clear"
+                )
         return self
 
     @model_validator(mode="after")

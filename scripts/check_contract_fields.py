@@ -78,6 +78,14 @@ READERS: dict[tuple[str, str], tuple[str, list[str]]] = {
     ("Ceiling", "clear_kinds"): (CORE + "compile.py", ["ceiling"]),
     ("Roles", "roles"): (CORE + "compile.py", ["roles"]),
     ("Roles", "ceilings"): (CORE + "compile.py", ["roles"]),
+    ("Roles", "version"): (CORE + "contract.py", ["self"]),  # the versions validator
+    ("Roles", "changes"): (CORE + "versioning.py", ["roles"]),
+    ("RolesChange", "version"): (CORE + "versioning.py", ["ch"]),
+    ("RolesChange", "requested_by"): (CORE + "versioning.py", ["ch"]),
+    ("RolesChange", "approved_by"): (CORE + "versioning.py", ["ch"]),
+    ("RolesChange", "ceilings_added"): (CORE + "versioning.py", ["ch"]),
+    ("CeilingAdded", "role"): (CORE + "versioning.py", ["c"]),
+    ("CeilingAdded", "kinds"): (CORE + "versioning.py", ["c"]),
     ("Roles", "seat_groups"): (CORE + "marketplace.py", ["roles"]),
     ("Roles", "waiver_approvers"): (CORE + "validate.py", ["roles"]),
     ("Roles", "directory"): (CORE + "validate.py", ["roles"]),
@@ -95,6 +103,8 @@ DOCUMENTATION = {
     ("Change", "date"): "when a version was made; shown, not enforced",
     ("Role", "description"): "what a role is for",
     ("Waiver", "reason"): "why an exception exists; read by its approver",
+    ("RolesChange", "change"): "the human sentence of a roles change; read by its approver",
+    ("RolesChange", "date"): "when; shown in the access review",
     ("RowAccess", "none"): "the written reason all rows are visible; the absence of `column` is what compiles",
     ("LogSink", "source"): "which logs feed the sink; the sink filter itself is compiled from code",
 }

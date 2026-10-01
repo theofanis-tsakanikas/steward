@@ -130,7 +130,7 @@ closes        scripts/gate_proof.py with the three rules (green first · non-zer
 out_of_scope  —
 stop_at       table of mutations shown
 review        yes
-status        open
+status        closed 2026-10-01 — PR #9 (review + verification pass)
 ```
 
 ```
@@ -143,7 +143,7 @@ closes        a column with detected personal data declared non-sensitive is ref
 out_of_scope  —
 stop_at       ADR reviewed
 review        yes
-status        open
+status        closed 2026-10-01 — this PR (review; verification pass recorded in SESSION-LOG)
 ```
 
 ---
