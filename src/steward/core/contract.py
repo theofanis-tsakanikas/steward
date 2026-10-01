@@ -312,9 +312,23 @@ class Ceiling(Strict):
     clear_kinds: list[Kind]
 
 
+class CeilingChange(Strict):
+    """A raised ceiling is an approval, not an edit: who asked, who approved, when, and which kinds."""
+
+    role: str
+    kinds_added: list[Kind] = Field(min_length=1)
+    reason: str = Field(min_length=10)
+    requested_by: str
+    approved_by: str
+    approved_on: date_t
+
+    _p = field_validator("requested_by", "approved_by")(classmethod(lambda cls, v: _principal(v)))
+
+
 class Roles(Strict):
     roles: dict[str, Role]
     ceilings: dict[str, Ceiling]
+    ceiling_changes: list[CeilingChange]
     seat_groups: dict[str, str]
     waiver_approvers: str
     directory: dict[str, list[str]]

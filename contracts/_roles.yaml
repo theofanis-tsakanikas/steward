@@ -22,8 +22,10 @@ roles:
 
 # Ceilings: the most any contract may give a role on a tagged column. A role may see a tagged column
 # in `clear` only if every kind the column declares is in its `clear_kinds`; `special` data is never
-# clear for anyone. A contract that exceeds a ceiling fails the access gate — the contract author
-# cannot raise the ceiling in the same file that uses it.
+# clear for anyone. A contract that exceeds a ceiling fails the access gate. Raising a ceiling is not an
+# edit but an approval: every kind added since the base commit needs a `ceiling_changes` entry approved by
+# a member of the waiver-approver group who is not its requester (scripts/check_contract_versions.py,
+# CEILING_RAISED) — so a ceiling cannot be raised in the same PR that uses it without a named approver.
 ceilings:
   analyst: {clear_kinds: []}
   steward: {clear_kinds: []}
@@ -39,6 +41,9 @@ seat_groups:
   analyst@DE: group:analysts-de@halverra.example
   fraud_investigator: group:fraud-investigators@halverra.example
   bi_service: group:bi-service@halverra.example
+
+# Approved raises of a ceiling, append-only. Empty: no ceiling has been raised since the first one.
+ceiling_changes: []
 
 # Who may approve a waiver (doctrine 6). Never the requester, never an owner of what is waived.
 waiver_approvers: group:privacy-office@halverra.example

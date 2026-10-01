@@ -41,3 +41,60 @@ def compare(name: str, old: dict | None, new: dict | None) -> list[Finding]:
     if nc[: len(oc)] != oc:
         out.append(Finding("CHANGELOG_REWRITTEN", GATE, name, "earlier changelog entries were edited or removed"))
     return out
+
+
+def compare_roles(old: dict | None, new: dict) -> list[Finding]:
+    """Doctrine 5 for ceilings: any kind added to a role's `clear_kinds` since the base commit needs a
+    `ceiling_changes` entry approved by a named member of the waiver-approver group who did not ask for
+    it. A ceiling raised in the same PR that uses it is otherwise a key to doctrine 7 in effect."""
+    from .contract import Roles
+
+    if not old:
+        return []
+    out: list[Finding] = []
+    roles = Roles.model_validate(new)
+    old_ceil = {r: set(c.get("clear_kinds", [])) for r, c in (old.get("ceilings") or {}).items()}
+    approved = {(ch.role, k): ch for ch in roles.ceiling_changes for k in ch.kinds_added}
+    for role, ceil in roles.ceilings.items():
+        for kind in sorted(set(ceil.clear_kinds) - old_ceil.get(role, set())):
+            ch = approved.get((role, kind))
+            where = f"_roles.yaml:ceilings.{role}"
+            if ch is None:
+                out.append(
+                    Finding(
+                        "CEILING_RAISED",
+                        GATE,
+                        where,
+                        f"{kind} added to {role}'s clear_kinds with no approved ceiling_changes entry",
+                    )
+                )
+                continue
+            if not ch.approved_by.startswith("user:") or not roles.is_member(ch.approved_by, roles.waiver_approvers):
+                out.append(
+                    Finding(
+                        "CEILING_RAISED",
+                        GATE,
+                        where,
+                        f"{kind} for {role}: approved by {ch.approved_by}, not a member of {roles.waiver_approvers}",
+                    )
+                )
+            elif ch.approved_by.casefold() == ch.requested_by.casefold():
+                out.append(
+                    Finding(
+                        "CEILING_RAISED",
+                        GATE,
+                        where,
+                        f"{kind} for {role}: requester approved their own raise (doctrine 5)",
+                    )
+                )
+    old_changes = old.get("ceiling_changes") or []
+    if [c for c in (new.get("ceiling_changes") or [])][: len(old_changes)] != old_changes:
+        out.append(
+            Finding(
+                "CHANGELOG_REWRITTEN",
+                GATE,
+                "_roles.yaml:ceiling_changes",
+                "earlier ceiling approvals were edited or removed",
+            )
+        )
+    return out
