@@ -38,3 +38,14 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
 | D4 | Model-proposed descriptions (T031) | unlock: T030 closed before 2026-10-06 |
 | D5 | Dataform for transformations | unlock: never for this timebox unless asked |
 | D6 | VPC Service Controls perimeter | unlock: needs an organization node; if the project has none, documented only |
+
+## Decided during the build (session, 2026-10-01)
+- **B1 — The operator is "Halverra Telecom", domain `halverra.example`.** Searched 2026-10-01: no
+  operator or well-known brand by that name; `.example` is reserved (RFC 2606) so no principal in the
+  repository can ever resolve to a real mailbox. Rejected: "Corvane" (a registered UK company exists).
+- **B2 — The naming rule in `CLAUDE.md` no longer names a real company, even as a negative example.**
+  A public repository that names a company in order to say it is not about that company is about that
+  company. The first commit was amended before any push, so no history carries the name.
+- **B3 — The GitHub repository was created by the session (private), not by the author.** DAY-ONE step 6
+  listed it as manual, but the autonomous build (P3) cannot open its first PR without it; `gh` was
+  already authenticated as the author. The WIF half of step 6 stays with T010.
