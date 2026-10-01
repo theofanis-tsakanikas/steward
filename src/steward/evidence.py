@@ -15,11 +15,11 @@ gate-proof run, too slow to recompute here — must still list exactly today's m
 
 from __future__ import annotations
 
-import contextlib
 import hashlib
 import importlib.util
-import io as _io
 import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -63,18 +63,35 @@ def digest(data) -> str:
     return hashlib.sha256(canonical(data).encode()).hexdigest()
 
 
-def _harness(name: str):
-    path = io.REPO / "evals" / name / "eval.py"
-    sys.path.insert(0, str(path.parent.parent))  # evals/_common.py
-    spec = importlib.util.spec_from_file_location(f"evidence_eval_{name}", path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+_CHILD = """
+import contextlib, importlib.util, io, json, sys
+name = sys.argv[1]
+path = sys.argv[2] + "/evals/" + name + "/eval.py"
+sys.path.insert(0, sys.argv[2] + "/evals")  # evals/_common.py
+spec = importlib.util.spec_from_file_location("evidence_eval_" + name, path)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+with contextlib.redirect_stdout(io.StringIO()):  # a harness prints its table; the payload is what it returns
+    result = mod.evaluate()
+def plain(o):
+    return sorted(o) if isinstance(o, (set, frozenset)) else list(o) if isinstance(o, tuple) else str(o)
+sys.stdout.write(json.dumps(result, default=plain))
+"""
 
 
 def _evaluate(name: str) -> dict:
-    with contextlib.redirect_stdout(_io.StringIO()):  # a harness prints its table; the payload is what it returns
-        return json.loads(canonical(_harness(name).evaluate()))
+    """One claim harness's `evaluate()`, in its own process: the planted ground truth is read by evals only,
+    and an eval run in-process from here would put that read inside a production import path."""
+    r = subprocess.run(
+        [sys.executable, "-c", _CHILD, name, str(io.REPO)],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "PYTHONPATH": str(io.REPO / "src")},
+        cwd=io.REPO,
+    )
+    if r.returncode:
+        raise RuntimeError(f"evals/{name}/eval.py evaluate() failed:\n{r.stderr[-1500:]}")
+    return json.loads(canonical(json.loads(r.stdout)))
 
 
 def estate() -> dict:
