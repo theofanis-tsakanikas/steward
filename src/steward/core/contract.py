@@ -208,9 +208,29 @@ class Marketplace(Strict):
     listable: bool
     approvers: str
     max_grant_days: int = Field(gt=0, le=90)
-    grantable_roles: list[str] = Field(min_length=1)
+    grantable_roles: list[str]
+
+    @model_validator(mode="after")
+    def _listed_iff_grantable(self) -> Marketplace:
+        if self.listable != bool(self.grantable_roles):
+            raise ValueError("a listed dataset grants at least one role; an unlisted one grants none")
+        return self
 
     _p = field_validator("approvers")(classmethod(lambda cls, v: _principal(v)))
+
+
+LOG_SINK_TABLE = re.compile(r"^cloudaudit_googleapis_com_[a-z_]+$")
+
+
+class LogSink(Strict):
+    """A dataset filled by a Cloud Logging sink: its tables and columns are Logging's (B15).
+
+    Narrow on purpose — this must not become a key to doctrine 7. Only tables named the way Cloud
+    Logging names audit-log tables are exempt from declaration, and the only personal data such a
+    dataset may hold is principals' e-mail addresses."""
+
+    source: str = Field(min_length=10)
+    personal_kinds: list[Literal["email"]] = Field(min_length=1)
 
 
 class Change(Strict):
@@ -231,7 +251,16 @@ class Contract(Strict):
     readers: list[str]  # roles with standing read access; [] is allowed and means "only via the marketplace"
     marketplace: Marketplace
     changelog: list[Change] = Field(min_length=1)
-    tables: dict[str, Table] = Field(min_length=1)
+    log_sink: LogSink | None = None
+    tables: dict[str, Table]
+
+    @model_validator(mode="after")
+    def _tables_or_sink(self) -> Contract:
+        if self.log_sink is None and not self.tables:
+            raise ValueError("a contract declares at least one table (or `log_sink` for a sink-filled dataset)")
+        if self.log_sink is not None and self.tables:
+            raise ValueError("a log-sink dataset's tables belong to Cloud Logging; declare none")
+        return self
 
     _p = field_validator("owner", "steward", "custodian")(classmethod(lambda cls, v: _principal(v)))
 
@@ -286,6 +315,7 @@ class Ceiling(Strict):
 class Roles(Strict):
     roles: dict[str, Role]
     ceilings: dict[str, Ceiling]
+    seat_groups: dict[str, str]
     waiver_approvers: str
     directory: dict[str, list[str]]
 
@@ -305,6 +335,16 @@ class Roles(Strict):
                     # this file says, and "who is in this group" has one answer a reviewer can read.
                     raise ValueError(f"{g} contains group {m}: nested groups are not allowed")
         return v
+
+    @model_validator(mode="after")
+    def _seat_groups_cover_unbound_seats(self) -> Roles:
+        seats = {s for r, role in self.roles.items() if not role.bound_from for s in self.seats(r)}
+        if set(self.seat_groups) != seats:
+            raise ValueError(f"seat_groups must name a group for exactly the seats {sorted(seats)}")
+        missing = sorted(g for g in self.seat_groups.values() if g not in self.directory)
+        if missing:
+            raise ValueError(f"seat groups not in the directory: {missing}")
+        return self
 
     @model_validator(mode="after")
     def _every_role_has_a_ceiling(self) -> Roles:

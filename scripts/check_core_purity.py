@@ -17,6 +17,10 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 CORE = REPO / "src" / "steward" / "core"
 ALLOWED_THIRD_PARTY = {"pydantic", "yaml"}
+# The core reads no clock: "now" is always data (a capture timestamp, a ledger's as_of, an anchor date).
+# A test that controlled the clock the code reads would be the code agreeing with itself (claim 6 trap).
+CLOCK_MODULES = {"time"}
+CLOCK_ATTRS = {"now", "today", "utcnow", "fromtimestamp", "utcfromtimestamp", "time_ns", "monotonic", "perf_counter"}
 ALLOWED_INTERNAL = "steward.core"
 
 
@@ -33,10 +37,22 @@ def violations(core: Path = CORE) -> list[str]:
                     continue
                 names = [node.module or ""]
             for name in names:
+                if name.split(".")[0] in CLOCK_MODULES:
+                    found.append(f"CORE_CLOCK {path.relative_to(REPO)}:{node.lineno} imports {name}")
+                    continue
                 top = name.split(".")[0]
                 if name.startswith(ALLOWED_INTERNAL) or top in sys.stdlib_module_names or top in ALLOWED_THIRD_PARTY:
                     continue
                 found.append(f"CORE_IMPURE {path.relative_to(REPO)}:{node.lineno} imports {name}")
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Attribute) and node.attr in CLOCK_ATTRS:
+                found.append(f"CORE_CLOCK {path.relative_to(REPO)}:{node.lineno} references .{node.attr}")
+            if (
+                isinstance(node, ast.ImportFrom)
+                and node.module == "datetime"
+                and any(a.name in CLOCK_ATTRS for a in node.names)
+            ):
+                found.append(f"CORE_CLOCK {path.relative_to(REPO)}:{node.lineno} imports a clock from datetime")
     return found
 
 
@@ -47,7 +63,7 @@ def main() -> int:
     if found:
         print(f"FAIL core purity: {len(found)} forbidden import(s)")
         return 1
-    print("ok core purity: src/steward/core imports only stdlib, pydantic, yaml")
+    print("ok core purity: src/steward/core imports only stdlib, pydantic, yaml, and reads no clock")
     return 0
 
 

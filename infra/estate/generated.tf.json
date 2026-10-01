@@ -6,10 +6,10 @@
         "personal|analyst=email_mask,bi_service=hash,fraud_investigator=nullify,steward=email_mask": "${google_data_catalog_policy_tag.personal_0c8a752d.name}",
         "personal|analyst=hash,bi_service=hash,fraud_investigator=clear,steward=hash": "${google_data_catalog_policy_tag.personal_fcd2e14f.name}",
         "personal|analyst=hash,bi_service=hash,fraud_investigator=clear,steward=last_four": "${google_data_catalog_policy_tag.personal_e07e3e53.name}",
-        "personal|analyst=hash,bi_service=hash,steward=hash": "${google_data_catalog_policy_tag.personal_07eeb42d.name}",
-        "personal|analyst=last_four,bi_service=nullify,steward=last_four": "${google_data_catalog_policy_tag.personal_825e2471.name}",
         "personal|analyst=nullify,bi_service=nullify,fraud_investigator=nullify,steward=nullify": "${google_data_catalog_policy_tag.personal_797e2fac.name}",
         "personal|analyst=year_only,bi_service=year_only,fraud_investigator=nullify,steward=year_only": "${google_data_catalog_policy_tag.personal_91294881.name}",
+        "personal|bi_service=hash,steward=hash": "${google_data_catalog_policy_tag.personal_b0e3d096.name}",
+        "personal|bi_service=nullify,steward=last_four": "${google_data_catalog_policy_tag.personal_80db2127.name}",
         "restricted": "${google_data_catalog_policy_tag.restricted.name}",
         "sensitive_network|analyst=hash,bi_service=hash,fraud_investigator=clear,steward=last_four": "${google_data_catalog_policy_tag.sensitive_network_e07e3e53.name}",
         "sensitive_network|analyst=hash,bi_service=hash,fraud_investigator=clear,steward=nullify": "${google_data_catalog_policy_tag.sensitive_network_bfba4130.name}",
@@ -24,6 +24,22 @@
   },
   "resource": {
     "google_bigquery_dataset": {
+      "audit": {
+        "dataset_id": "audit",
+        "default_partition_expiration_ms": 7776000000,
+        "delete_contents_on_destroy": true,
+        "description": "BigQuery Data Access audit logs for the estate — the input to the access review. Owner group:privacy-office@halverra.example; steward group:data-governance@halverra.example; custodian group:data-platform@halverra.example.",
+        "labels": {
+          "contract-version": "1",
+          "managed-by": "steward",
+          "owner": "privacy-office",
+          "project": "steward",
+          "retention-days": "90",
+          "steward": "data-governance"
+        },
+        "location": "${var.location}",
+        "max_time_travel_hours": "48"
+      },
       "crm": {
         "dataset_id": "crm",
         "delete_contents_on_destroy": true,
@@ -44,7 +60,7 @@
         "delete_contents_on_destroy": true,
         "description": "Invoices of Halverra Telecom (fictional). Owner group:finance-owners@halverra.example; steward group:finance-stewards@halverra.example; custodian group:data-platform@halverra.example.",
         "labels": {
-          "contract-version": "2",
+          "contract-version": "3",
           "managed-by": "steward",
           "owner": "finance-owners",
           "project": "steward",
@@ -136,12 +152,12 @@
         "deletion_protection": false,
         "description": "One row per invoice. Partitioned by issue_date.",
         "labels": {
-          "contract-version": "2",
+          "contract-version": "3",
           "managed-by": "steward",
           "project": "steward"
         },
         "require_partition_filter": true,
-        "schema": "[{\"name\":\"invoice_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"customer_id\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_07eeb42d.name}\"]}},{\"name\":\"iban\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_825e2471.name}\"]}},{\"name\":\"amount\",\"type\":\"NUMERIC\",\"mode\":\"NULLABLE\"},{\"name\":\"currency\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"issue_date\",\"type\":\"DATE\",\"mode\":\"REQUIRED\"},{\"name\":\"due_date\",\"type\":\"DATE\",\"mode\":\"NULLABLE\"},{\"name\":\"status\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"country\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"}]",
+        "schema": "[{\"name\":\"invoice_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"customer_id\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_b0e3d096.name}\"]}},{\"name\":\"iban\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_80db2127.name}\"]}},{\"name\":\"amount\",\"type\":\"NUMERIC\",\"mode\":\"NULLABLE\"},{\"name\":\"currency\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"issue_date\",\"type\":\"DATE\",\"mode\":\"REQUIRED\"},{\"name\":\"due_date\",\"type\":\"DATE\",\"mode\":\"NULLABLE\"},{\"name\":\"status\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"country\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"}]",
         "table_id": "billing",
         "time_partitioning": {
           "expiration_ms": 315360000000,
@@ -158,7 +174,7 @@
           "project": "steward",
           "quarantine-of": "billing"
         },
-        "schema": "[{\"name\":\"invoice_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"customer_id\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_07eeb42d.name}\"]}},{\"name\":\"iban\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_825e2471.name}\"]}},{\"name\":\"amount\",\"type\":\"NUMERIC\",\"mode\":\"NULLABLE\"},{\"name\":\"currency\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"issue_date\",\"type\":\"DATE\",\"mode\":\"REQUIRED\"},{\"name\":\"due_date\",\"type\":\"DATE\",\"mode\":\"NULLABLE\"},{\"name\":\"status\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"country\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"_run_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_rule_ids\",\"type\":\"STRING\",\"mode\":\"REPEATED\"},{\"name\":\"_row_key\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_routed_to\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_failures\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"_quarantined_at\",\"type\":\"TIMESTAMP\",\"mode\":\"REQUIRED\"}]",
+        "schema": "[{\"name\":\"invoice_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"customer_id\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_b0e3d096.name}\"]}},{\"name\":\"iban\",\"type\":\"STRING\",\"mode\":\"NULLABLE\",\"policyTags\":{\"names\":[\"${google_data_catalog_policy_tag.personal_80db2127.name}\"]}},{\"name\":\"amount\",\"type\":\"NUMERIC\",\"mode\":\"NULLABLE\"},{\"name\":\"currency\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"issue_date\",\"type\":\"DATE\",\"mode\":\"REQUIRED\"},{\"name\":\"due_date\",\"type\":\"DATE\",\"mode\":\"NULLABLE\"},{\"name\":\"status\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"country\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"_run_id\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_rule_ids\",\"type\":\"STRING\",\"mode\":\"REPEATED\"},{\"name\":\"_row_key\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_routed_to\",\"type\":\"STRING\",\"mode\":\"REQUIRED\"},{\"name\":\"_failures\",\"type\":\"STRING\",\"mode\":\"NULLABLE\"},{\"name\":\"_quarantined_at\",\"type\":\"TIMESTAMP\",\"mode\":\"REQUIRED\"}]",
         "table_id": "billing__quarantine"
       },
       "legacy__legacy_crm_export": {
@@ -250,12 +266,6 @@
         "display_name": "sensitive_network",
         "taxonomy": "${google_data_catalog_taxonomy.classification.id}"
       },
-      "personal_07eeb42d": {
-        "description": "personal|analyst=hash,bi_service=hash,steward=hash",
-        "display_name": "personal analyst-hash bi-hash steward-hash",
-        "parent_policy_tag": "${google_data_catalog_policy_tag.class_personal.id}",
-        "taxonomy": "${google_data_catalog_taxonomy.classification.id}"
-      },
       "personal_0c8a752d": {
         "description": "personal|analyst=email_mask,bi_service=hash,fraud_investigator=nullify,steward=email_mask",
         "display_name": "personal analyst-email_mask bi-hash fraud-nullify steward-email_mask",
@@ -268,15 +278,21 @@
         "parent_policy_tag": "${google_data_catalog_policy_tag.class_personal.id}",
         "taxonomy": "${google_data_catalog_taxonomy.classification.id}"
       },
-      "personal_825e2471": {
-        "description": "personal|analyst=last_four,bi_service=nullify,steward=last_four",
-        "display_name": "personal analyst-last_four bi-nullify steward-last_four",
+      "personal_80db2127": {
+        "description": "personal|bi_service=nullify,steward=last_four",
+        "display_name": "personal bi-nullify steward-last_four",
         "parent_policy_tag": "${google_data_catalog_policy_tag.class_personal.id}",
         "taxonomy": "${google_data_catalog_taxonomy.classification.id}"
       },
       "personal_91294881": {
         "description": "personal|analyst=year_only,bi_service=year_only,fraud_investigator=nullify,steward=year_only",
         "display_name": "personal analyst-year_only bi-year_only fraud-nullify steward-year_only",
+        "parent_policy_tag": "${google_data_catalog_policy_tag.class_personal.id}",
+        "taxonomy": "${google_data_catalog_taxonomy.classification.id}"
+      },
+      "personal_b0e3d096": {
+        "description": "personal|bi_service=hash,steward=hash",
+        "display_name": "personal bi-hash steward-hash",
         "parent_policy_tag": "${google_data_catalog_policy_tag.class_personal.id}",
         "taxonomy": "${google_data_catalog_taxonomy.classification.id}"
       },
