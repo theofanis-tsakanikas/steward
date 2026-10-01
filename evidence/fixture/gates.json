@@ -1,0 +1,1046 @@
+{
+ "data": {
+  "ok": true,
+  "results": [
+   {
+    "claim": "7",
+    "detail": "ERROR RETENTION_MISSING finance:retention — Field required",
+    "expect": [
+     "RETENTION_MISSING",
+     "finance:retention"
+    ],
+    "file": "contracts/finance.yaml",
+    "gate": "contracts",
+    "n": 1,
+    "name": "retention deleted",
+    "status": "REFUSED",
+    "why": "a dataset with no retention period fails the build (doctrine 3)"
+   },
+   {
+    "claim": "4",
+    "detail": "ERROR OWNERSHIP_MISSING crm:owner — Field required",
+    "expect": [
+     "OWNERSHIP_MISSING",
+     "crm:owner"
+    ],
+    "file": "contracts/crm.yaml",
+    "gate": "contracts",
+    "n": 2,
+    "name": "owner deleted",
+    "status": "REFUSED",
+    "why": "a dataset with no owner fails the build (doctrine 3)"
+   },
+   {
+    "claim": "1",
+    "detail": "ERROR COLUMN_UNDECLARED finance.billing.payer_phone — STRING column exists in the estate but not in the contract",
+    "expect": [
+     "COLUMN_UNDECLARED",
+     "finance.billing.payer_phone"
+    ],
+    "file": "synthetic/data/_schema.json",
+    "gate": "contracts",
+    "n": 3,
+    "name": "new column, no contract entry",
+    "status": "REFUSED",
+    "why": "a column the estate has and the contract does not is drift"
+   },
+   {
+    "claim": "1",
+    "detail": "ERROR WAIVER_REFUSED W-999 — PII_UNTAGGED is not waivable (only CONTRACT_MISSING); fix the declaration instead",
+    "expect": [
+     "WAIVER_REFUSED",
+     "W-999"
+    ],
+    "file": "contracts/_waivers.yaml",
+    "gate": "contracts",
+    "n": 4,
+    "name": "waiver for personal data",
+    "status": "REFUSED",
+    "why": "no waiver can open personal data (doctrine 7)"
+   },
+   {
+    "claim": "4",
+    "detail": "ERROR VERSION_NOT_BUMPED crm — content changed but version stayed 2 → 2",
+    "expect": [
+     "VERSION_NOT_BUMPED",
+     "crm"
+    ],
+    "file": "contracts/crm.yaml",
+    "gate": "contract-versions",
+    "n": 5,
+    "name": "contract edited without a version bump",
+    "status": "REFUSED",
+    "why": "a changed contract must be a new version (doctrine 4)"
+   },
+   {
+    "claim": "1",
+    "detail": "ERROR PII_UNTAGGED crm.support_tickets.ref_2 — msisdn found by value (309/400 values) but the contract classifies it `internal` — no policy tag, no masking",
+    "expect": [
+     "PII_UNTAGGED",
+     "crm.support_tickets.ref_2"
+    ],
+    "file": "contracts/crm.yaml",
+    "gate": "classification",
+    "n": 6,
+    "name": "the tag removed from ref_2",
+    "status": "REFUSED",
+    "why": "phone numbers found by value in a column the contract calls internal"
+   },
+   {
+    "claim": "1",
+    "detail": "ERROR PII_UNTAGGED legacy.legacy_crm_export.tel_a — msisdn found by value; no contract and the compiled schema does not hold it at `restricted`",
+    "expect": [
+     "PII_UNTAGGED",
+     "legacy.legacy_crm_export.tel_a"
+    ],
+    "file": "src/steward/core/compile.py",
+    "gate": "classification",
+    "n": 7,
+    "name": "compiler forgets the safe state",
+    "status": "REFUSED",
+    "why": "an uncontracted table's PII must compile to `restricted`"
+   },
+   {
+    "claim": "2",
+    "detail": "ERROR ROLE_CEILING_EXCEEDED crm.customers.msisdn — analyst would see msisdn in clear; its ceiling allows clear only for nothing",
+    "expect": [
+     "ROLE_CEILING_EXCEEDED",
+     "crm.customers.msisdn"
+    ],
+    "file": "contracts/crm.yaml",
+    "gate": "access",
+    "n": 8,
+    "name": "analyst sees MSISDN in clear",
+    "status": "REFUSED",
+    "why": "a role ceiling the contract cannot raise"
+   },
+   {
+    "claim": "2",
+    "detail": "ERROR MASKING_TYPE_INVALID crm.customers.email — year_only (DATE_YEAR_MASK) cannot mask a STRING column (accepts ['DATE', 'DATETIME', 'TIMESTAMP'])",
+    "expect": [
+     "MASKING_TYPE_INVALID",
+     "crm.customers.email"
+    ],
+    "file": "contracts/crm.yaml",
+    "gate": "access",
+    "n": 9,
+    "name": "year mask on a STRING",
+    "status": "REFUSED",
+    "why": "a masking rule BigQuery would reject on that type"
+   },
+   {
+    "claim": "2",
+    "detail": "MISMATCH tag-grants personal_0c8a752d analyst@DE: expected EMAIL_MASK compiled clear",
+    "expect": [
+     "MISMATCH tag-grants",
+     "analyst@DE: expected EMAIL_MASK compiled clear"
+    ],
+    "file": "src/steward/core/compile.py",
+    "gate": "access-eval",
+    "n": 10,
+    "name": "compiler grants clear to every masked seat",
+    "status": "REFUSED",
+    "why": "compiled controls must be exactly what the contracts imply"
+   },
+   {
+    "claim": "2",
+    "detail": "MISMATCH tag-grants personal_0c8a752d group:data-platform@halverra.example: expected None compiled clear",
+    "expect": [
+     "MISMATCH tag-grants",
+     "group:data-platform@halverra.example: expected None compiled clear"
+    ],
+    "file": "src/steward/core/compile.py",
+    "gate": "access-eval",
+    "n": 11,
+    "name": "pipeline SA handed Fine-Grained Reader",
+    "status": "REFUSED",
+    "why": "the custodian writes data and reads no tagged column in clear (doctrine 5)"
+   },
+   {
+    "claim": "2",
+    "detail": "UNMODELLED_ACCESS google_project_iam_member.analyst_de: role roles/datacatalog.categoryFineGrainedReader is not modelled",
+    "expect": [
+     "UNMODELLED_ACCESS",
+     "google_project_iam_member"
+    ],
+    "file": "src/steward/core/compile.py",
+    "gate": "access-eval",
+    "n": 12,
+    "name": "project-level Fine-Grained Reader",
+    "status": "REFUSED",
+    "why": "access the simulator cannot evaluate is refused, never ignored"
+   },
+   {
+    "claim": "2",
+    "detail": "MISMATCH tag-grants personal_80db2127 group:finance-stewards@halverra.example: expected LAST_FOUR_CHARACTERS compiled SHA256",
+    "expect": [
+     "MISMATCH tag-grants",
+     "expected LAST_FOUR_CHARACTERS compiled SHA256"
+    ],
+    "file": "src/steward/core/compile.py",
+    "gate": "access-eval",
+    "n": 13,
+    "name": "last-four compiled as a hash",
+    "status": "REFUSED",
+    "why": "the eval reads the contract vocabulary with its own map, not the compiler's"
+   },
+   {
+    "claim": "2",
+    "detail": "UNMODELLED_ACCESS google_bigquery_dataset.analytics carries IAM the model does not read: ['access', 'access[0].role']",
+    "expect": [
+     "UNMODELLED_ACCESS",
+     "google_bigquery_dataset"
+    ],
+    "file": "src/steward/core/compile.py",
+    "gate": "access-eval",
+    "n": 14,
+    "name": "an inline access block on a dataset",
+    "status": "REFUSED",
+    "why": "a grant hidden inside a non-IAM resource is still a grant"
+   },
+   {
+    "claim": "2",
+    "detail": "UNMODELLED_ACCESS estate: resource type google_data_catalog_policy_tag_iam_member is not modelled in this layer",
+    "expect": [
+     "UNMODELLED_ACCESS",
+     "estate"
+    ],
+    "file": "src/steward/core/compile.py",
+    "gate": "access-eval",
+    "n": 15,
+    "name": "a Fine-Grained Reader in the estate layer",
+    "status": "REFUSED",
+    "why": "IAM in a layer the model does not read is refused, not ignored"
+   },
+   {
+    "claim": "5",
+    "detail": "ERROR QUALITY_ROWS_LOST finance.billing — source 1802 ≠ loaded 1795 + quarantined 6 — 1 row(s) unaccounted for",
+    "expect": [
+     "QUALITY_ROWS_LOST",
+     "finance.billing"
+    ],
+    "file": "src/steward/quality_run.py",
+    "gate": "quality",
+    "n": 16,
+    "name": "a loader that drops a quarantined row",
+    "status": "REFUSED",
+    "why": "source = loaded + quarantined, counted from what was written (claim 5)"
+   },
+   {
+    "claim": "5",
+    "detail": "ERROR QUARANTINE_UNATTRIBUTED finance.billing — quarantined row 'INV-2026-000136@135' lacks ['rule_ids']",
+    "expect": [
+     "QUARANTINE_UNATTRIBUTED",
+     "finance.billing"
+    ],
+    "file": "src/steward/core/quality.py",
+    "gate": "quality",
+    "n": 17,
+    "name": "quarantine without its rule id",
+    "status": "REFUSED",
+    "why": "a quarantined row carries the rule that sent it there"
+   },
+   {
+    "claim": "6",
+    "detail": "MISMATCH R-004: expected ('refused', ['SELF_APPROVAL']) got ('granted', [])",
+    "expect": [
+     "MISMATCH",
+     "R-004:"
+    ],
+    "file": "src/steward/core/marketplace.py",
+    "gate": "marketplace-eval",
+    "n": 18,
+    "name": "the self-approval check deleted",
+    "status": "REFUSED",
+    "why": "R-004's approver owns network and sits in analyst@IT — only the self-approval check stops it (doctrine 5)"
+   },
+   {
+    "claim": "6",
+    "detail": "MISMATCH R-005: expected ('refused', ['SERVICE_ACCOUNT_APPROVAL']) got ('refused', ['APPROVER_NOT_HUMAN'])",
+    "expect": [
+     "MISMATCH",
+     "R-005:"
+    ],
+    "file": "src/steward/core/marketplace.py",
+    "gate": "marketplace-eval",
+    "n": 19,
+    "name": "a service account's approval accepted",
+    "status": "REFUSED",
+    "why": "no pipeline approves access (doctrine 5); the refusal still holds as APPROVER_NOT_HUMAN — this proves the eval checks the reason"
+   },
+   {
+    "claim": "6",
+    "detail": "MISMATCH R-001: expected member user:eleni.kosta@halverra.example got member ${var.grantees[\"analyst@GR\"]}",
+    "expect": [
+     "MISMATCH",
+     "R-001:"
+    ],
+    "file": "src/steward/core/marketplace.py",
+    "gate": "marketplace-eval",
+    "n": 20,
+    "name": "a grant handed to the whole seat",
+    "status": "REFUSED",
+    "why": "the grant goes to the person who asked, never to their whole seat"
+   },
+   {
+    "claim": "6",
+    "detail": "ERROR GRANT_WITHOUT_EXPIRY network:user:eleni.kosta@halverra.example — dataViewer with no expiry condition for a member that is not a standing reader — every grant expires",
+    "expect": [
+     "GRANT_WITHOUT_EXPIRY",
+     "network:user:eleni.kosta@halverra.example"
+    ],
+    "file": "src/steward/core/compile_marketplace.py",
+    "gate": "marketplace",
+    "n": 21,
+    "name": "a grant compiled without its expiry",
+    "status": "REFUSED",
+    "why": "every grant carries an IAM Condition expiry"
+   },
+   {
+    "claim": "6",
+    "detail": "CORE_CLOCK src/steward/core/marketplace.py:352 imports time",
+    "expect": [
+     "CORE_CLOCK",
+     "src/steward/core/marketplace.py"
+    ],
+    "file": "src/steward/core/marketplace.py",
+    "gate": "core-purity",
+    "n": 22,
+    "name": "the evaluator reads the clock",
+    "status": "REFUSED",
+    "why": "now comes from the evidence capture time, never from a clock the code controls (claim 6 trap)"
+   },
+   {
+    "claim": "7",
+    "detail": "ERROR RETENTION_MISMATCH network.network_events — declared 90 d; compiled partition expiration 15552000000 ms (want 7776000000)",
+    "expect": [
+     "RETENTION_MISMATCH",
+     "network.network_events"
+    ],
+    "file": "src/steward/core/compile.py",
+    "gate": "retention",
+    "n": 23,
+    "name": "partition expiry from the dataset, not the table",
+    "status": "REFUSED",
+    "why": "the compiled expiry is exactly the declared period, table override included (claim 7)"
+   },
+   {
+    "claim": "7",
+    "detail": "ERROR RETENTION_NOT_COMPILED crm.support_tickets — row retention of 730 d on opened_at has 0 compiled DELETE(s); want exactly 1",
+    "expect": [
+     "RETENTION_NOT_COMPILED",
+     "crm.support_tickets"
+    ],
+    "file": "src/steward/core/retention.py",
+    "gate": "retention",
+    "n": 24,
+    "name": "a row-retention DELETE never compiled",
+    "status": "REFUSED",
+    "why": "a declared row retention with no DELETE behind it is a promise nobody keeps"
+   },
+   {
+    "claim": "7",
+    "detail": "CAVEAT_MISSING first line — the report must open with the time-travel / fail-safe caveat",
+    "expect": [
+     "CAVEAT_MISSING",
+     "first line"
+    ],
+    "file": "src/steward/core/retention.py",
+    "gate": "retention-eval",
+    "n": 25,
+    "name": "the erasure caveat dropped from the report",
+    "status": "REFUSED",
+    "why": "the report's first line says deletion is not immediate (time travel + fail-safe)"
+   },
+   {
+    "claim": "all",
+    "detail": "FIELD_UNREAD Contract.mode — no reader declared; name the file that reads it in scripts/check_contract_fields.py READERS",
+    "expect": [
+     "FIELD_UNREAD",
+     "Contract.mode"
+    ],
+    "file": "src/steward/core/contract.py",
+    "gate": "contract-fields",
+    "n": 26,
+    "name": "a contract field nothing reads, named like one that is read elsewhere",
+    "status": "REFUSED",
+    "why": "a field in a contract that no generator reads is a defect (CLAUDE.md, the contract layer)"
+   },
+   {
+    "claim": "1",
+    "detail": "FAIL claim 1: recall < 1.0 on planted PII",
+    "expect": [
+     "FAIL claim 1",
+     "recall < 1.0"
+    ],
+    "file": "src/steward/core/classify.py",
+    "gate": "classification-eval",
+    "n": 27,
+    "name": "a detector that reads column names",
+    "status": "REFUSED",
+    "why": "claim 1's trap: detection by name misses ref_2, notes_free_text and the legacy columns"
+   },
+   {
+    "claim": "5",
+    "detail": "MISSED finance.billing offset 1800 uniqueness — a planted defect that was not quarantined",
+    "expect": [
+     "MISSED",
+     "finance.billing"
+    ],
+    "file": "src/steward/core/quality.py",
+    "gate": "quality-eval",
+    "n": 28,
+    "name": "duplicates loaded instead of quarantined",
+    "status": "REFUSED",
+    "why": "the two planted duplicate invoices must be quarantined by Q-FIN-002, not loaded"
+   },
+   {
+    "claim": "1",
+    "detail": "SYNTHETIC_STALE data/finance.billing.jsonl",
+    "expect": [
+     "SYNTHETIC_STALE",
+     "finance.billing"
+    ],
+    "file": "synthetic/data/finance.billing.jsonl",
+    "gate": "synthetic-check",
+    "n": 29,
+    "name": "a synthetic row edited by hand",
+    "status": "REFUSED",
+    "why": "the synthetic estate is generated, seeded and byte-identical; a hand edit is drift"
+   },
+   {
+    "claim": "4",
+    "detail": "ERROR CONTRACT_MISSING legacy.legacy_crm_export — exists in the estate; no contract declares it — the compiled controls must deny every column to every role (doctrine 1)",
+    "expect": [
+     "CONTRACT_MISSING",
+     "legacy.legacy_crm_export"
+    ],
+    "file": "contracts/_waivers.yaml",
+    "gate": "contracts",
+    "n": 30,
+    "name": "a waiver left to lapse",
+    "status": "REFUSED",
+    "why": "exceptions expire; on expiry the finding returns and CI goes red (doctrine 6)"
+   },
+   {
+    "claim": "all",
+    "detail": "READER_STALE Column.type — src/steward/core/validate.py no longer reads col.type",
+    "expect": [
+     "READER_STALE",
+     "Column.type"
+    ],
+    "file": "src/steward/core/validate.py",
+    "gate": "contract-fields",
+    "n": 31,
+    "name": "the type-drift check dropped",
+    "status": "REFUSED",
+    "why": "a field whose only reader is removed is a promise nobody keeps"
+   },
+   {
+    "claim": "7",
+    "detail": "ERROR CEILING_RAISED _roles.yaml:ceilings.bi_service — msisdn added to bi_service's clear_kinds without being listed in this change's ceilings_added",
+    "expect": [
+     "CEILING_RAISED",
+     "_roles.yaml:ceilings.bi_service"
+    ],
+    "file": "contracts/_roles.yaml",
+    "gate": "contract-versions",
+    "n": 32,
+    "name": "a ceiling raised in the same PR, unapproved",
+    "status": "REFUSED",
+    "why": "raising a ceiling is an approval by someone else, not an edit (doctrines 5 and 7)"
+   },
+   {
+    "claim": "3",
+    "detail": "ERROR UNRESOLVED_FIELD billing_health/amount_by_status/billing.total_amt — billing.total_amt: no such field in view billing",
+    "expect": [
+     "UNRESOLVED_FIELD",
+     "billing_health/amount_by_status/billing.total_amt"
+    ],
+    "file": "lookml/dashboards/billing_health.dashboard.lookml",
+    "gate": "lineage",
+    "n": 33,
+    "name": "a dashboard field renamed in LookML only",
+    "status": "REFUSED",
+    "why": "every dashboard field resolves to a catalogued column (claim 3)"
+   },
+   {
+    "claim": "3",
+    "detail": "NOT_DETECTED LINEAGE_DISAGREEMENT billing_health",
+    "expect": [
+     "NOT_DETECTED",
+     "LINEAGE_DISAGREEMENT billing_health"
+    ],
+    "file": "src/steward/core/lineage.py",
+    "gate": "lineage-eval",
+    "n": 34,
+    "name": "the job-history cross-check merged instead of compared",
+    "status": "REFUSED",
+    "why": "a disagreement between LookML and the job history is a finding, never a merge (claim 3 trap)"
+   },
+   {
+    "claim": "3",
+    "detail": "NOT_DETECTED SENSITIVE_UNMASKED_ON_DASHBOARD customer_overview/callers_with_most_tickets/customers.msisdn",
+    "expect": [
+     "NOT_DETECTED",
+     "SENSITIVE_UNMASKED_ON_DASHBOARD"
+    ],
+    "file": "src/steward/core/lineage.py",
+    "gate": "lineage-eval",
+    "n": 35,
+    "name": "the sensitive-on-dashboard check removed",
+    "status": "REFUSED",
+    "why": "a tagged column reaches a dashboard only masked for the connection's role (claim 3)"
+   },
+   {
+    "claim": "3",
+    "detail": "ERROR DASHBOARD_FIELD_DENIED customer_overview/customers_by_country/customers.country — crm.customers.country is denied: no dataset access for bi_service: the tile would fail",
+    "expect": [
+     "DASHBOARD_FIELD_DENIED",
+     "customer_overview/customers_by_country/customers.country"
+    ],
+    "file": "src/steward/core/lineage.py",
+    "gate": "lineage",
+    "n": 36,
+    "name": "dashboards judged as the wrong role",
+    "status": "REFUSED",
+    "why": "a field is judged by what its model's connection role reads, not any role's"
+   },
+   {
+    "claim": "3",
+    "detail": "ERROR LINEAGE_UNTRACED billing_health:finance.billing — finance.billing has no path back to a landing source in the job history",
+    "expect": [
+     "LINEAGE_UNTRACED",
+     "billing_health:finance.billing"
+    ],
+    "file": "evals/lineage/query_history.json",
+    "gate": "lineage",
+    "n": 37,
+    "name": "a load job that no longer lands the billing table",
+    "status": "REFUSED",
+    "why": "every table a dashboard reads traces back to a landing source (claim 3)"
+   },
+   {
+    "claim": "4",
+    "detail": "ERROR CATALOG_OWNER_MISSING crm:Owner — the catalog names no Owner for crm",
+    "expect": [
+     "CATALOG_OWNER_MISSING",
+     "crm:Owner"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog",
+    "n": 38,
+    "name": "a dataset's domain generated without its owners",
+    "status": "REFUSED",
+    "why": "the catalog names an owner, steward and custodian for every contracted dataset — read back, not assumed (claim 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "ERROR CLASSIFICATION_MISMATCH crm.customers.msisdn — the contract says 'personal', the catalog says 'public'",
+    "expect": [
+     "CLASSIFICATION_MISMATCH",
+     "crm.customers.msisdn"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog",
+    "n": 39,
+    "name": "a weaker classification written to the catalog",
+    "status": "REFUSED",
+    "why": "the catalog never says less than the contract (claim 4; doctrine 1)"
+   },
+   {
+    "claim": "4",
+    "detail": "ERROR SYNC_NOT_IDEMPOTENT second-sync — a second sync of an unchanged estate sent 100 command(s); it must send 0",
+    "expect": [
+     "SYNC_NOT_IDEMPOTENT",
+     "second-sync"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog",
+    "n": 40,
+    "name": "a diff that resends everything",
+    "status": "REFUSED",
+    "why": "a second sync of an unchanged estate sends 0 commands (claim 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "ERROR RECONCILE_DIFFERS Halverra Data / Business Glossary / Active Customer — Halverra Data / Business Glossary / Active Customer differs from the contract: ['attribute:Last Changed']",
+    "expect": [
+     "RECONCILE_DIFFERS",
+     "Business Glossary / Active Customer"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog",
+    "n": 41,
+    "name": "a timestamp counted as content",
+    "status": "REFUSED",
+    "why": "`Last Changed` is when content changed, not content: the reconciliation must not report it as drift (claim 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "ERROR MODE_UNSTATED community — the catalog does not say which mode generated it (doctrine 2)",
+    "expect": [
+     "MODE_UNSTATED",
+     "community"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog",
+    "n": 42,
+    "name": "the catalog's mode left unsaid",
+    "status": "REFUSED",
+    "why": "the catalog says whether it was generated for MOCK or REAL (doctrine 2)"
+   },
+   {
+    "claim": "4",
+    "detail": "ERROR CATALOG_REJECTED UNKNOWN_RELATION — UNKNOWN_RELATION (command 11): 'is part of:TARGET': expected '<Source>:<source role>:<target role>:<Target>:<TARGET|SOURCE>'",
+    "expect": [
+     "CATALOG_REJECTED",
+     "UNKNOWN_RELATION"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog",
+    "n": 43,
+    "name": "a relation written in the shorthand",
+    "status": "REFUSED",
+    "why": "the validating mock refuses a relation key the Import API guide does not document (claim 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "NOT_DETECTED UNKNOWN_ASSET_TYPE an asset type the model does not have",
+    "expect": [
+     "NOT_DETECTED",
+     "UNKNOWN_ASSET_TYPE"
+    ],
+    "file": "src/steward/adapters/collibra/mock.py",
+    "gate": "catalog-eval",
+    "n": 44,
+    "name": "a mock that accepts any asset type",
+    "status": "REFUSED",
+    "why": "a mock that accepts anything proves nothing (claim 4 trap)"
+   },
+   {
+    "claim": "4",
+    "detail": "NOT_DETECTED DANGLING_RELATION a relation to an asset that does not exist",
+    "expect": [
+     "NOT_DETECTED",
+     "DANGLING_RELATION"
+    ],
+    "file": "src/steward/adapters/collibra/mock.py",
+    "gate": "catalog-eval",
+    "n": 45,
+    "name": "a mock that lets dangling relations through",
+    "status": "REFUSED",
+    "why": "a relation to an asset that does not exist is refused (claim 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "MISMATCH an asset type the model does not have → UNKNOWN_ASSET_TYPE: got UNKNOWN_ASSET_TYPE, and the catalog changed",
+    "expect": [
+     "MISMATCH",
+     "and the catalog changed"
+    ],
+    "file": "src/steward/adapters/collibra/mock.py",
+    "gate": "catalog-eval",
+    "n": 46,
+    "name": "a mock that writes before it validates",
+    "status": "REFUSED",
+    "why": "a refused job commits nothing — one transaction (continueOnError=false)"
+   },
+   {
+    "claim": "4",
+    "detail": "NOT_DETECTED RECONCILE_DIFFERS in_both_differing",
+    "expect": [
+     "NOT_DETECTED",
+     "RECONCILE_DIFFERS"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog-eval",
+    "n": 47,
+    "name": "reconciliation blind to hand edits",
+    "status": "REFUSED",
+    "why": "an owner or description changed by hand in the catalog is drift the reconciliation reports (claim 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "MISMATCH the previous description is kept, with when: []",
+    "expect": [
+     "MISMATCH",
+     "the previous description is kept"
+    ],
+    "file": "src/steward/adapters/collibra/mock.py",
+    "gate": "catalog-eval",
+    "n": 48,
+    "name": "the previous description not kept",
+    "status": "REFUSED",
+    "why": "a correction never erases what was previously stated (doctrine 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "MISMATCH stale marker names the last good sync: None",
+    "expect": [
+     "MISMATCH",
+     "stale marker names the last good sync"
+    ],
+    "file": "src/steward/catalog_sync.py",
+    "gate": "catalog-eval",
+    "n": 49,
+    "name": "a failed sync that is never stale",
+    "status": "REFUSED",
+    "why": "when the catalog cannot be updated it says so, with the age of the last good sync (doctrine 1)"
+   },
+   {
+    "claim": "4",
+    "detail": "NOT_DETECTED OWNER_GROUP_UNKNOWN crm-owners",
+    "expect": [
+     "NOT_DETECTED",
+     "OWNER_GROUP_UNKNOWN"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog-eval",
+    "n": 50,
+    "name": "an owner nobody declared, invented",
+    "status": "REFUSED",
+    "why": "no default owner (doctrine 3)"
+   },
+   {
+    "claim": "4",
+    "detail": "ERROR CATALOG_RETENTION_MISMATCH crm — the contract says '2555 days', the catalog says '25550 days'",
+    "expect": [
+     "CATALOG_RETENTION_MISMATCH",
+     "crm"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog",
+    "n": 51,
+    "name": "a retention period misstated in the catalog",
+    "status": "REFUSED",
+    "why": "the catalog states the retention the contract declares — read back (claim 4, claim 7)"
+   },
+   {
+    "claim": "4",
+    "detail": "ERROR CATALOG_MASKING_MISMATCH crm.customers.msisdn — the contract says {'analyst': 'hash', 'fraud_investigator': 'clear', 'steward': 'last_four', 'bi_service': 'hash'}, the catalog says 'none (untagged)'",
+    "expect": [
+     "CATALOG_MASKING_MISMATCH",
+     "crm.customers.msisdn"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog",
+    "n": 52,
+    "name": "masking dropped from the catalog",
+    "status": "REFUSED",
+    "why": "the catalog states the masking each role gets, as the contract declares it (claim 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "ERROR CATALOG_UNDECLARED_NOT_RESTRICTED halverra-data.legacy.legacy_crm_export.adr_l1 — no contract declares it; the catalog says 'public', not restricted",
+    "expect": [
+     "CATALOG_UNDECLARED_NOT_RESTRICTED",
+     "halverra-data.legacy"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog",
+    "n": 53,
+    "name": "an undeclared column catalogued as public",
+    "status": "REFUSED",
+    "why": "a column no contract declares is held at restricted — never `public` (doctrine 1, 3)"
+   },
+   {
+    "claim": "4",
+    "detail": "ERROR CATALOG_SELF_ACCEPTED Active Customer — a term drafted from LookML arrived Accepted: only a steward accepts (doctrine 5)",
+    "expect": [
+     "CATALOG_SELF_ACCEPTED",
+     "Active Customer"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog",
+    "n": 54,
+    "name": "a drafted glossary term born Accepted",
+    "status": "REFUSED",
+    "why": "nothing accepts its own drafted description (doctrine 5)"
+   },
+   {
+    "claim": "4",
+    "detail": "MISMATCH owner, description, status, relation and foreign attribute listed as differing: [('crm (BigQuery)', ('responsibilities',)), ('halverra-data.crm.customers', ('attribute:Description',)), ('halverra-data.crm.customers.email', ('attribute:Comment',)), ('halverra-data.crm.support_tickets', ('sta",
+    "expect": [
+     "MISMATCH",
+     "relation and foreign attribute listed as differing"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog-eval",
+    "n": 55,
+    "name": "reconciliation blind to relations",
+    "status": "REFUSED",
+    "why": "a relation removed by hand is drift the reconciliation reports (claim 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "MISMATCH owner, description, status, relation and foreign attribute listed as differing: [('crm (BigQuery)', ('responsibilities',)), ('halverra-data.crm.customers', ('attribute:Description',)), ('halverra-data.crm.customers.email', ('attribute:Comment',)), ('looker:billing_health', ('relations',))]",
+    "expect": [
+     "MISMATCH",
+     "relation and foreign attribute listed as differing"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog-eval",
+    "n": 56,
+    "name": "reconciliation blind to status",
+    "status": "REFUSED",
+    "why": "a status changed by hand on a contracted asset is drift (claim 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "NOT_DETECTED RECONCILE_STALE_GENERATED in_catalog_not_generated",
+    "expect": [
+     "NOT_DETECTED",
+     "RECONCILE_STALE_GENERATED"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog-eval",
+    "n": 57,
+    "name": "reconciliation blind to stale generated assets",
+    "status": "REFUSED",
+    "why": "a retired dashboard must not go on advertising its columns (claim 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "MISMATCH then sends nothing — including for what it cannot remove: 2",
+    "expect": [
+     "MISMATCH",
+     "then sends nothing"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog-eval",
+    "n": 58,
+    "name": "diff counting what Steward does not write",
+    "status": "REFUSED",
+    "why": "a second sync sends 0 even when the catalog holds something an import cannot remove (claim 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "MISMATCH a steward's acceptance survives the next sync and is not drift: sent 1, differing []",
+    "expect": [
+     "MISMATCH",
+     "a steward's acceptance survives the next sync"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog-eval",
+    "n": 59,
+    "name": "a steward's acceptance overwritten",
+    "status": "REFUSED",
+    "why": "the pipeline proposes, a steward accepts, the sync never undoes it (doctrine 5)"
+   },
+   {
+    "claim": "4",
+    "detail": "MISMATCH a column the scan never saw says so, never 'nothing found': No personal data found by value in the scan.",
+    "expect": [
+     "MISMATCH",
+     "a column the scan never saw says so"
+    ],
+    "file": "src/steward/core/catalog.py",
+    "gate": "catalog-eval",
+    "n": 60,
+    "name": "an unscanned column reported clean",
+    "status": "REFUSED",
+    "why": "an absence of findings is not a finding of absence (doctrine 1)"
+   },
+   {
+    "claim": "4",
+    "detail": "MISMATCH …and after it the dataset is drift again (doctrine 6): {'mode': 'MOCK', 'reconciled_at': '2026-11-02T00:00:00Z', 'in_gcp_not_in_catalog': [], 'in_catalog_not_in_gcp': [], 'pending_first_write': ['halverra-data.audit'], 'in_both_differing': [], 'generated_not_in_catalog': [], 'in_catalog_not",
+    "expect": [
+     "MISMATCH",
+     "and after it the dataset is drift again"
+    ],
+    "file": "src/steward/catalog_sync.py",
+    "gate": "catalog-eval",
+    "n": 61,
+    "name": "the log-sink exception that never expires",
+    "status": "REFUSED",
+    "why": "an exception expires and the finding returns (doctrine 6)"
+   },
+   {
+    "claim": "4",
+    "detail": "MISMATCH the catalog itself shows the stale marker: Generated by Steward from the data contracts and the harvested BigQuery estate (catalog mode: MOCK). Edits made here are reverted by the next sync.",
+    "expect": [
+     "MISMATCH",
+     "the catalog itself shows the stale marker"
+    ],
+    "file": "src/steward/catalog_sync.py",
+    "gate": "catalog-eval",
+    "n": 62,
+    "name": "a stale marker kept out of the catalog",
+    "status": "REFUSED",
+    "why": "the catalog shows a stale marker with its age (doctrine 1)"
+   },
+   {
+    "claim": "4",
+    "detail": "NOT_DETECTED RELATION_TYPE_MISMATCH a report anchoring a table's relation (target type right)",
+    "expect": [
+     "NOT_DETECTED",
+     "a report anchoring"
+    ],
+    "file": "src/steward/adapters/collibra/mock.py",
+    "gate": "catalog-eval",
+    "n": 63,
+    "name": "a mock with no anchor check",
+    "status": "REFUSED",
+    "why": "a relation is refused when its anchor is the wrong type, whatever its target (claim 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "NOT_DETECTED MISSING_REQUIRED_ATTRIBUTE a required attribute missing",
+    "expect": [
+     "NOT_DETECTED",
+     "a required attribute missing"
+    ],
+    "file": "src/steward/adapters/collibra/mock.py",
+    "gate": "catalog-eval",
+    "n": 64,
+    "name": "a mock that skips required attributes",
+    "status": "REFUSED",
+    "why": "a required attribute missing is refused (claim 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "NOT_DETECTED WRONG_DOMAIN_TYPE a column placed in a glossary domain",
+    "expect": [
+     "NOT_DETECTED",
+     "a column placed in a glossary domain"
+    ],
+    "file": "src/steward/adapters/collibra/mock.py",
+    "gate": "catalog-eval",
+    "n": 65,
+    "name": "a mock that skips the domain-type rule",
+    "status": "REFUSED",
+    "why": "an asset type belongs in its domain type (claim 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "NOT_DETECTED UNKNOWN_PRINCIPAL a user group id the directory does not have",
+    "expect": [
+     "NOT_DETECTED",
+     "a user group id the directory does not have"
+    ],
+    "file": "src/steward/adapters/collibra/mock.py",
+    "gate": "catalog-eval",
+    "n": 66,
+    "name": "a mock that trusts any user group id",
+    "status": "REFUSED",
+    "why": "an owner is a group the directory knows (doctrine 3)"
+   },
+   {
+    "claim": "4",
+    "detail": "NOT_DETECTED RESPONSIBILITIES_NOT_ENABLED responsibilities on an asset (setting off by default)",
+    "expect": [
+     "NOT_DETECTED",
+     "responsibilities on an asset"
+    ],
+    "file": "src/steward/adapters/collibra/mock.py",
+    "gate": "catalog-eval",
+    "n": 67,
+    "name": "a mock with asset responsibilities on",
+    "status": "REFUSED",
+    "why": "the default instance refuses asset-level responsibilities; so does the mock (claim 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "NOT_DETECTED MALFORMED_COMMAND a relation target listed twice",
+    "expect": [
+     "NOT_DETECTED",
+     "a relation target listed twice"
+    ],
+    "file": "src/steward/adapters/collibra/mock.py",
+    "gate": "catalog-eval",
+    "n": 68,
+    "name": "a mock that accepts a relation target twice",
+    "status": "REFUSED",
+    "why": "a malformed relation list is refused (claim 4)"
+   },
+   {
+    "claim": "4",
+    "detail": "NOT_DETECTED MALFORMED_COMMAND an extra key in an identifier",
+    "expect": [
+     "NOT_DETECTED",
+     "an extra key in an identifier"
+    ],
+    "file": "src/steward/adapters/collibra/mock.py",
+    "gate": "catalog-eval",
+    "n": 69,
+    "name": "a mock that accepts unknown identifier keys",
+    "status": "REFUSED",
+    "why": "the mock refuses shapes the guide does not document (claim 4)"
+   },
+   {
+    "claim": "5",
+    "detail": "ERROR DEMO_FIGURE_HARDCODED app/pages/4_Quality.py:33 — 14 looks like a figure: read it from evidence/",
+    "expect": [
+     "DEMO_FIGURE_HARDCODED",
+     "app/pages/4_Quality.py"
+    ],
+    "file": "app/pages/4_Quality.py",
+    "gate": "demo-figures",
+    "n": 70,
+    "name": "a figure typed into a page",
+    "status": "REFUSED",
+    "why": "every number the demo shows comes from an evidence file"
+   },
+   {
+    "claim": "7",
+    "detail": "ERROR DEMO_FIGURE_HARDCODED app/pages/7_Retention.py:30 — 'Checked 2026-10-01: a dataset with no retention period fails the build.' looks like a figure: read it from evidence/",
+    "expect": [
+     "DEMO_FIGURE_HARDCODED",
+     "app/pages/7_Retention.py"
+    ],
+    "file": "app/pages/7_Retention.py",
+    "gate": "demo-figures",
+    "n": 71,
+    "name": "a date typed into a page",
+    "status": "REFUSED",
+    "why": "a date or a count in prose is a figure too"
+   },
+   {
+    "claim": "2",
+    "detail": "GENERATED_STALE infra/estate/generated.tf.json",
+    "expect": [
+     "GENERATED_STALE",
+     "infra/estate/generated.tf.json"
+    ],
+    "file": "infra/estate/generated.tf.json",
+    "gate": "generated",
+    "n": 72,
+    "name": "generated Terraform edited by hand",
+    "status": "REFUSED",
+    "why": "every control is generated; a hand edit is drift"
+   },
+   {
+    "claim": "all",
+    "detail": "CORE_IMPURE src/steward/core/compile.py:26 imports google.cloud",
+    "expect": [
+     "CORE_IMPURE",
+     "src/steward/core/compile.py"
+    ],
+    "file": "src/steward/core/compile.py",
+    "gate": "core-purity",
+    "n": 73,
+    "name": "a cloud SDK in the core",
+    "status": "REFUSED",
+    "why": "the core is pure; claims are provable offline"
+   }
+  ],
+  "rules": [
+   "green first",
+   "a non-zero exit is not evidence",
+   "STALE is not passed"
+  ]
+ },
+ "meta": {
+  "as_of": "2026-09-30",
+  "claim": "all",
+  "data": "synthetic",
+  "digest": "3eadfbe85ac3ed345e197d94885c96e98197b3a942f39ed1909b25f7b29cc235",
+  "mode": "fixture",
+  "name": "gates",
+  "operator": "fictional (Halverra Telecom)",
+  "origin": "scripts/gate_proof.py --json",
+  "recorded": true,
+  "schema": 1
+ }
+}

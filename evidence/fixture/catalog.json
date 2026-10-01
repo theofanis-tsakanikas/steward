@@ -1,0 +1,325 @@
+{
+ "data": {
+  "failures": [],
+  "mode": "MOCK",
+  "scenarios": {
+   "A_clean": {
+    "assets_by_type": {
+     "Business Term": 1,
+     "Column": 73,
+     "Report": 4,
+     "Schema": 6,
+     "Table": 7
+    },
+    "first": {
+     "changes_sent": 100,
+     "created": 100,
+     "desired_commands": 100,
+     "last_good_sync": "2026-10-01T09:00:00Z",
+     "mode": "MOCK",
+     "run_at": "2026-10-01T09:00:00Z",
+     "stale": null,
+     "status": "ok",
+     "updated": 0
+    },
+    "reconciliation": {
+     "generated_not_in_catalog": [],
+     "in_both_differing": [],
+     "in_catalog_not_generated": [],
+     "in_catalog_not_in_gcp": [],
+     "in_gcp_not_in_catalog": [],
+     "mode": "MOCK",
+     "pending_first_write": [
+      "halverra-data.audit"
+     ],
+     "reconciled_at": "2026-10-01T09:05:00Z"
+    },
+    "second": {
+     "changes_sent": 0,
+     "created": 0,
+     "desired_commands": 100,
+     "last_good_sync": "2026-10-01T09:05:00Z",
+     "mode": "MOCK",
+     "run_at": "2026-10-01T09:05:00Z",
+     "stale": null,
+     "status": "ok",
+     "updated": 0
+    }
+   },
+   "B_refusals": [
+    {
+     "case": "an asset type the model does not have",
+     "catalog_untouched": true,
+     "expected": "UNKNOWN_ASSET_TYPE",
+     "got": "UNKNOWN_ASSET_TYPE"
+    },
+    {
+     "case": "a required attribute missing",
+     "catalog_untouched": true,
+     "expected": "MISSING_REQUIRED_ATTRIBUTE",
+     "got": "MISSING_REQUIRED_ATTRIBUTE"
+    },
+    {
+     "case": "a relation to an asset that does not exist",
+     "catalog_untouched": true,
+     "expected": "DANGLING_RELATION",
+     "got": "DANGLING_RELATION"
+    },
+    {
+     "case": "a relation key in the shorthand, not the documented form",
+     "catalog_untouched": true,
+     "expected": "UNKNOWN_RELATION",
+     "got": "UNKNOWN_RELATION"
+    },
+    {
+     "case": "a relation anchored on the wrong asset type",
+     "catalog_untouched": true,
+     "expected": "RELATION_TYPE_MISMATCH",
+     "got": "RELATION_TYPE_MISMATCH"
+    },
+    {
+     "case": "a responsibility naming a group instead of its id",
+     "catalog_untouched": true,
+     "expected": "MALFORMED_RESPONSIBILITY",
+     "got": "MALFORMED_RESPONSIBILITY"
+    },
+    {
+     "case": "a user group id the directory does not have",
+     "catalog_untouched": true,
+     "expected": "UNKNOWN_PRINCIPAL",
+     "got": "UNKNOWN_PRINCIPAL"
+    },
+    {
+     "case": "responsibilities on an asset (setting off by default)",
+     "catalog_untouched": true,
+     "expected": "RESPONSIBILITIES_NOT_ENABLED",
+     "got": "RESPONSIBILITIES_NOT_ENABLED"
+    },
+    {
+     "case": "a column placed in a glossary domain",
+     "catalog_untouched": true,
+     "expected": "WRONG_DOMAIN_TYPE",
+     "got": "WRONG_DOMAIN_TYPE"
+    },
+    {
+     "case": "an attribute type the model does not have",
+     "catalog_untouched": true,
+     "expected": "UNKNOWN_ATTRIBUTE",
+     "got": "UNKNOWN_ATTRIBUTE"
+    },
+    {
+     "case": "a status the model does not have",
+     "catalog_untouched": true,
+     "expected": "UNKNOWN_STATUS",
+     "got": "UNKNOWN_STATUS"
+    },
+    {
+     "case": "an asset sent before its domain",
+     "catalog_untouched": true,
+     "expected": "DOMAIN_MISSING",
+     "got": "DOMAIN_MISSING"
+    },
+    {
+     "case": "a role the model does not have",
+     "catalog_untouched": true,
+     "expected": "UNKNOWN_ROLE",
+     "got": "UNKNOWN_ROLE"
+    },
+    {
+     "case": "a report anchoring a table's relation (target type right)",
+     "catalog_untouched": true,
+     "expected": "RELATION_TYPE_MISMATCH",
+     "got": "RELATION_TYPE_MISMATCH"
+    },
+    {
+     "case": "an extra key in an identifier",
+     "catalog_untouched": true,
+     "expected": "MALFORMED_COMMAND",
+     "got": "MALFORMED_COMMAND"
+    },
+    {
+     "case": "a type addressed by id, a form Steward does not emit",
+     "catalog_untouched": true,
+     "expected": "MALFORMED_COMMAND",
+     "got": "MALFORMED_COMMAND"
+    },
+    {
+     "case": "an attribute with two values",
+     "catalog_untouched": true,
+     "expected": "MALFORMED_ATTRIBUTE",
+     "got": "MALFORMED_ATTRIBUTE"
+    },
+    {
+     "case": "an attribute with an empty value",
+     "catalog_untouched": true,
+     "expected": "MALFORMED_ATTRIBUTE",
+     "got": "MALFORMED_ATTRIBUTE"
+    },
+    {
+     "case": "a relation target listed twice",
+     "catalog_untouched": true,
+     "expected": "MALFORMED_COMMAND",
+     "got": "MALFORMED_COMMAND"
+    },
+    {
+     "case": "a relation target with no domain (a KeyError, not a refusal)",
+     "catalog_untouched": true,
+     "expected": "MALFORMED_COMMAND",
+     "got": "MALFORMED_COMMAND"
+    }
+   ],
+   "C_drift": {
+    "after": {
+     "generated_not_in_catalog": [],
+     "in_both_differing": [
+      {
+       "differs": [
+        "attribute:Comment"
+       ],
+       "resource": "Halverra Data / crm (BigQuery) / halverra-data.crm.customers.email",
+       "type": "Asset"
+      }
+     ],
+     "in_catalog_not_generated": [
+      "Halverra Data / Dashboards (Looker) / looker:retired_dashboard"
+     ],
+     "in_catalog_not_in_gcp": [
+      "halverra-data.crm.ghost_table"
+     ],
+     "in_gcp_not_in_catalog": [],
+     "mode": "MOCK",
+     "pending_first_write": [
+      "halverra-data.audit"
+     ],
+     "reconciled_at": "2026-10-03T12:00:00Z"
+    },
+    "reconciliation_before_repair": {
+     "generated_not_in_catalog": [],
+     "in_both_differing": [
+      {
+       "differs": [
+        "relations"
+       ],
+       "resource": "Halverra Data / Dashboards (Looker) / looker:billing_health",
+       "type": "Asset"
+      },
+      {
+       "differs": [
+        "attribute:Description"
+       ],
+       "resource": "Halverra Data / crm (BigQuery) / halverra-data.crm.customers",
+       "type": "Asset"
+      },
+      {
+       "differs": [
+        "attribute:Comment"
+       ],
+       "resource": "Halverra Data / crm (BigQuery) / halverra-data.crm.customers.email",
+       "type": "Asset"
+      },
+      {
+       "differs": [
+        "status"
+       ],
+       "resource": "Halverra Data / crm (BigQuery) / halverra-data.crm.support_tickets",
+       "type": "Asset"
+      },
+      {
+       "differs": [
+        "responsibilities"
+       ],
+       "resource": "Halverra Data / crm (BigQuery)",
+       "type": "Domain"
+      }
+     ],
+     "in_catalog_not_generated": [
+      "Halverra Data / Dashboards (Looker) / looker:retired_dashboard"
+     ],
+     "in_catalog_not_in_gcp": [
+      "halverra-data.crm.ghost_table"
+     ],
+     "in_gcp_not_in_catalog": [
+      "halverra-data.crm.customers.country"
+     ],
+     "mode": "MOCK",
+     "pending_first_write": [
+      "halverra-data.audit"
+     ],
+     "reconciled_at": "2026-10-01T09:05:00Z"
+    },
+    "repair_commands": 5
+   },
+   "D_contract_change": {
+    "changed": [
+     "halverra-data.finance",
+     "halverra-data.finance.billing"
+    ],
+    "history_entries": 3
+   },
+   "E_failure": {
+    "first_failure": {
+     "changes_sent": 35,
+     "desired_commands": 100,
+     "error": "UNKNOWN_ASSET_TYPE (command 3): simulated refusal",
+     "last_good_sync": "2026-10-01T09:00:00Z",
+     "marker_written": true,
+     "mode": "MOCK",
+     "run_at": "2026-10-01T09:05:00Z",
+     "stale": "STALE — last good sync 2026-10-01T09:00:00Z (0 h ago)",
+     "status": "failed"
+    },
+    "no_owner_id": {
+     "changes_sent": null,
+     "desired_commands": null,
+     "error": "OWNER_GROUP_UNKNOWN: crm: Owner 'group:nobody@halverra.example' has no user group id in the catalog directory",
+     "last_good_sync": "2026-10-01T09:00:00Z",
+     "marker_written": true,
+     "mode": "MOCK",
+     "run_at": "2026-10-01T09:05:00Z",
+     "stale": "STALE — last good sync 2026-10-01T09:00:00Z (0 h ago)",
+     "status": "failed"
+    },
+    "second_failure": {
+     "changes_sent": 36,
+     "desired_commands": 100,
+     "error": "UNKNOWN_ASSET_TYPE (command 3): simulated refusal",
+     "last_good_sync": "2026-10-01T09:00:00Z",
+     "marker_written": true,
+     "mode": "MOCK",
+     "run_at": "2026-10-03T12:00:00Z",
+     "stale": "STALE — last good sync 2026-10-01T09:00:00Z (51 h ago); past the 24 h deadline",
+     "status": "failed"
+    },
+    "unreachable": {
+     "changes_sent": 35,
+     "desired_commands": 100,
+     "error": "simulated outage",
+     "last_good_sync": "2026-10-01T09:00:00Z",
+     "marker_written": false,
+     "mode": "MOCK",
+     "run_at": "2026-10-01T09:05:00Z",
+     "stale": "STALE — last good sync 2026-10-01T09:00:00Z (0 h ago)",
+     "status": "failed"
+    }
+   },
+   "G_leave_alone_or_say": {
+    "acceptance_kept": true,
+    "not_scanned": "Not scanned: no sample of this column was inspected (an absence of findings is not a finding of absence).",
+    "pending_expiry": [
+     "halverra-data.audit"
+    ]
+   }
+  }
+ },
+ "meta": {
+  "as_of": "2026-09-30",
+  "claim": "4",
+  "data": "synthetic",
+  "digest": "cb35c7a63ddc905e119bcf9be75f3d133c1b4eaf48f84eeeae65180b152805b8",
+  "mode": "fixture",
+  "name": "catalog",
+  "operator": "fictional (Halverra Telecom)",
+  "origin": "evals/catalog/eval.py evaluate()",
+  "schema": 1
+ }
+}

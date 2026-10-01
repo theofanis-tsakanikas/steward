@@ -1,0 +1,905 @@
+{
+ "data": {
+  "datasets": [
+   {
+    "columns": [
+     {
+      "classification": "internal",
+      "column": "analytics.weekly_usage_by_cell.week_start",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "weekly_usage_by_cell",
+      "type": "DATE"
+     },
+     {
+      "classification": "internal",
+      "column": "analytics.weekly_usage_by_cell.country",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [
+       "Q-ANA-001"
+      ],
+      "table": "weekly_usage_by_cell",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "analytics.weekly_usage_by_cell.cell_id",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "weekly_usage_by_cell",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "analytics.weekly_usage_by_cell.events",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "weekly_usage_by_cell",
+      "type": "INTEGER"
+     },
+     {
+      "classification": "internal",
+      "column": "analytics.weekly_usage_by_cell.total_mb",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "weekly_usage_by_cell",
+      "type": "FLOAT"
+     },
+     {
+      "classification": "internal",
+      "column": "analytics.weekly_usage_by_cell.subscribers",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [
+       "Q-ANA-002"
+      ],
+      "table": "weekly_usage_by_cell",
+      "type": "INTEGER"
+     }
+    ],
+    "custodian": "group:data-platform@halverra.example",
+    "dataset": "analytics",
+    "description": "Aggregated network usage for planning dashboards — no subscriber-level rows.",
+    "lawful_basis": "ePrivacy Directive 2002/58/EC Art. 6 and 9 — traffic and location data, aggregated to cell-weeks with a minimum of 5 subscribers; a frequency threshold, not a guarantee of anonymity (GDPR Recital 26)",
+    "listable": false,
+    "log_sink": null,
+    "owner": "group:analytics-owners@halverra.example",
+    "readers": [
+     "analyst",
+     "bi_service",
+     "steward"
+    ],
+    "retention_basis": "GDPR Art. 5(1)(e) storage limitation — one year of weekly aggregates plus a month for year-on-year comparison (illustrative)",
+    "retention_days": 400,
+    "steward": "group:data-governance@halverra.example",
+    "tables": [
+     "weekly_usage_by_cell"
+    ],
+    "version": 2
+   },
+   {
+    "columns": [],
+    "custodian": "group:data-platform@halverra.example",
+    "dataset": "audit",
+    "description": "BigQuery Data Access audit logs for the estate — the input to the access review.",
+    "lawful_basis": "GDPR Art. 6(1)(c) and Art. 32 — security of processing: a record of who read personal data",
+    "listable": false,
+    "log_sink": "BigQuery Data Access audit logs (sink steward-data-access)",
+    "owner": "group:privacy-office@halverra.example",
+    "readers": [
+     "steward"
+    ],
+    "retention_basis": "GDPR Art. 5(1)(e) storage limitation; 90 days covers a quarterly access review (illustrative)",
+    "retention_days": 90,
+    "steward": "group:data-governance@halverra.example",
+    "tables": [],
+    "version": 1
+   },
+   {
+    "columns": [
+     {
+      "classification": "personal",
+      "column": "crm.customers.customer_id",
+      "kinds": [
+       "customer_key"
+      ],
+      "masking": {
+       "analyst": "hash",
+       "bi_service": "hash",
+       "fraud_investigator": "clear",
+       "steward": "hash"
+      },
+      "quality_rules": [
+       "Q-CRM-001",
+       "Q-CRM-002"
+      ],
+      "table": "customers",
+      "type": "STRING"
+     },
+     {
+      "classification": "personal",
+      "column": "crm.customers.full_name",
+      "kinds": [
+       "person_name"
+      ],
+      "masking": {
+       "analyst": "nullify",
+       "bi_service": "nullify",
+       "fraud_investigator": "nullify",
+       "steward": "nullify"
+      },
+      "quality_rules": [],
+      "table": "customers",
+      "type": "STRING"
+     },
+     {
+      "classification": "personal",
+      "column": "crm.customers.email",
+      "kinds": [
+       "email"
+      ],
+      "masking": {
+       "analyst": "email_mask",
+       "bi_service": "hash",
+       "fraud_investigator": "nullify",
+       "steward": "email_mask"
+      },
+      "quality_rules": [],
+      "table": "customers",
+      "type": "STRING"
+     },
+     {
+      "classification": "personal",
+      "column": "crm.customers.msisdn",
+      "kinds": [
+       "msisdn"
+      ],
+      "masking": {
+       "analyst": "hash",
+       "bi_service": "hash",
+       "fraud_investigator": "clear",
+       "steward": "last_four"
+      },
+      "quality_rules": [
+       "Q-CRM-003"
+      ],
+      "table": "customers",
+      "type": "STRING"
+     },
+     {
+      "classification": "personal",
+      "column": "crm.customers.birth_date",
+      "kinds": [
+       "birth_date"
+      ],
+      "masking": {
+       "analyst": "year_only",
+       "bi_service": "year_only",
+       "fraud_investigator": "nullify",
+       "steward": "year_only"
+      },
+      "quality_rules": [],
+      "table": "customers",
+      "type": "DATE"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.customers.address",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "customers",
+      "type": "RECORD"
+     },
+     {
+      "classification": "personal",
+      "column": "crm.customers.address.street",
+      "kinds": [
+       "address"
+      ],
+      "masking": {
+       "analyst": "nullify",
+       "bi_service": "nullify",
+       "fraud_investigator": "nullify",
+       "steward": "nullify"
+      },
+      "quality_rules": [],
+      "table": "customers",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.customers.address.city",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "customers",
+      "type": "STRING"
+     },
+     {
+      "classification": "personal",
+      "column": "crm.customers.address.postcode",
+      "kinds": [
+       "postcode"
+      ],
+      "masking": {
+       "analyst": "nullify",
+       "bi_service": "nullify",
+       "fraud_investigator": "nullify",
+       "steward": "nullify"
+      },
+      "quality_rules": [],
+      "table": "customers",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.customers.country",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [
+       "Q-CRM-004"
+      ],
+      "table": "customers",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.customers.segment",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [
+       "Q-CRM-005"
+      ],
+      "table": "customers",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.customers.consent",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "customers",
+      "type": "RECORD"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.customers.consent.marketing",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "customers",
+      "type": "BOOLEAN"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.customers.consent.profiling",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "customers",
+      "type": "BOOLEAN"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.customers.consent.updated_at",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "customers",
+      "type": "TIMESTAMP"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.customers.contracts",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "customers",
+      "type": "RECORD"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.customers.contracts.contract_id",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "customers",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.customers.contracts.plan",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "customers",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.customers.contracts.start_date",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "customers",
+      "type": "DATE"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.customers.contracts.end_date",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "customers",
+      "type": "DATE"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.customers.contracts.status",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [
+       "Q-CRM-006"
+      ],
+      "table": "customers",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.customers.contracts.monthly_fee",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "customers",
+      "type": "NUMERIC"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.customers.created_at",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "customers",
+      "type": "TIMESTAMP"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.support_tickets.ticket_id",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [
+       "Q-CRM-010",
+       "Q-CRM-011"
+      ],
+      "table": "support_tickets",
+      "type": "STRING"
+     },
+     {
+      "classification": "personal",
+      "column": "crm.support_tickets.customer_id",
+      "kinds": [
+       "customer_key"
+      ],
+      "masking": {
+       "analyst": "hash",
+       "bi_service": "hash",
+       "fraud_investigator": "clear",
+       "steward": "hash"
+      },
+      "quality_rules": [
+       "Q-CRM-012"
+      ],
+      "table": "support_tickets",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.support_tickets.opened_at",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "support_tickets",
+      "type": "TIMESTAMP"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.support_tickets.channel",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "support_tickets",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.support_tickets.category",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "support_tickets",
+      "type": "STRING"
+     },
+     {
+      "classification": "personal",
+      "column": "crm.support_tickets.notes_free_text",
+      "kinds": [
+       "birth_date",
+       "email",
+       "iban",
+       "msisdn"
+      ],
+      "masking": {
+       "analyst": "nullify",
+       "bi_service": "nullify",
+       "fraud_investigator": "nullify",
+       "steward": "nullify"
+      },
+      "quality_rules": [],
+      "table": "support_tickets",
+      "type": "STRING"
+     },
+     {
+      "classification": "personal",
+      "column": "crm.support_tickets.ref_2",
+      "kinds": [
+       "msisdn"
+      ],
+      "masking": {
+       "analyst": "hash",
+       "bi_service": "hash",
+       "fraud_investigator": "clear",
+       "steward": "last_four"
+      },
+      "quality_rules": [],
+      "table": "support_tickets",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.support_tickets.country",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "support_tickets",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "crm.support_tickets.status",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [
+       "Q-CRM-013"
+      ],
+      "table": "support_tickets",
+      "type": "STRING"
+     }
+    ],
+    "custodian": "group:data-platform@halverra.example",
+    "dataset": "crm",
+    "description": "Customer master data and customer-service tickets of Halverra Telecom (fictional).",
+    "lawful_basis": "GDPR Art. 6(1)(b) — performance of the subscription contract",
+    "listable": true,
+    "log_sink": null,
+    "owner": "group:crm-owners@halverra.example",
+    "readers": [
+     "analyst",
+     "bi_service",
+     "steward"
+    ],
+    "retention_basis": "GDPR Art. 5(1)(e) storage limitation; 7 years after the last contract ends (illustrative, not a legal determination)",
+    "retention_days": 2555,
+    "steward": "group:crm-stewards@halverra.example",
+    "tables": [
+     "customers",
+     "support_tickets"
+    ],
+    "version": 2
+   },
+   {
+    "columns": [
+     {
+      "classification": "internal",
+      "column": "finance.billing.invoice_id",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [
+       "Q-FIN-001",
+       "Q-FIN-002"
+      ],
+      "table": "billing",
+      "type": "STRING"
+     },
+     {
+      "classification": "personal",
+      "column": "finance.billing.customer_id",
+      "kinds": [
+       "customer_key"
+      ],
+      "masking": {
+       "bi_service": "hash",
+       "steward": "hash"
+      },
+      "quality_rules": [
+       "Q-FIN-003"
+      ],
+      "table": "billing",
+      "type": "STRING"
+     },
+     {
+      "classification": "personal",
+      "column": "finance.billing.iban",
+      "kinds": [
+       "iban"
+      ],
+      "masking": {
+       "bi_service": "nullify",
+       "steward": "last_four"
+      },
+      "quality_rules": [],
+      "table": "billing",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "finance.billing.amount",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [
+       "Q-FIN-004"
+      ],
+      "table": "billing",
+      "type": "NUMERIC"
+     },
+     {
+      "classification": "internal",
+      "column": "finance.billing.currency",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [
+       "Q-FIN-005"
+      ],
+      "table": "billing",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "finance.billing.issue_date",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "billing",
+      "type": "DATE"
+     },
+     {
+      "classification": "internal",
+      "column": "finance.billing.due_date",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "billing",
+      "type": "DATE"
+     },
+     {
+      "classification": "internal",
+      "column": "finance.billing.status",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [
+       "Q-FIN-006"
+      ],
+      "table": "billing",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "finance.billing.country",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "billing",
+      "type": "STRING"
+     }
+    ],
+    "custodian": "group:data-platform@halverra.example",
+    "dataset": "finance",
+    "description": "Invoices of Halverra Telecom (fictional).",
+    "lawful_basis": "GDPR Art. 6(1)(c) — legal obligation (tax and accounting records)",
+    "listable": false,
+    "log_sink": null,
+    "owner": "group:finance-owners@halverra.example",
+    "readers": [
+     "bi_service",
+     "steward"
+    ],
+    "retention_basis": "Tax and accounting record-keeping obligation, 10 years (illustrative; varies by country)",
+    "retention_days": 3650,
+    "steward": "group:finance-stewards@halverra.example",
+    "tables": [
+     "billing"
+    ],
+    "version": 3
+   },
+   {
+    "columns": [
+     {
+      "classification": "internal",
+      "column": "network.usage_events.event_id",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [
+       "Q-NET-002",
+       "Q-NET-003"
+      ],
+      "table": "usage_events",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "network.usage_events.event_date",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "usage_events",
+      "type": "DATE"
+     },
+     {
+      "classification": "internal",
+      "column": "network.usage_events.event_ts",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "usage_events",
+      "type": "TIMESTAMP"
+     },
+     {
+      "classification": "sensitive-network",
+      "column": "network.usage_events.msisdn",
+      "kinds": [
+       "msisdn"
+      ],
+      "masking": {
+       "analyst": "hash",
+       "bi_service": "hash",
+       "fraud_investigator": "clear",
+       "steward": "last_four"
+      },
+      "quality_rules": [
+       "Q-NET-004"
+      ],
+      "table": "usage_events",
+      "type": "STRING"
+     },
+     {
+      "classification": "sensitive-network",
+      "column": "network.usage_events.imsi",
+      "kinds": [
+       "imsi"
+      ],
+      "masking": {
+       "analyst": "hash",
+       "bi_service": "hash",
+       "fraud_investigator": "clear",
+       "steward": "nullify"
+      },
+      "quality_rules": [],
+      "table": "usage_events",
+      "type": "STRING"
+     },
+     {
+      "classification": "sensitive-network",
+      "column": "network.usage_events.cell_id",
+      "kinds": [
+       "location"
+      ],
+      "masking": {
+       "analyst": "nullify",
+       "bi_service": "hash",
+       "fraud_investigator": "clear",
+       "steward": "nullify"
+      },
+      "quality_rules": [],
+      "table": "usage_events",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "network.usage_events.country",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [
+       "Q-NET-005"
+      ],
+      "table": "usage_events",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "network.usage_events.event_type",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [
+       "Q-NET-006"
+      ],
+      "table": "usage_events",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "network.usage_events.volume_mb",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [
+       "Q-NET-007"
+      ],
+      "table": "usage_events",
+      "type": "FLOAT"
+     },
+     {
+      "classification": "internal",
+      "column": "network.usage_events.duration_s",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "usage_events",
+      "type": "INTEGER"
+     },
+     {
+      "classification": "internal",
+      "column": "network.network_events.attach_id",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [
+       "Q-NET-010"
+      ],
+      "table": "network_events",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "network.network_events.event_date",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "network_events",
+      "type": "DATE"
+     },
+     {
+      "classification": "internal",
+      "column": "network.network_events.ts",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "network_events",
+      "type": "TIMESTAMP"
+     },
+     {
+      "classification": "sensitive-network",
+      "column": "network.network_events.imei",
+      "kinds": [
+       "imei"
+      ],
+      "masking": {
+       "analyst": "hash",
+       "bi_service": "hash",
+       "fraud_investigator": "clear",
+       "steward": "nullify"
+      },
+      "quality_rules": [],
+      "table": "network_events",
+      "type": "STRING"
+     },
+     {
+      "classification": "sensitive-network",
+      "column": "network.network_events.imsi",
+      "kinds": [
+       "imsi"
+      ],
+      "masking": {
+       "analyst": "hash",
+       "bi_service": "hash",
+       "fraud_investigator": "clear",
+       "steward": "nullify"
+      },
+      "quality_rules": [],
+      "table": "network_events",
+      "type": "STRING"
+     },
+     {
+      "classification": "sensitive-network",
+      "column": "network.network_events.cell_id",
+      "kinds": [
+       "location"
+      ],
+      "masking": {
+       "analyst": "nullify",
+       "bi_service": "hash",
+       "fraud_investigator": "clear",
+       "steward": "nullify"
+      },
+      "quality_rules": [],
+      "table": "network_events",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "network.network_events.country",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "network_events",
+      "type": "STRING"
+     },
+     {
+      "classification": "internal",
+      "column": "network.network_events.rat",
+      "kinds": [],
+      "masking": {},
+      "quality_rules": [],
+      "table": "network_events",
+      "type": "STRING"
+     }
+    ],
+    "custodian": "group:data-platform@halverra.example",
+    "dataset": "network",
+    "description": "Usage (traffic) events and device attach events of Halverra Telecom (fictional).",
+    "lawful_basis": "ePrivacy Directive 2002/58/EC Art. 6(2) — traffic data for billing and interconnection",
+    "listable": true,
+    "log_sink": null,
+    "owner": "group:network-owners@halverra.example",
+    "readers": [
+     "bi_service",
+     "fraud_investigator",
+     "steward"
+    ],
+    "retention_basis": "ePrivacy Art. 6(1): erase or anonymise when no longer needed; 180 days for billing disputes (illustrative)",
+    "retention_days": 180,
+    "steward": "group:network-stewards@halverra.example",
+    "tables": [
+     "network_events",
+     "usage_events"
+    ],
+    "version": 2
+   }
+  ],
+  "operator": "Halverra Telecom (fictional)",
+  "uncontracted_columns": [
+   "legacy.legacy_crm_export.adr_l1",
+   "legacy.legacy_crm_export.cd_s",
+   "legacy.legacy_crm_export.dt_x",
+   "legacy.legacy_crm_export.fld_7",
+   "legacy.legacy_crm_export.k_id",
+   "legacy.legacy_crm_export.nm_1",
+   "legacy.legacy_crm_export.tel_a",
+   "legacy.legacy_crm_export.upd"
+  ],
+  "waivers": [
+   {
+    "approved_by": "user:dimitris.nikolaou@halverra.example",
+    "expires": "2026-11-30",
+    "finding": "CONTRACT_MISSING",
+    "id": "W-001",
+    "reason": "Export from the CRM retired in 2019; no owner has been found yet. Until one is, every column is to be held at the safe state — denied to every role (doctrine 1) — until one is.",
+    "target": "legacy.legacy_crm_export"
+   }
+  ]
+ },
+ "meta": {
+  "as_of": "2026-09-30",
+  "claim": "1,4,7",
+  "data": "synthetic",
+  "digest": "424ec9a9e03506f58f618fdb370842c8a55ffee332d565a296c8b0a8237f99d1",
+  "mode": "fixture",
+  "name": "estate",
+  "operator": "fictional (Halverra Telecom)",
+  "origin": "contracts/*.yaml, loaded and validated by core.contract",
+  "schema": 1
+ }
+}

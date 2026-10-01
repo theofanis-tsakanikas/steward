@@ -917,7 +917,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.8" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", marker = "extra == 'gcp'", specifier = ">=2.32" },
-    { name = "streamlit", marker = "extra == 'demo'", specifier = ">=1.38" },
+    { name = "streamlit", marker = "extra == 'demo'", specifier = ">=1.50" },
 ]
 provides-extras = ["demo", "gcp"]
 

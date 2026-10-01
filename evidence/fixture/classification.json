@@ -1,0 +1,837 @@
+{
+ "data": {
+  "detections": [
+   {
+    "column": "crm.customers.address.street",
+    "hits": {
+     "address": 600
+    },
+    "kinds": [
+     "address"
+    ],
+    "n_values": 600
+   },
+   {
+    "column": "crm.customers.birth_date",
+    "hits": {
+     "birth_date": 600
+    },
+    "kinds": [
+     "birth_date"
+    ],
+    "n_values": 600
+   },
+   {
+    "column": "crm.customers.email",
+    "hits": {
+     "email": 600
+    },
+    "kinds": [
+     "email"
+    ],
+    "n_values": 600
+   },
+   {
+    "column": "crm.customers.msisdn",
+    "hits": {
+     "msisdn": 600
+    },
+    "kinds": [
+     "msisdn"
+    ],
+    "n_values": 600
+   },
+   {
+    "column": "crm.support_tickets.notes_free_text",
+    "hits": {
+     "birth_date": 25,
+     "email": 20,
+     "iban": 19,
+     "msisdn": 35
+    },
+    "kinds": [
+     "birth_date",
+     "email",
+     "iban",
+     "msisdn"
+    ],
+    "n_values": 400
+   },
+   {
+    "column": "crm.support_tickets.ref_2",
+    "hits": {
+     "msisdn": 309
+    },
+    "kinds": [
+     "msisdn"
+    ],
+    "n_values": 400
+   },
+   {
+    "column": "finance.billing.iban",
+    "hits": {
+     "iban": 1802
+    },
+    "kinds": [
+     "iban"
+    ],
+    "n_values": 1802
+   },
+   {
+    "column": "legacy.legacy_crm_export.adr_l1",
+    "hits": {
+     "address": 150
+    },
+    "kinds": [
+     "address"
+    ],
+    "n_values": 150
+   },
+   {
+    "column": "legacy.legacy_crm_export.dt_x",
+    "hits": {
+     "birth_date": 150
+    },
+    "kinds": [
+     "birth_date"
+    ],
+    "n_values": 150
+   },
+   {
+    "column": "legacy.legacy_crm_export.fld_7",
+    "hits": {
+     "iban": 150
+    },
+    "kinds": [
+     "iban"
+    ],
+    "n_values": 150
+   },
+   {
+    "column": "legacy.legacy_crm_export.tel_a",
+    "hits": {
+     "msisdn": 150
+    },
+    "kinds": [
+     "msisdn"
+    ],
+    "n_values": 150
+   },
+   {
+    "column": "network.network_events.imei",
+    "hits": {
+     "imei": 3000
+    },
+    "kinds": [
+     "imei"
+    ],
+    "n_values": 3000
+   },
+   {
+    "column": "network.network_events.imsi",
+    "hits": {
+     "imsi": 3000
+    },
+    "kinds": [
+     "imsi"
+    ],
+    "n_values": 3000
+   },
+   {
+    "column": "network.usage_events.imsi",
+    "hits": {
+     "imsi": 6000
+    },
+    "kinds": [
+     "imsi"
+    ],
+    "n_values": 6000
+   },
+   {
+    "column": "network.usage_events.msisdn",
+    "hits": {
+     "msisdn": 5997
+    },
+    "kinds": [
+     "msisdn"
+    ],
+    "n_values": 5997
+   }
+  ],
+  "gate_findings": [
+   {
+    "code": "PII_HELD_AT_SAFE_STATE",
+    "evidence": {
+     "hits": {
+      "address": 150
+     },
+     "n_values": 150
+    },
+    "gate": "classification",
+    "message": "address found by value; no contract — compiled `restricted`, denied to every role",
+    "severity": "info",
+    "target": "legacy.legacy_crm_export.adr_l1",
+    "waived_by": null
+   },
+   {
+    "code": "PII_HELD_AT_SAFE_STATE",
+    "evidence": {
+     "hits": {
+      "birth_date": 150
+     },
+     "n_values": 150
+    },
+    "gate": "classification",
+    "message": "birth_date found by value; no contract — compiled `restricted`, denied to every role",
+    "severity": "info",
+    "target": "legacy.legacy_crm_export.dt_x",
+    "waived_by": null
+   },
+   {
+    "code": "PII_HELD_AT_SAFE_STATE",
+    "evidence": {
+     "hits": {
+      "iban": 150
+     },
+     "n_values": 150
+    },
+    "gate": "classification",
+    "message": "iban found by value; no contract — compiled `restricted`, denied to every role",
+    "severity": "info",
+    "target": "legacy.legacy_crm_export.fld_7",
+    "waived_by": null
+   },
+   {
+    "code": "PII_HELD_AT_SAFE_STATE",
+    "evidence": {
+     "hits": {
+      "msisdn": 150
+     },
+     "n_values": 150
+    },
+    "gate": "classification",
+    "message": "msisdn found by value; no contract — compiled `restricted`, denied to every role",
+    "severity": "info",
+    "target": "legacy.legacy_crm_export.tel_a",
+    "waived_by": null
+   }
+  ],
+  "hard_cases": {
+   "n": 48,
+   "passed": 48,
+   "results": [
+    {
+     "expected": [
+      "msisdn"
+     ],
+     "got": [
+      "msisdn"
+     ],
+     "ok": true,
+     "value": "+30 694 123 4567"
+    },
+    {
+     "expected": [
+      "msisdn"
+     ],
+     "got": [
+      "msisdn"
+     ],
+     "ok": true,
+     "value": "0049-171-2345678"
+    },
+    {
+     "expected": [
+      "msisdn"
+     ],
+     "got": [
+      "msisdn"
+     ],
+     "ok": true,
+     "value": "call me at 00393471234567 tomorrow"
+    },
+    {
+     "expected": [
+      "email"
+     ],
+     "got": [
+      "email"
+     ],
+     "ok": true,
+     "value": "first.last+promo@sub.example.co.uk"
+    },
+    {
+     "expected": [
+      "iban"
+     ],
+     "got": [
+      "iban"
+     ],
+     "ok": true,
+     "value": "pay to DE89370400440532013000 please"
+    },
+    {
+     "expected": [
+      "iban"
+     ],
+     "got": [
+      "iban"
+     ],
+     "ok": true,
+     "value": "GB82WEST12345698765432"
+    },
+    {
+     "expected": [
+      "birth_date"
+     ],
+     "got": [
+      "birth_date"
+     ],
+     "ok": true,
+     "value": "born 03.11.1975"
+    },
+    {
+     "expected": [
+      "address"
+     ],
+     "got": [
+      "address"
+     ],
+     "ok": true,
+     "value": "Viale Monza 221"
+    },
+    {
+     "expected": [
+      "address"
+     ],
+     "got": [
+      "address"
+     ],
+     "ok": true,
+     "value": "Am Lindenplatz 4"
+    },
+    {
+     "expected": [
+      "address"
+     ],
+     "got": [
+      "address"
+     ],
+     "ok": true,
+     "value": "Kaiserring 12"
+    },
+    {
+     "expected": [
+      "address"
+     ],
+     "got": [
+      "address"
+     ],
+     "ok": true,
+     "value": "12 Baker Street"
+    },
+    {
+     "expected": [
+      "msisdn"
+     ],
+     "got": [
+      "msisdn"
+     ],
+     "ok": true,
+     "value": "6912345678"
+    },
+    {
+     "expected": [
+      "msisdn"
+     ],
+     "got": [
+      "msisdn"
+     ],
+     "ok": true,
+     "value": "3471234567"
+    },
+    {
+     "expected": [
+      "msisdn"
+     ],
+     "got": [
+      "msisdn"
+     ],
+     "ok": true,
+     "value": "(+30) 691 234 5678"
+    },
+    {
+     "expected": [
+      "msisdn"
+     ],
+     "got": [
+      "msisdn"
+     ],
+     "ok": true,
+     "value": "+30.691.234.5678"
+    },
+    {
+     "expected": [
+      "msisdn"
+     ],
+     "got": [
+      "msisdn"
+     ],
+     "ok": true,
+     "value": "+33 6 12 34 56 78"
+    },
+    {
+     "expected": [
+      "msisdn"
+     ],
+     "got": [
+      "msisdn"
+     ],
+     "ok": true,
+     "value": "+41 79 123 45 67"
+    },
+    {
+     "expected": [
+      "msisdn"
+     ],
+     "got": [
+      "msisdn"
+     ],
+     "ok": true,
+     "value": "+302101234567"
+    },
+    {
+     "expected": [
+      "iban"
+     ],
+     "got": [
+      "iban"
+     ],
+     "ok": true,
+     "value": "GR16 0110 1250 0000 0001 2300 695"
+    },
+    {
+     "expected": [
+      "iban"
+     ],
+     "got": [
+      "iban"
+     ],
+     "ok": true,
+     "value": "gr1601101250000000012300695"
+    },
+    {
+     "expected": [
+      "birth_date"
+     ],
+     "got": [
+      "birth_date"
+     ],
+     "ok": true,
+     "value": "12 March 1984"
+    },
+    {
+     "expected": [
+      "birth_date"
+     ],
+     "got": [
+      "birth_date"
+     ],
+     "ok": true,
+     "value": "12-03-1984"
+    },
+    {
+     "expected": [
+      "birth_date"
+     ],
+     "got": [
+      "birth_date"
+     ],
+     "ok": true,
+     "value": "1984/03/12"
+    },
+    {
+     "expected": [
+      "birth_date"
+     ],
+     "got": [
+      "birth_date"
+     ],
+     "ok": true,
+     "value": "12.3.1984"
+    },
+    {
+     "expected": [
+      "address"
+     ],
+     "got": [
+      "address"
+     ],
+     "ok": true,
+     "value": "Οδός Ερμού 12"
+    },
+    {
+     "expected": [
+      "address"
+     ],
+     "got": [
+      "address"
+     ],
+     "ok": true,
+     "value": "Hauptstr. 5"
+    },
+    {
+     "expected": [
+      "address"
+     ],
+     "got": [
+      "address"
+     ],
+     "ok": true,
+     "value": "Via Roma, 10"
+    },
+    {
+     "expected": [
+      "email"
+     ],
+     "got": [
+      "email"
+     ],
+     "ok": true,
+     "value": "write to <a.b@example.org> today"
+    },
+    {
+     "expected": [
+      "address"
+     ],
+     "got": [
+      "address"
+     ],
+     "ok": true,
+     "value": "Berliner Straße 12"
+    },
+    {
+     "expected": [
+      "msisdn"
+     ],
+     "got": [
+      "msisdn"
+     ],
+     "ok": true,
+     "value": "697 123 4567"
+    },
+    {
+     "expected": [
+      "msisdn"
+     ],
+     "got": [
+      "msisdn"
+     ],
+     "ok": true,
+     "value": "0170 1234567"
+    },
+    {
+     "expected": [
+      "msisdn"
+     ],
+     "got": [
+      "msisdn"
+     ],
+     "ok": true,
+     "value": "00 30 697 123 4567"
+    },
+    {
+     "expected": [
+      "birth_date"
+     ],
+     "got": [
+      "birth_date"
+     ],
+     "ok": true,
+     "value": "12 Μαρτίου 1984"
+    },
+    {
+     "expected": [
+      "birth_date"
+     ],
+     "got": [
+      "birth_date"
+     ],
+     "ok": true,
+     "value": "March 12, 1984"
+    },
+    {
+     "expected": [],
+     "got": [],
+     "ok": true,
+     "value": "INV-2026-000123"
+    },
+    {
+     "expected": [],
+     "got": [],
+     "ok": true,
+     "value": "DE89370400440532013001"
+    },
+    {
+     "expected": [],
+     "got": [],
+     "ok": true,
+     "value": "2026-09-12"
+    },
+    {
+     "expected": [],
+     "got": [],
+     "ok": true,
+     "value": "1890-01-01"
+    },
+    {
+     "expected": [],
+     "got": [],
+     "ok": true,
+     "value": "ticket escalated, see note@ 14:00"
+    },
+    {
+     "expected": [],
+     "got": [],
+     "ok": true,
+     "value": "REF-37095"
+    },
+    {
+     "expected": [],
+     "got": [],
+     "ok": true,
+     "value": "GR-ATH-0042"
+    },
+    {
+     "expected": [],
+     "got": [],
+     "ok": true,
+     "value": "Version 2 street level view"
+    },
+    {
+     "expected": [],
+     "got": [],
+     "ok": true,
+     "value": "2017-02-27T12:00:00Z"
+    },
+    {
+     "expected": [],
+     "got": [],
+     "ok": true,
+     "value": "0000 0001 2300 695"
+    },
+    {
+     "expected": [
+      "imei"
+     ],
+     "got": [
+      "imei"
+     ],
+     "ok": true,
+     "value": "490154203237518"
+    },
+    {
+     "expected": [
+      "imei"
+     ],
+     "got": [
+      "imei"
+     ],
+     "ok": true,
+     "value": "35-209900-176148-1"
+    },
+    {
+     "expected": [
+      "imsi"
+     ],
+     "got": [
+      "imsi"
+     ],
+     "ok": true,
+     "value": "262011234567890"
+    },
+    {
+     "expected": [
+      "none"
+     ],
+     "got": [
+      "none"
+     ],
+     "ok": true,
+     "value": "123456789012345"
+    }
+   ]
+  },
+  "innocent_columns": {
+   "detected": 6,
+   "held_at_safe_state_no_contract": [
+    "legacy.legacy_crm_export.adr_l1",
+    "legacy.legacy_crm_export.dt_x",
+    "legacy.legacy_crm_export.fld_7",
+    "legacy.legacy_crm_export.tel_a"
+   ],
+   "n": 6,
+   "tagged_by_contract": 2
+  },
+  "known_over_flags": {
+   "cases": [
+    {
+     "flagged": true,
+     "kind": "msisdn",
+     "value": "3000000001",
+     "why": "a 10-digit id starting with 3 reads as an Italian mobile"
+    },
+    {
+     "flagged": true,
+     "kind": "msisdn",
+     "value": "6912345678",
+     "why": "identical to a Greek mobile in national form — genuinely ambiguous"
+    },
+    {
+     "flagged": true,
+     "kind": "msisdn",
+     "value": "invoice 0049 1234 5678",
+     "why": "digit groups after 00 + country code"
+    },
+    {
+     "flagged": true,
+     "kind": "msisdn",
+     "value": "+1 555 0100",
+     "why": "a fictional US number is still a phone number"
+    },
+    {
+     "flagged": true,
+     "kind": "address",
+     "value": "Bring 2",
+     "why": "a German word ending in -ring followed by a number"
+    },
+    {
+     "flagged": true,
+     "kind": "birth_date",
+     "value": "created 2001-01-01",
+     "why": "a 25-year-old date in free text"
+    }
+   ],
+   "flagged": 6,
+   "n": 6
+  },
+  "limit": "generator and detector share an author: part A is a pipeline check (the planted PII reaches the gate), not a measure of detection in the wild; C is the independent part (see T014 for Google DLP on the same samples)",
+  "n_columns": 70,
+  "n_truth_pairs": 18,
+  "n_values": 122206,
+  "name_heuristics": {
+   "false_negatives": [
+    [
+     "crm.support_tickets.notes_free_text",
+     "birth_date"
+    ],
+    [
+     "crm.support_tickets.notes_free_text",
+     "email"
+    ],
+    [
+     "crm.support_tickets.notes_free_text",
+     "iban"
+    ],
+    [
+     "crm.support_tickets.notes_free_text",
+     "msisdn"
+    ],
+    [
+     "crm.support_tickets.ref_2",
+     "msisdn"
+    ],
+    [
+     "legacy.legacy_crm_export.adr_l1",
+     "address"
+    ],
+    [
+     "legacy.legacy_crm_export.dt_x",
+     "birth_date"
+    ],
+    [
+     "legacy.legacy_crm_export.fld_7",
+     "iban"
+    ]
+   ],
+   "false_positives": [],
+   "fn": 8,
+   "fp": 0,
+   "precision": 1.0,
+   "recall": 0.5556,
+   "tp": 10
+  },
+  "name_heuristics_innocent_columns": {
+   "false_negatives": [
+    [
+     "crm.support_tickets.notes_free_text",
+     "birth_date"
+    ],
+    [
+     "crm.support_tickets.notes_free_text",
+     "email"
+    ],
+    [
+     "crm.support_tickets.notes_free_text",
+     "iban"
+    ],
+    [
+     "crm.support_tickets.notes_free_text",
+     "msisdn"
+    ],
+    [
+     "crm.support_tickets.ref_2",
+     "msisdn"
+    ],
+    [
+     "legacy.legacy_crm_export.adr_l1",
+     "address"
+    ],
+    [
+     "legacy.legacy_crm_export.dt_x",
+     "birth_date"
+    ],
+    [
+     "legacy.legacy_crm_export.fld_7",
+     "iban"
+    ]
+   ],
+   "false_positives": [],
+   "fn": 8,
+   "fp": 0,
+   "precision": 1.0,
+   "recall": 0.1111,
+   "tp": 1
+  },
+  "scan_date": "2026-09-30",
+  "value_detector": {
+   "false_negatives": [],
+   "false_positives": [],
+   "fn": 0,
+   "fp": 0,
+   "precision": 1.0,
+   "recall": 1.0,
+   "tp": 18
+  },
+  "value_detector_innocent_columns": {
+   "false_negatives": [],
+   "false_positives": [],
+   "fn": 0,
+   "fp": 0,
+   "precision": 1.0,
+   "recall": 1.0,
+   "tp": 9
+  }
+ },
+ "meta": {
+  "as_of": "2026-09-30",
+  "claim": "1",
+  "data": "synthetic",
+  "digest": "14f43acb42cf738338491998fcc739defd559d07a06b71724de6b25afb96f6db",
+  "mode": "fixture",
+  "name": "classification",
+  "operator": "fictional (Halverra Telecom)",
+  "origin": "evals/classification/eval.py evaluate()",
+  "schema": 1
+ }
+}

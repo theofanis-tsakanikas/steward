@@ -213,3 +213,24 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
 - **B27 — `pending_first_write` expires.** A log-sink dataset (`audit`, B15) has no table until the first
   write; the reconciliation lists it as pending, not missing, until `pending_first_write_until`
   (2026-10-31, doctrine 6), judged by the run's own `at` timestamp because `core/` reads no clock.
+- **B28 — Evidence is the harnesses' own results, wrapped and digested.** `steward evidence` runs each claim
+  harness's `evaluate()` (and loads the contracts) and writes `evidence/fixture/<name>.json` as
+  `{meta: {mode, as_of, origin, digest}, data}`; the digest is the SHA-256 of the canonical payload.
+  `steward evidence-check` (in `make check`) refuses a payload that no longer matches its digest, a file the
+  manifest does not list, and a fixture file that differs from what the repository produces today. The demo
+  re-verifies the digest on every read and refuses to draw from a file that fails it. `as_of` is the
+  synthetic anchor date, never the wall clock, so the files are byte-identical across machines.
+- **B29 — The Gates page shows a recorded run, and the record cannot vouch for itself.** Recomputing
+  gate-proof inside `evidence-check` would take minutes, so `make evidence-gates` records a run
+  (`--skip evidence`) and the gate checks that the record still lists exactly today's mutations, all REFUSED
+  (`GATES_STALE`, `GATES_NOT_REFUSED`). The `evidence` gate's own mutations are not in the record (a
+  record cannot contain the proof of the check that reads it); CI runs them on every push, and the page says so.
+  Cost: adding a mutation means re-recording (`make evidence-gates`, about 1.5 minutes).
+- **B30 — "No hard-coded figure" is a gate.** `scripts/check_demo_numbers.py` refuses, in `app/`, a float, an
+  int outside -1..12 (layout counts), or a string holding two or more consecutive digits (`DEMO_FIGURE_HARDCODED`).
+  A page computes what it prints from evidence. It is a lexical check: it cannot tell a figure from a
+  coincidence, and a value computed from the wrong field passes it; the tests open every page.
+- **B31 — Recorded mode only is built.** The banner states the evidence source (`fixture` or `live`) and the
+  Collibra mode. A live mode (reading the running estate) waits for phase 3 (T017); until `evidence/live/`
+  exists the demo cannot silently show anything but the offline fixture. Streamlit is pinned `>=1.50` for
+  `width="stretch"`; the Lineage graph uses `st.graphviz_chart` (rendered in the browser, no network).
