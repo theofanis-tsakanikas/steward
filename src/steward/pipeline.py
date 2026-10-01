@@ -75,7 +75,7 @@ def iam_snapshot(e: Estate, captured_at: str) -> dict:
     offline stand-in for a live getIamPolicy capture (T016), which has the same shape."""
     import re
 
-    seat = re.compile(r'^\$\{var\.principals\["([^"]+)"\]\}$')
+    seat = re.compile(r'^\$\{var\.(?:principals|grantees)\["([^"]+)"\]\}$')
     bindings = []
     for layer in ("infra/governance/generated.tf.json", "infra/marketplace/generated.tf.json"):
         for node in e.compiled[layer]["resource"].get("google_bigquery_dataset_iam_member", {}).values():

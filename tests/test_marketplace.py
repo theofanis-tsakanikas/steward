@@ -44,7 +44,7 @@ def test_unknown_requester_and_wrong_seat_are_refused(e):
 
 def test_the_grant_goes_to_the_person_not_the_seat(e):
     grants = e.compiled["infra/marketplace/generated.tf.json"]["resource"]["google_bigquery_dataset_iam_member"]
-    assert grants["r_001"]["member"] == '${var.principals["user:eleni.kosta@halverra.example"]}'
+    assert grants["r_001"]["member"] == '${var.grantees["user:eleni.kosta@halverra.example"]}'
 
 
 def test_stale_decision_is_refused(e):
@@ -175,3 +175,90 @@ def test_lifecycle_never_deletes_and_ignores_stale_notices():
     got = {d["dashboard"]: d["state"] for d in states(usage)}
     assert got == {"a": "notify-owner", "b": "notify-owner", "c": "archive-due", "d": "notify-owner"}
     assert all("delete" not in d["state"] and "delete" not in d["action"] for d in states(usage))
+
+
+@pytest.mark.parametrize(
+    "role", ["projects/p/roles/readAll", "roles/owner", "roles/viewer", "roles/bigquery.dataOwner"]
+)
+def test_any_unexplained_role_is_flagged(e, role):
+    snap = {
+        "captured_at": "2026-09-30T18:00:00Z",
+        "bindings": [{"dataset": "crm", "member": "analyst@IT", "role": role, "condition": None}],
+    }
+    assert {f.code for f in gate(snap, decide(e.ledger, e.contracts, e.roles), e.contracts, e.roles)} == {
+        "GRANT_ROLE_UNEXPECTED"
+    }
+
+
+def test_only_the_captured_sink_writer_may_edit_audit(e):
+    mine, foreign = (
+        "serviceAccount:service-111@gcp-sa-logging.iam.gserviceaccount.com",
+        "serviceAccount:service-999@gcp-sa-logging.iam.gserviceaccount.com",
+    )
+    snap = {
+        "captured_at": "2026-09-30T18:00:00Z",
+        "sink_writer_identity": mine,
+        "bindings": [
+            {"dataset": "audit", "member": mine, "role": "roles/bigquery.dataEditor", "condition": None},
+            {"dataset": "audit", "member": foreign, "role": "roles/bigquery.dataEditor", "condition": None},
+        ],
+    }
+    out = {(f.code, f.target) for f in gate(snap, decide(e.ledger, e.contracts, e.roles), e.contracts, e.roles)}
+    assert out == {("GRANT_ROLE_UNEXPECTED", f"audit:{foreign}")}
+
+
+def test_log_sink_is_not_a_key_for_an_ordinary_dataset():
+    from datetime import date
+
+    from steward.core.classify import detect
+    from steward.core.gate_classification import gate as scan
+    from steward.core.validate import validate_all
+
+    docs = copy.deepcopy(io.contract_docs())
+    del docs["audit"]
+    net = docs["network"]
+    net["log_sink"] = {"source": "pretend this is a sink", "personal_kinds": ["email"]}
+    net["tables"] = {}
+    _, findings = validate_all(docs, io.roles_doc(), io.waivers_doc(), io.harvest(), date(2026, 10, 1))
+    assert ("TABLE_UNDECLARED", "network.usage_events") in {(f.code, f.target) for f in findings if f.blocking}
+    e2 = pipeline.load(contract_docs=docs)
+    out = {
+        (f.code, f.target)
+        for f in scan(
+            detect(io.synthetic_columns(), pipeline.synthetic_anchor()), e2.contracts, e2.compiled_tags, e2.broken
+        )
+        if f.blocking
+    }
+    assert ("PII_UNDECLARED_COLUMN", "network.usage_events.msisdn") in out
+
+
+def test_log_sink_may_declare_only_email():
+    docs = copy.deepcopy(io.contract_docs())
+    docs["audit"]["log_sink"]["personal_kinds"] = ["msisdn"]
+    from steward.core.validate import load_contract
+
+    assert load_contract("audit", docs["audit"])[0] is None
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("as_of", "garbage"),
+        ("as_of", "2026-09-30T18:00:00"),
+        ("requests.0.at", "2026-09-25 09:00"),
+        ("requests.0.requester", "USER:eleni.kosta@halverra.example"),
+    ],
+)
+def test_ledger_rejects_bad_times_and_prefixes(field, value):
+    lg = _ledger()
+    target = lg
+    *path, last = field.split(".")
+    for k in path:
+        target = target[int(k)] if k.isdigit() else target[k]
+    target[last] = value
+    assert load_ledger(lg)[0] is None
+
+
+def test_the_offline_snapshot_sees_marketplace_grants(e):
+    snap = pipeline.iam_snapshot(e, "2026-09-30T18:00:00Z")
+    assert any(b["member"] == "user:eleni.kosta@halverra.example" and b["condition"] for b in snap["bindings"])

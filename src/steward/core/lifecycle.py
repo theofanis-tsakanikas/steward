@@ -34,6 +34,7 @@ def states(usage: dict) -> list[dict]:
         else:
             due = (notified or now) + timedelta(days=GRACE)
             state, action = "notify-owner", f"notify {d['owner']}: archived on {iso(due)} unless opened or renewed"
+        # There is no delete state: the strongest action this module can emit is a reversible archive.
         out.append(
             {
                 "dashboard": d["id"],
@@ -42,7 +43,6 @@ def states(usage: dict) -> list[dict]:
                 "idle_days": idle,
                 "state": state,
                 "action": action,
-                "delete": False,
             }
         )
     return out

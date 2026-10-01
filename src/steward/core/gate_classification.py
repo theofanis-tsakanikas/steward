@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from .classify import UNSCHEMED, ColumnDetection
 from .compile import RESTRICTED
-from .contract import Contract
+from .contract import LOG_SINK_TABLE, Contract
 from .findings import Finding
 
 GATE = "classification"
@@ -32,6 +32,7 @@ def gate(
     declared: dict[str, object] = {}
     tables: set[str] = set()
     sinks = {c.dataset: c.log_sink for c in contracts if c.log_sink}
+    contracted = {c.dataset for c in contracts}
     for c in contracts:
         for fqn, _, _, col in c.iter_columns():
             declared[fqn] = col
@@ -56,7 +57,7 @@ def gate(
                     evidence=ev,
                 )
             )
-        elif dataset in sinks:
+        elif dataset in sinks and LOG_SINK_TABLE.match(table.split(".", 1)[1]):
             extra = sorted(set(d.kinds) - set(sinks[dataset].personal_kinds))
             if extra:
                 out.append(
@@ -86,6 +87,16 @@ def gate(
                     GATE,
                     d.column,
                     f"{kinds} found by value in a field the schema does not declare",
+                    evidence=ev,
+                )
+            )
+        elif table not in tables and dataset in contracted:
+            out.append(
+                Finding(
+                    "PII_UNDECLARED_COLUMN",
+                    GATE,
+                    d.column,
+                    f"{kinds} found by value in a table {dataset}'s contract does not declare",
                     evidence=ev,
                 )
             )

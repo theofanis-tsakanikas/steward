@@ -46,7 +46,7 @@
           "title": "steward-R-001"
         },
         "dataset_id": "network",
-        "member": "${var.principals[\"user:eleni.kosta@halverra.example\"]}",
+        "member": "${var.grantees[\"user:eleni.kosta@halverra.example\"]}",
         "role": "roles/bigquery.dataViewer"
       },
       "r_002": {
@@ -56,7 +56,7 @@
           "title": "steward-R-002"
         },
         "dataset_id": "crm",
-        "member": "${var.principals[\"user:paolo.marino@halverra.example\"]}",
+        "member": "${var.grantees[\"user:paolo.marino@halverra.example\"]}",
         "role": "roles/bigquery.dataViewer"
       }
     },
