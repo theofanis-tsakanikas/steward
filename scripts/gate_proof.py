@@ -486,7 +486,7 @@ def _commands(target: str) -> list[str]:
     """What `make <target>` would run — prerequisites and variables expanded — split into single commands."""
     import re as _re
 
-    r = subprocess.run(["make", "-n", target], cwd=REPO, capture_output=True, text=True)
+    r = subprocess.run(["make", "-n", "--no-print-directory", target], cwd=REPO, capture_output=True, text=True)
     if r.returncode:
         raise SystemExit(f"UNGATED cannot expand `make {target}`: {r.stderr.strip()}")
     return [c.strip() for line in r.stdout.splitlines() for c in _re.split(r"&&|;|\|", line) if c.strip()]
