@@ -32,6 +32,13 @@ positives:
   - {value: "Hauptstr. 5", kinds: [address]}
   - {value: "Via Roma, 10", kinds: [address]}
   - {value: "write to <a.b@example.org> today", kinds: [email]}
+  # added after the T003 verification pass
+  - {value: "Berliner Straße 12", kinds: [address]}
+  - {value: "697 123 4567", kinds: [msisdn]}
+  - {value: "0170 1234567", kinds: [msisdn]}
+  - {value: "00 30 697 123 4567", kinds: [msisdn]}
+  - {value: "12 Μαρτίου 1984", kinds: [birth_date]}
+  - {value: "March 12, 1984", kinds: [birth_date]}
 negatives:
   - {value: "INV-2026-000123", why: invoice number}
   - {value: "DE89370400440532013001", why: IBAN shape with a wrong check digit}
@@ -48,3 +55,13 @@ fifteen_digit:
   - {value: "35-209900-176148-1", expect: imei, why: grouped IMEI}
   - {value: "262011234567890", expect: imsi, why: German MCC, Luhn fails}
   - {value: "123456789012345", expect: none, why: neither Luhn-valid nor a European MCC}
+
+# Values that ARE flagged and are NOT personal data — the declared cost of "one hit is enough"
+# (doctrine 1). Measured and printed by the eval so the cost is visible; they do not fail the build.
+known_over_flags:
+  - {value: "3000000001", kind: msisdn, why: a 10-digit id starting with 3 reads as an Italian mobile}
+  - {value: "6912345678", kind: msisdn, why: identical to a Greek mobile in national form — genuinely ambiguous}
+  - {value: "invoice 0049 1234 5678", kind: msisdn, why: digit groups after 00 + country code}
+  - {value: "+1 555 0100", kind: msisdn, why: a fictional US number is still a phone number}
+  - {value: "Bring 2", kind: address, why: a German word ending in -ring followed by a number}
+  - {value: "created 2001-01-01", kind: birth_date, why: a 25-year-old date in free text}

@@ -83,3 +83,31 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   dataset; marketplace grants exist only for roles that are not standing readers. The three-role query
   on `crm.customers` therefore shows the fraud investigator through an approved grant — the bridge from
   claim 2 to claim 6.
+- **B11 — The `msisdn` kind means "a phone number", not only a mobile subscriber number.** Since the
+  T003 review the detector flags any E.164 number and the three markets' national mobile formats; a
+  person's landline is personal data too (GDPR Art. 4(1)), so the wider net follows doctrine 1. The
+  kind keeps its name because contracts and catalog already use it. Cost, measured in
+  `evals/classification/cases.yaml` → `known_over_flags` (printed by the eval, not failing): 10-digit
+  ids starting with 3, digit groups after `00`+country code, German words ending in -ring + number,
+  25-year-old dates in free text. **Known misses, accepted for this timebox:** Greek addresses written
+  without a street word ("Ερμού 15"), compact `YYYYMMDD` dates, dashed IBANs, and non-European IMSIs
+  (inbound roamers: a 15-digit number not starting with 2 is read as an IMEI if its Luhn digit passes).
+- **B12 — The custodian writes; it never reads a tag in clear.** Compiled: `roles/bigquery.dataEditor`
+  on each contracted dataset for that contract's `custodian`, a seat in every `all_rows` row policy
+  (it loads, quarantines and deletes rows), `jobUser`, and **no** Fine-Grained Reader or Masked Reader.
+  Quality rules run in the loader on the source before the load (claim 5), so no rule needs a tagged
+  column in clear inside BigQuery. gate-proof plants a Fine-Grained Reader for it and the access eval
+  refuses it.
+- **B13 — Roles bound to a contract field; the reach rules the access eval checks.** `steward` and
+  `custodian` have no global seat: on each dataset their seat is that contract's own `steward` /
+  `custodian` principal, so crm's stewards govern crm and nothing else. The rules, stated here so the
+  eval does not copy them from the compiler: (1) dataset read = `readers` ∪ the custodian (B12) ∪ an
+  approved, unexpired marketplace grant for a `grantable_roles` seat; (2) a tagged column is clear only
+  with Fine-Grained Reader, masked only with that rule's Masked Reader, otherwise denied; (3) row
+  policies cover `readers` ∪ `grantable_roles` ∪ the custodian; a role scoped by the row-access column
+  gets one policy per scope, everyone else `TRUE`; (4) a column the estate has and the contract does
+  not, and every column of a table with no contract, is tagged `restricted` — no reader at all.
+- **B4 (extended) — values the code owns, deliberately not contract fields:** `jobUser` for every seat
+  (running a query is not reading data), `require_partition_filter` on partitioned tables (B9),
+  `max_time_travel_hours = 48` (the minimum; claim 7), `deletion_protection = false` and
+  `delete_contents_on_destroy = true` (deploy → capture → destroy, M4).

@@ -9,7 +9,7 @@
     }
   },
   "locals": {
-    "policy_tags": "${jsondecode(data.google_parameter_manager_parameter_version.estate.parameter_data).policy_tags}"
+    "policy_tags": "${nonsensitive(jsondecode(data.google_parameter_manager_parameter_version.estate.parameter_data).policy_tags)}"
   },
   "resource": {
     "google_bigquery_datapolicy_data_policy": {
@@ -205,10 +205,10 @@
         "project": "${google_bigquery_datapolicy_data_policy.personal_07eeb42d_sha256.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
-      "personal_07eeb42d_sha256__steward": {
+      "personal_07eeb42d_sha256__group_finance_stewards_halverra_example": {
         "data_policy_id": "${google_bigquery_datapolicy_data_policy.personal_07eeb42d_sha256.data_policy_id}",
         "location": "${google_bigquery_datapolicy_data_policy.personal_07eeb42d_sha256.location}",
-        "member": "${var.principals[\"steward\"]}",
+        "member": "${var.principals[\"group:finance-stewards@halverra.example\"]}",
         "project": "${google_bigquery_datapolicy_data_policy.personal_07eeb42d_sha256.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
@@ -240,10 +240,10 @@
         "project": "${google_bigquery_datapolicy_data_policy.personal_0c8a752d_email_mask.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
-      "personal_0c8a752d_email_mask__steward": {
+      "personal_0c8a752d_email_mask__group_crm_stewards_halverra_example": {
         "data_policy_id": "${google_bigquery_datapolicy_data_policy.personal_0c8a752d_email_mask.data_policy_id}",
         "location": "${google_bigquery_datapolicy_data_policy.personal_0c8a752d_email_mask.location}",
-        "member": "${var.principals[\"steward\"]}",
+        "member": "${var.principals[\"group:crm-stewards@halverra.example\"]}",
         "project": "${google_bigquery_datapolicy_data_policy.personal_0c8a752d_email_mask.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
@@ -289,10 +289,10 @@
         "project": "${google_bigquery_datapolicy_data_policy.personal_797e2fac_always_null.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
-      "personal_797e2fac_always_null__steward": {
+      "personal_797e2fac_always_null__group_crm_stewards_halverra_example": {
         "data_policy_id": "${google_bigquery_datapolicy_data_policy.personal_797e2fac_always_null.data_policy_id}",
         "location": "${google_bigquery_datapolicy_data_policy.personal_797e2fac_always_null.location}",
-        "member": "${var.principals[\"steward\"]}",
+        "member": "${var.principals[\"group:crm-stewards@halverra.example\"]}",
         "project": "${google_bigquery_datapolicy_data_policy.personal_797e2fac_always_null.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
@@ -324,10 +324,10 @@
         "project": "${google_bigquery_datapolicy_data_policy.personal_825e2471_last_four_characters.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
-      "personal_825e2471_last_four_characters__steward": {
+      "personal_825e2471_last_four_characters__group_finance_stewards_halverra_example": {
         "data_policy_id": "${google_bigquery_datapolicy_data_policy.personal_825e2471_last_four_characters.data_policy_id}",
         "location": "${google_bigquery_datapolicy_data_policy.personal_825e2471_last_four_characters.location}",
-        "member": "${var.principals[\"steward\"]}",
+        "member": "${var.principals[\"group:finance-stewards@halverra.example\"]}",
         "project": "${google_bigquery_datapolicy_data_policy.personal_825e2471_last_four_characters.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
@@ -366,17 +366,17 @@
         "project": "${google_bigquery_datapolicy_data_policy.personal_91294881_date_year_mask.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
-      "personal_91294881_date_year_mask__steward": {
+      "personal_91294881_date_year_mask__group_crm_stewards_halverra_example": {
         "data_policy_id": "${google_bigquery_datapolicy_data_policy.personal_91294881_date_year_mask.data_policy_id}",
         "location": "${google_bigquery_datapolicy_data_policy.personal_91294881_date_year_mask.location}",
-        "member": "${var.principals[\"steward\"]}",
+        "member": "${var.principals[\"group:crm-stewards@halverra.example\"]}",
         "project": "${google_bigquery_datapolicy_data_policy.personal_91294881_date_year_mask.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
-      "personal_e07e3e53_last_four_characters__steward": {
+      "personal_e07e3e53_last_four_characters__group_crm_stewards_halverra_example": {
         "data_policy_id": "${google_bigquery_datapolicy_data_policy.personal_e07e3e53_last_four_characters.data_policy_id}",
         "location": "${google_bigquery_datapolicy_data_policy.personal_e07e3e53_last_four_characters.location}",
-        "member": "${var.principals[\"steward\"]}",
+        "member": "${var.principals[\"group:crm-stewards@halverra.example\"]}",
         "project": "${google_bigquery_datapolicy_data_policy.personal_e07e3e53_last_four_characters.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
@@ -436,10 +436,10 @@
         "project": "${google_bigquery_datapolicy_data_policy.personal_fcd2e14f_sha256.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
-      "personal_fcd2e14f_sha256__steward": {
+      "personal_fcd2e14f_sha256__group_crm_stewards_halverra_example": {
         "data_policy_id": "${google_bigquery_datapolicy_data_policy.personal_fcd2e14f_sha256.data_policy_id}",
         "location": "${google_bigquery_datapolicy_data_policy.personal_fcd2e14f_sha256.location}",
-        "member": "${var.principals[\"steward\"]}",
+        "member": "${var.principals[\"group:crm-stewards@halverra.example\"]}",
         "project": "${google_bigquery_datapolicy_data_policy.personal_fcd2e14f_sha256.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
@@ -464,10 +464,10 @@
         "project": "${google_bigquery_datapolicy_data_policy.sensitive_network_a9e19a3b_always_null.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
-      "sensitive_network_a9e19a3b_always_null__steward": {
+      "sensitive_network_a9e19a3b_always_null__group_network_stewards_halverra_example": {
         "data_policy_id": "${google_bigquery_datapolicy_data_policy.sensitive_network_a9e19a3b_always_null.data_policy_id}",
         "location": "${google_bigquery_datapolicy_data_policy.sensitive_network_a9e19a3b_always_null.location}",
-        "member": "${var.principals[\"steward\"]}",
+        "member": "${var.principals[\"group:network-stewards@halverra.example\"]}",
         "project": "${google_bigquery_datapolicy_data_policy.sensitive_network_a9e19a3b_always_null.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
@@ -478,10 +478,10 @@
         "project": "${google_bigquery_datapolicy_data_policy.sensitive_network_a9e19a3b_sha256.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
-      "sensitive_network_bfba4130_always_null__steward": {
+      "sensitive_network_bfba4130_always_null__group_network_stewards_halverra_example": {
         "data_policy_id": "${google_bigquery_datapolicy_data_policy.sensitive_network_bfba4130_always_null.data_policy_id}",
         "location": "${google_bigquery_datapolicy_data_policy.sensitive_network_bfba4130_always_null.location}",
-        "member": "${var.principals[\"steward\"]}",
+        "member": "${var.principals[\"group:network-stewards@halverra.example\"]}",
         "project": "${google_bigquery_datapolicy_data_policy.sensitive_network_bfba4130_always_null.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
@@ -513,10 +513,10 @@
         "project": "${google_bigquery_datapolicy_data_policy.sensitive_network_bfba4130_sha256.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
-      "sensitive_network_e07e3e53_last_four_characters__steward": {
+      "sensitive_network_e07e3e53_last_four_characters__group_network_stewards_halverra_example": {
         "data_policy_id": "${google_bigquery_datapolicy_data_policy.sensitive_network_e07e3e53_last_four_characters.data_policy_id}",
         "location": "${google_bigquery_datapolicy_data_policy.sensitive_network_e07e3e53_last_four_characters.location}",
-        "member": "${var.principals[\"steward\"]}",
+        "member": "${var.principals[\"group:network-stewards@halverra.example\"]}",
         "project": "${google_bigquery_datapolicy_data_policy.sensitive_network_e07e3e53_last_four_characters.project}",
         "role": "roles/bigquerydatapolicy.maskedReader"
       },
@@ -550,54 +550,69 @@
       }
     },
     "google_bigquery_dataset_iam_member": {
-      "crm__analyst_de": {
+      "crm__analyst_de__viewer": {
         "dataset_id": "crm",
         "member": "${var.principals[\"analyst@DE\"]}",
         "role": "roles/bigquery.dataViewer"
       },
-      "crm__analyst_gr": {
+      "crm__analyst_gr__viewer": {
         "dataset_id": "crm",
         "member": "${var.principals[\"analyst@GR\"]}",
         "role": "roles/bigquery.dataViewer"
       },
-      "crm__analyst_it": {
+      "crm__analyst_it__viewer": {
         "dataset_id": "crm",
         "member": "${var.principals[\"analyst@IT\"]}",
         "role": "roles/bigquery.dataViewer"
       },
-      "crm__bi_service": {
+      "crm__bi_service__viewer": {
         "dataset_id": "crm",
         "member": "${var.principals[\"bi_service\"]}",
         "role": "roles/bigquery.dataViewer"
       },
-      "crm__steward": {
+      "crm__group_crm_stewards_halverra_example__viewer": {
         "dataset_id": "crm",
-        "member": "${var.principals[\"steward\"]}",
+        "member": "${var.principals[\"group:crm-stewards@halverra.example\"]}",
         "role": "roles/bigquery.dataViewer"
       },
-      "finance__bi_service": {
+      "crm__group_data_platform_halverra_example__editor": {
+        "dataset_id": "crm",
+        "member": "${var.principals[\"group:data-platform@halverra.example\"]}",
+        "role": "roles/bigquery.dataEditor"
+      },
+      "finance__bi_service__viewer": {
         "dataset_id": "finance",
         "member": "${var.principals[\"bi_service\"]}",
         "role": "roles/bigquery.dataViewer"
       },
-      "finance__steward": {
+      "finance__group_data_platform_halverra_example__editor": {
         "dataset_id": "finance",
-        "member": "${var.principals[\"steward\"]}",
+        "member": "${var.principals[\"group:data-platform@halverra.example\"]}",
+        "role": "roles/bigquery.dataEditor"
+      },
+      "finance__group_finance_stewards_halverra_example__viewer": {
+        "dataset_id": "finance",
+        "member": "${var.principals[\"group:finance-stewards@halverra.example\"]}",
         "role": "roles/bigquery.dataViewer"
       },
-      "network__bi_service": {
+      "network__bi_service__viewer": {
         "dataset_id": "network",
         "member": "${var.principals[\"bi_service\"]}",
         "role": "roles/bigquery.dataViewer"
       },
-      "network__fraud_investigator": {
+      "network__fraud_investigator__viewer": {
         "dataset_id": "network",
         "member": "${var.principals[\"fraud_investigator\"]}",
         "role": "roles/bigquery.dataViewer"
       },
-      "network__steward": {
+      "network__group_data_platform_halverra_example__editor": {
         "dataset_id": "network",
-        "member": "${var.principals[\"steward\"]}",
+        "member": "${var.principals[\"group:data-platform@halverra.example\"]}",
+        "role": "roles/bigquery.dataEditor"
+      },
+      "network__group_network_stewards_halverra_example__viewer": {
+        "dataset_id": "network",
+        "member": "${var.principals[\"group:network-stewards@halverra.example\"]}",
         "role": "roles/bigquery.dataViewer"
       }
     },
@@ -607,9 +622,9 @@
         "filter_predicate": "TRUE",
         "grantees": [
           "${var.principals[\"bi_service\"]}",
-          "${var.principals[\"custodian\"]}",
           "${var.principals[\"fraud_investigator\"]}",
-          "${var.principals[\"steward\"]}"
+          "${var.principals[\"group:crm-stewards@halverra.example\"]}",
+          "${var.principals[\"group:data-platform@halverra.example\"]}"
         ],
         "policy_id": "all_rows",
         "table_id": "customers"
@@ -646,9 +661,9 @@
         "filter_predicate": "TRUE",
         "grantees": [
           "${var.principals[\"bi_service\"]}",
-          "${var.principals[\"custodian\"]}",
           "${var.principals[\"fraud_investigator\"]}",
-          "${var.principals[\"steward\"]}"
+          "${var.principals[\"group:crm-stewards@halverra.example\"]}",
+          "${var.principals[\"group:data-platform@halverra.example\"]}"
         ],
         "policy_id": "all_rows",
         "table_id": "support_tickets"
@@ -685,8 +700,8 @@
         "filter_predicate": "TRUE",
         "grantees": [
           "${var.principals[\"bi_service\"]}",
-          "${var.principals[\"custodian\"]}",
-          "${var.principals[\"steward\"]}"
+          "${var.principals[\"group:data-platform@halverra.example\"]}",
+          "${var.principals[\"group:finance-stewards@halverra.example\"]}"
         ],
         "policy_id": "all_rows",
         "table_id": "billing"
@@ -723,9 +738,9 @@
         "filter_predicate": "TRUE",
         "grantees": [
           "${var.principals[\"bi_service\"]}",
-          "${var.principals[\"custodian\"]}",
           "${var.principals[\"fraud_investigator\"]}",
-          "${var.principals[\"steward\"]}"
+          "${var.principals[\"group:data-platform@halverra.example\"]}",
+          "${var.principals[\"group:network-stewards@halverra.example\"]}"
         ],
         "policy_id": "all_rows",
         "table_id": "network_events"
@@ -762,9 +777,9 @@
         "filter_predicate": "TRUE",
         "grantees": [
           "${var.principals[\"bi_service\"]}",
-          "${var.principals[\"custodian\"]}",
           "${var.principals[\"fraud_investigator\"]}",
-          "${var.principals[\"steward\"]}"
+          "${var.principals[\"group:data-platform@halverra.example\"]}",
+          "${var.principals[\"group:network-stewards@halverra.example\"]}"
         ],
         "policy_id": "all_rows",
         "table_id": "usage_events"
@@ -845,18 +860,28 @@
         "project": "${var.project_id}",
         "role": "roles/bigquery.jobUser"
       },
-      "custodian": {
-        "member": "${var.principals[\"custodian\"]}",
-        "project": "${var.project_id}",
-        "role": "roles/bigquery.jobUser"
-      },
       "fraud_investigator": {
         "member": "${var.principals[\"fraud_investigator\"]}",
         "project": "${var.project_id}",
         "role": "roles/bigquery.jobUser"
       },
-      "steward": {
-        "member": "${var.principals[\"steward\"]}",
+      "group_crm_stewards_halverra_example": {
+        "member": "${var.principals[\"group:crm-stewards@halverra.example\"]}",
+        "project": "${var.project_id}",
+        "role": "roles/bigquery.jobUser"
+      },
+      "group_data_platform_halverra_example": {
+        "member": "${var.principals[\"group:data-platform@halverra.example\"]}",
+        "project": "${var.project_id}",
+        "role": "roles/bigquery.jobUser"
+      },
+      "group_finance_stewards_halverra_example": {
+        "member": "${var.principals[\"group:finance-stewards@halverra.example\"]}",
+        "project": "${var.project_id}",
+        "role": "roles/bigquery.jobUser"
+      },
+      "group_network_stewards_halverra_example": {
+        "member": "${var.principals[\"group:network-stewards@halverra.example\"]}",
         "project": "${var.project_id}",
         "role": "roles/bigquery.jobUser"
       }
@@ -864,12 +889,12 @@
   },
   "variable": {
     "principals": {
-      "description": "Seat -> IAM member (user:, group: or serviceAccount:). No default: a seat with no principal is a failed plan, never an invented one (doctrine 3). Seats come from contracts/_roles.yaml.",
+      "description": "Seat -> IAM member (user:, group: or serviceAccount:). No default: a seat with no principal is a failed plan, never an invented one (doctrine 3). Seats come from contracts/_roles.yaml and, for roles bound to a contract field (steward, custodian), from each contract.",
       "type": "map(string)",
       "validation": [
         {
-          "condition": "${alltrue([for k in [\"analyst@GR\", \"analyst@IT\", \"analyst@DE\", \"bi_service\", \"custodian\", \"fraud_investigator\", \"steward\"] : contains(keys(var.principals), k)])}",
-          "error_message": "principals must bind every seat in contracts/_roles.yaml: analyst@GR, analyst@IT, analyst@DE, bi_service, custodian, fraud_investigator, steward."
+          "condition": "${alltrue([for k in [\"analyst@DE\", \"analyst@GR\", \"analyst@IT\", \"bi_service\", \"fraud_investigator\", \"group:crm-stewards@halverra.example\", \"group:data-platform@halverra.example\", \"group:finance-stewards@halverra.example\", \"group:network-stewards@halverra.example\"] : contains(keys(var.principals), k)])}",
+          "error_message": "principals must bind every seat: analyst@DE, analyst@GR, analyst@IT, bi_service, fraud_investigator, group:crm-stewards@halverra.example, group:data-platform@halverra.example, group:finance-stewards@halverra.example, group:network-stewards@halverra.example."
         },
         {
           "condition": "${alltrue([for v in values(var.principals) : can(regex(\"^(user|group|serviceAccount):\", v))])}",

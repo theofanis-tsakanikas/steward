@@ -84,11 +84,32 @@ def test_one_hit_is_enough():
     assert detect_column("b", ["call +306912345678"], SCAN).kinds == ["msisdn"]
 
 
-def test_history_is_not_a_birth_date_column():
-    created = [f"{y}-03-01" for y in range(1990, 2009)] + ["2020-01-01"] * 5
+def test_recent_history_is_not_a_birth_date_column():
+    created = [f"20{y:02d}-03-01" for y in range(12, 26)]  # all younger than 16 years
     assert "birth_date" not in detect_column("a", created, SCAN).kinds
-    births = [f"{y}-03-01" for y in range(1940, 2000)]
+
+
+def test_old_history_is_flagged_by_design():
+    # dates 18-36 years old cannot be told from ages by value alone: flagged (doctrine 1, DECISIONS B11)
+    created = [f"{y}-03-01" for y in range(1990, 2009)]
+    assert detect_column("a", created, SCAN).kinds == ["birth_date"]
+
+
+@pytest.mark.parametrize("filler", ["1900-01-01", "9999-12-31", "2015-06-01"])
+def test_sentinels_and_minors_do_not_hide_a_birth_date_column(filler):
+    births = [f"{y}-03-01" for y in range(1940, 2000)][:85] + [filler] * 15
     assert detect_column("b", births, SCAN).kinds == ["birth_date"]
+
+
+def test_leap_day_scan_date_does_not_crash():
+    assert "birth_date" in scan_value("1984-03-12", date(2028, 2, 29))
+
+
+def test_typo_in_dataset_name_still_blocks_its_pii(detections):
+    docs = copy.deepcopy(io.contract_docs())
+    docs["crm"]["dataset"] = "CRM"
+    out = run(detections, docs)
+    assert ("PII_CONTRACT_BROKEN", "crm.support_tickets.ref_2") in out
 
 
 def test_birth_date_window_moves_with_the_scan_date():

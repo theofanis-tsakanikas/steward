@@ -2,8 +2,10 @@
 
 This module never reads a contract. It reconstructs access from the generated `.tf.json` alone —
 dataset viewers, Fine-Grained Readers, data policies and their Masked Readers, row access policies —
-the way BigQuery would evaluate them. evals/access then compares its answers with what the contracts
-imply. Two independent readings agreeing is the claim; one function agreeing with itself is not.
+for the **modelled IAM subset**, and it refuses to model anything outside that subset: an IAM resource,
+role or condition not on the allowlist below raises `Unmodelled` rather than being ignored, so an
+additive grant (a project-level Fine-Grained Reader, a dataOwner) cannot slip past as "not modelled".
+evals/access compares its answers with what the contracts imply.
 
 It also renders a query's result per seat (`answer`) with the masking rules applied in Python. That
 is a **simulation**, labelled as such on every surface; the live transcripts (T012) are the evidence
@@ -25,6 +27,43 @@ _TAG_NAME = re.compile(r"^\$\{google_data_catalog_policy_tag\.([a-z0-9_]+)\.name
 _DP_REF = re.compile(r"^\$\{google_bigquery_datapolicy_data_policy\.([a-z0-9_]+)\.data_policy_id\}$")
 
 
+class Unmodelled(ValueError):
+    """The compiled Terraform contains access this simulator cannot evaluate. Refused, never ignored."""
+
+
+# resource type -> allowed IAM roles (None = not an IAM resource; must carry no member/role)
+ALLOWED = {
+    "google_data_catalog_taxonomy": None,
+    "google_data_catalog_policy_tag": None,
+    "google_bigquery_dataset": None,
+    "google_bigquery_table": None,
+    "google_parameter_manager_parameter": None,
+    "google_parameter_manager_parameter_version": None,
+    "google_bigquery_datapolicy_data_policy": None,
+    "google_bigquery_row_access_policy": None,
+    "google_bigquery_datapolicy_data_policy_iam_member": {"roles/bigquerydatapolicy.maskedReader"},
+    "google_data_catalog_policy_tag_iam_member": {"roles/datacatalog.categoryFineGrainedReader"},
+    "google_bigquery_dataset_iam_member": {"roles/bigquery.dataViewer", "roles/bigquery.dataEditor"},
+    "google_project_iam_member": {"roles/bigquery.jobUser"},
+}
+
+
+def _allowlisted(doc: dict) -> None:
+    for rtype, nodes in doc.get("resource", {}).items():
+        if rtype not in ALLOWED:
+            raise Unmodelled(f"resource type {rtype} is not modelled")
+        roles = ALLOWED[rtype]
+        for name, node in nodes.items():
+            if roles is None:
+                if "role" in node or "member" in node:
+                    raise Unmodelled(f"{rtype}.{name} carries IAM the model does not read")
+                continue
+            if node.get("role") not in roles:
+                raise Unmodelled(f"{rtype}.{name}: role {node.get('role')} is not modelled")
+            if node.get("condition"):
+                raise Unmodelled(f"{rtype}.{name}: IAM conditions are not modelled here (claim 6 owns them)")
+
+
 def _seat(member: str) -> str:
     m = _VAR.match(member)
     if not m:
@@ -35,7 +74,8 @@ def _seat(member: str) -> str:
 @dataclass
 class AccessModel:
     column_tag: dict[str, str | None]  # fqn -> policy-tag resource (or None = untagged)
-    viewers: dict[str, set[str]] = field(default_factory=dict)  # dataset -> seats
+    viewers: dict[str, set[str]] = field(default_factory=dict)  # dataset -> seats (dataViewer)
+    editors: dict[str, set[str]] = field(default_factory=dict)  # dataset -> seats (dataEditor: write, and read)
     fine_grained: dict[str, set[str]] = field(default_factory=dict)  # tag resource -> seats (clear)
     masked: dict[str, dict[str, str]] = field(default_factory=dict)  # tag resource -> seat -> predefined rule
     row_policies: dict[str, list[tuple[str, set[str]]]] = field(
@@ -44,12 +84,14 @@ class AccessModel:
 
 
 def model(estate: dict, governance: dict) -> AccessModel:
+    _allowlisted(estate)
+    _allowlisted(governance)
     am = AccessModel(compiled_column_tags(estate))
     key_to_tag = {k: _TAG_NAME.match(v).group(1) for k, v in estate["locals"]["published"]["policy_tags"].items()}
     gr = governance["resource"]
     for node in gr.get("google_bigquery_dataset_iam_member", {}).values():
-        if node["role"] == "roles/bigquery.dataViewer":
-            am.viewers.setdefault(node["dataset_id"], set()).add(_seat(node["member"]))
+        target = am.viewers if node["role"] == "roles/bigquery.dataViewer" else am.editors
+        target.setdefault(node["dataset_id"], set()).add(_seat(node["member"]))
     for node in gr.get("google_data_catalog_policy_tag_iam_member", {}).values():
         if node["role"] == "roles/datacatalog.categoryFineGrainedReader":
             tag = key_to_tag[_LOCAL_TAG.match(node["policy_tag"]).group(1)]
@@ -85,15 +127,21 @@ def effective(am: AccessModel, seat: str, column: str, granted: Grants = frozens
     """'clear' | a predefined masking rule | a DENIED_* reason. `granted` holds the (seat, dataset)
     pairs with an approved marketplace grant (claim 6) — standing access comes from compiled viewers only."""
     dataset = column.split(".")[0]
-    if seat not in am.viewers.get(dataset, set()) and (seat, dataset) not in granted:
+    readers = am.viewers.get(dataset, set()) | am.editors.get(dataset, set())
+    if seat not in readers and (seat, dataset) not in granted:
         return DENIED_DATASET
     tag = am.column_tag.get(column)
     if tag is None:
         return "clear"
+    return tag_grant(am, seat, tag) or DENIED_COLUMN
+
+
+def tag_grant(am: AccessModel, seat: str, tag: str) -> str | None:
+    """What a seat holds on a policy tag, independent of any dataset access: 'clear' (Fine-Grained
+    Reader wins over masking), a masking rule, or None."""
     if seat in am.fine_grained.get(tag, set()):
         return "clear"
-    rule = am.masked.get(tag, {}).get(seat)
-    return rule or DENIED_COLUMN
+    return am.masked.get(tag, {}).get(seat)
 
 
 def row_filter(am: AccessModel, seat: str, table: str) -> str | None:
@@ -119,23 +167,33 @@ def _row_passes(pred: str, row: dict) -> bool:
     return any((m := _EQ.match(p.strip())) and str(row.get(m.group(1))) == m.group(2) for p in pred.split(" OR "))
 
 
+def _b64sha(value) -> str:
+    import base64
+
+    return base64.b64encode(hashlib.sha256(str(value).encode()).digest()).decode()
+
+
 def mask(rule: str, value, col_type: str):
     if value is None:
         return None
+    # Output shapes per the BigQuery masking docs (read 2026-10-01). The SHA-256 rendering (base64 of
+    # the digest) is this simulator's; live transcripts (T012) are compared by rule, not by value.
     if rule == "SHA256":
-        return hashlib.sha256(str(value).encode()).hexdigest()
+        return _b64sha(value)
     if rule == "ALWAYS_NULL":
         return None
     if rule == "LAST_FOUR_CHARACTERS":
         s = str(value)
-        return s[-4:] if len(s) > 4 else hashlib.sha256(s.encode()).hexdigest()
+        return "XXXXX" + s[-4:] if len(s) > 4 else _b64sha(s)
     if rule == "EMAIL_MASK":
         s = str(value)
-        return "XXXXX@" + s.split("@", 1)[1] if "@" in s else hashlib.sha256(s.encode()).hexdigest()
+        return "XXXXX@" + s.split("@", 1)[1] if "@" in s else _b64sha(s)
     if rule == "DATE_YEAR_MASK":
         return f"{str(value)[:4]}-01-01"
     if rule == "DEFAULT_MASKING_VALUE":
-        return {"STRING": "", "INTEGER": 0, "FLOAT": 0.0, "NUMERIC": 0, "BOOLEAN": False, "DATE": "1970-01-01"}.get(col_type)
+        return {"STRING": "", "INTEGER": 0, "FLOAT": 0.0, "NUMERIC": 0, "BOOLEAN": False, "DATE": "1970-01-01"}.get(
+            col_type
+        )
     raise ValueError(rule)
 
 

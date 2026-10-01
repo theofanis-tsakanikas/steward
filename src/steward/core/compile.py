@@ -56,6 +56,7 @@ CLASS_ABBR = {
     Classification.SPECIAL: "special",
     Classification.SENSITIVE_NETWORK: "sensitive_network",
 }
+QUARANTINE_SUFFIX = "__quarantine"  # claim 5: <table>__quarantine (emitted by the quality atom)
 RESTRICTED = "restricted"  # the safe-state tag: no reader, no data policy, nobody sees it
 TIME_TRAVEL_HOURS = "48"  # the minimum BigQuery allows; shortens how long deleted data stays recoverable
 DAY_MS = 86_400_000
@@ -72,6 +73,15 @@ def _label(s: str) -> str:
 
 def _principal_label(p: str) -> str:
     return _label(p.split(":", 1)[1].split("@", 1)[0])
+
+
+def seats_for(roles: Roles, role: str, c: Contract) -> list[str]:
+    """The seats a role occupies on contract `c`. A role bound to a contract field (steward,
+    custodian) is that contract's principal — so crm's steward governs crm, not finance."""
+    r = roles.roles[role]
+    if r.bound_from:
+        return [getattr(c, r.bound_from)]
+    return roles.seats(role)
 
 
 def profile_key(classification: Classification, masking: dict) -> str:
@@ -196,6 +206,11 @@ def compile_controls(contracts: list[Contract], roles: Roles, harvest: dict) -> 
             for path, col in tbl.columns.items():
                 if col.classification.tagged:
                     tag_of[path] = profile_key(col.classification, col.masking)
+            # A column the estate has and the contract does not: unknown sensitivity → the safe state
+            # (doctrine 1), even while COLUMN_UNDECLARED keeps the build red.
+            for path, info in cols.items():
+                if path not in tbl.columns and info.type != "RECORD":
+                    tag_of[path] = RESTRICTED
         else:
             # Doctrine 1: no contract → every leaf column is tagged `restricted`, which no one may read.
             for path, info in cols.items():
@@ -316,17 +331,17 @@ def compile_controls(contracts: list[Contract], roles: Roles, harvest: dict) -> 
     gov["data"]["google_parameter_manager_parameter_version"] = {
         "estate": {"parameter": "steward-estate", "parameter_version_id": "${var.estate_version}"}
     }
-    seats = [seat for role in sorted(roles.roles) for seat in roles.seats(role)]
+    all_seats = sorted({seat for c in contracts for role in roles.roles for seat in seats_for(roles, role, c)})
     gov["variable"] = {
         "principals": {
-            "description": "Seat -> IAM member (user:, group: or serviceAccount:). No default: a seat with no principal is a failed plan, never an invented one (doctrine 3). Seats come from contracts/_roles.yaml.",
+            "description": "Seat -> IAM member (user:, group: or serviceAccount:). No default: a seat with no principal is a failed plan, never an invented one (doctrine 3). Seats come from contracts/_roles.yaml and, for roles bound to a contract field (steward, custodian), from each contract.",
             "type": "map(string)",
             "validation": [
                 {
-                    "condition": "${alltrue([for k in " + json.dumps(seats) + " : contains(keys(var.principals), k)])}",
-                    "error_message": "principals must bind every seat in contracts/_roles.yaml: "
-                    + ", ".join(seats)
-                    + ".",
+                    "condition": "${alltrue([for k in "
+                    + json.dumps(all_seats)
+                    + " : contains(keys(var.principals), k)])}",
+                    "error_message": "principals must bind every seat: " + ", ".join(all_seats) + ".",
                 },
                 {
                     "condition": '${alltrue([for v in values(var.principals) : can(regex("^(user|group|serviceAccount):", v))])}',
@@ -335,30 +350,33 @@ def compile_controls(contracts: list[Contract], roles: Roles, harvest: dict) -> 
             ],
         }
     }
+    # Policy-tag names are identifiers, not secrets; the provider marks parameter data sensitive, which
+    # would make every tag reference in the plan unreadable.
     gov["locals"]["policy_tags"] = (
-        "${jsondecode(data.google_parameter_manager_parameter_version.estate.parameter_data).policy_tags}"
+        "${nonsensitive(jsondecode(data.google_parameter_manager_parameter_version.estate.parameter_data).policy_tags)}"
     )
 
-    rules_per_tag: dict[str, dict[str, list[str]]] = {}  # tag key -> rule -> roles
-    clear_per_tag: dict[str, list[str]] = {}
+    # tag key -> seat -> rule ("clear" = Fine-Grained Reader). Built per column, per contract, so a role
+    # bound to a contract field (steward, custodian) is granted for that contract's principal only.
+    grants: dict[str, dict[str, str]] = {}
     for c in contracts:
-        for _, _, _, col in c.iter_columns():
+        for fqn, _, _, col in c.iter_columns():
             if not col.classification.tagged:
                 continue
             key = profile_key(col.classification, col.masking)
             for role, rule in col.masking.items():
-                if rule == Masking.CLEAR:
-                    clear_per_tag.setdefault(key, [])
-                    if role not in clear_per_tag[key]:
-                        clear_per_tag[key].append(role)
-                else:
-                    lst = rules_per_tag.setdefault(key, {}).setdefault(PREDEFINED[rule], [])
-                    if role not in lst:
-                        lst.append(role)
+                if role not in roles.roles:
+                    continue
+                value = "clear" if rule == Masking.CLEAR else PREDEFINED[rule]
+                for seat in seats_for(roles, role, c):
+                    prev = grants.setdefault(key, {}).get(seat)
+                    if prev and prev != value:
+                        raise ValueError(f"{seat} would hold {prev} and {value} on one tag ({fqn})")
+                    grants[key][seat] = value
 
     dps, dp_iam, fgr = {}, {}, {}
-    for key in sorted(rules_per_tag):
-        for rule in sorted(rules_per_tag[key]):
+    for key in sorted(grants):
+        for rule in sorted({v for v in grants[key].values() if v != "clear"}):
             name = f"{_tag_resource(key)}_{rule.lower()}"
             dps[name] = {
                 "location": "${lower(var.location)}",
@@ -367,46 +385,49 @@ def compile_controls(contracts: list[Contract], roles: Roles, harvest: dict) -> 
                 "data_policy_type": "DATA_MASKING_POLICY",
                 "data_masking_policy": {"predefined_expression": rule},
             }
-            for role in sorted(rules_per_tag[key][rule]):
-                for seat in roles.seats(role):
-                    dp_iam[f"{name}__{_ident(seat)}"] = {
-                        "project": "${google_bigquery_datapolicy_data_policy." + name + ".project}",
-                        "location": "${google_bigquery_datapolicy_data_policy." + name + ".location}",
-                        "data_policy_id": "${google_bigquery_datapolicy_data_policy." + name + ".data_policy_id}",
-                        "role": "roles/bigquerydatapolicy.maskedReader",
-                        "member": f'${{var.principals["{seat}"]}}',
-                    }
-    for key in sorted(clear_per_tag):
-        for role in sorted(clear_per_tag[key]):
-            for seat in roles.seats(role):
-                fgr[f"{_tag_resource(key)}__{_ident(seat)}"] = {
-                    "policy_tag": f'${{local.policy_tags["{key}"]}}',
-                    "role": "roles/datacatalog.categoryFineGrainedReader",
+            for seat in sorted(s_ for s_, v in grants[key].items() if v == rule):
+                dp_iam[f"{name}__{_ident(seat)}"] = {
+                    "project": "${google_bigquery_datapolicy_data_policy." + name + ".project}",
+                    "location": "${google_bigquery_datapolicy_data_policy." + name + ".location}",
+                    "data_policy_id": "${google_bigquery_datapolicy_data_policy." + name + ".data_policy_id}",
+                    "role": "roles/bigquerydatapolicy.maskedReader",
                     "member": f'${{var.principals["{seat}"]}}',
                 }
+        for seat in sorted(s_ for s_, v in grants[key].items() if v == "clear"):
+            fgr[f"{_tag_resource(key)}__{_ident(seat)}"] = {
+                "policy_tag": f'${{local.policy_tags["{key}"]}}',
+                "role": "roles/datacatalog.categoryFineGrainedReader",
+                "member": f'${{var.principals["{seat}"]}}',
+            }
     if dps:
         G["google_bigquery_datapolicy_data_policy"] = dps
         G["google_bigquery_datapolicy_data_policy_iam_member"] = dp_iam
     if fgr:
         G["google_data_catalog_policy_tag_iam_member"] = fgr
 
-    viewers, jobusers = {}, {}
+    dataset_iam, jobusers = {}, {}
     for c in contracts:
         for role in sorted(c.readers):
-            for seat in roles.seats(role):
-                viewers[f"{c.dataset}__{_ident(seat)}"] = {
+            for seat in seats_for(roles, role, c):
+                dataset_iam[f"{c.dataset}__{_ident(seat)}__viewer"] = {
                     "dataset_id": c.dataset,
                     "role": "roles/bigquery.dataViewer",
                     "member": f'${{var.principals["{seat}"]}}',
                 }
-    for role in sorted(roles.roles):
-        for seat in roles.seats(role):
-            jobusers[_ident(seat)] = {
-                "project": "${var.project_id}",
-                "role": "roles/bigquery.jobUser",
-                "member": f'${{var.principals["{seat}"]}}',
-            }
-    G["google_bigquery_dataset_iam_member"] = viewers
+        # The custodian loads, quarantines and deletes (retention): it writes the dataset. It holds no
+        # Fine-Grained Reader, so it cannot read a tagged column in clear (DECISIONS B12).
+        dataset_iam[f"{c.dataset}__{_ident(c.custodian)}__editor"] = {
+            "dataset_id": c.dataset,
+            "role": "roles/bigquery.dataEditor",
+            "member": f'${{var.principals["{c.custodian}"]}}',
+        }
+    for seat in all_seats:
+        jobusers[_ident(seat)] = {
+            "project": "${var.project_id}",
+            "role": "roles/bigquery.jobUser",
+            "member": f'${{var.principals["{seat}"]}}',
+        }
+    G["google_bigquery_dataset_iam_member"] = dataset_iam
     G["google_project_iam_member"] = jobusers
 
     rap = {}
@@ -429,14 +450,14 @@ def compile_controls(contracts: list[Contract], roles: Roles, harvest: dict) -> 
                             "grantees": [f'${{var.principals["{role}@{scope}"]}}'],
                         }
                 else:
-                    unscoped.extend(roles.seats(role))
+                    unscoped.extend(seats_for(roles, role, c))
             if unscoped:
                 rap[f"{c.dataset}__{tname}__all_rows"] = {
                     "dataset_id": c.dataset,
                     "table_id": tname,
                     "policy_id": "all_rows",
                     "filter_predicate": "TRUE",
-                    "grantees": [f'${{var.principals["{s}"]}}' for s in sorted(unscoped)],
+                    "grantees": [f'${{var.principals["{s_}"]}}' for s_ in sorted(set(unscoped))],
                 }
     G["google_bigquery_row_access_policy"] = rap
 

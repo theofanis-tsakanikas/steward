@@ -33,8 +33,8 @@ from datetime import date
 
 from .contract import DETECTABLE_KINDS as KINDS  # noqa: F401 — one vocabulary, shared with contracts
 
-_E164 = re.compile(r"(?<![\w+])(?:\+|00)\(?[1-9]\d{0,2}\)?(?:[ .\-]?\(?\d\)?){6,13}(?!\w)")
-_NATIONAL = re.compile(r"(?<![\w+])(?:69\d{8}|3\d{8,9}|01[5-7]\d{7,9})(?!\w)")
+_E164 = re.compile(r"(?<![\w+])(?:\+|00)[ ]?\(?[1-9]\d{0,2}\)?(?:[ .\-]?\(?\d\)?){6,13}(?!\w)")
+_NATIONAL = re.compile(r"(?<![\w+\d])(?:69\d(?:[ ]?\d){7}|3\d{2}(?:[ ]?\d){6,7}|01[5-7]\d(?:[ ]?\d){6,8})(?![\w\d])")
 _DIGITS15 = re.compile(r"(?<![\d-])\d{2}[- ]?\d{6}[- ]?\d{6}[- ]?\d(?![\d-])")
 _EMAIL = re.compile(r"(?<![\w.+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}(?![\w-])")
 _DATE_NUM = re.compile(
@@ -54,11 +54,16 @@ _MONTHS = {
     **dict.fromkeys(["november", "nov", "novembre"], 11),
     **dict.fromkeys(["december", "dec", "dicembre", "dezember", "dez"], 12),
 }
-_DATE_WORD = re.compile(r"(?i)\b(\d{1,2})\.?\s+([a-zà-ÿ]{3,9})\.?\s+(\d{4})\b")
+_DATE_WORD = re.compile(r"(?i)\b(\d{1,2})\.?\s+([^\W\d_]{3,12})\.?,?\s+(\d{4})\b")
+_DATE_WORD_MDY = re.compile(r"(?i)\b([^\W\d_]{3,12})\.?\s+(\d{1,2}),?\s+(\d{4})\b")
+# Greek genitive month names (the form used in dates: "12 Μαρτίου 1984"), accents stripped before lookup
+_MONTHS_EL = {"ιανουαριου": 1, "φεβρουαριου": 2, "μαρτιου": 3, "απριλιου": 4, "μαιου": 5, "ιουνιου": 6, "ιουλιου": 7,
+              "αυγουστου": 8, "σεπτεμβριου": 9, "οκτωβριου": 10, "νοεμβριου": 11, "δεκεμβριου": 12}  # fmt: skip
 _STREET = re.compile(
     r"(?i)(?:\b(?:odos|odou|leoforos|leof\.|plateia|via|viale|corso|piazza|vicolo|largo)\s+[^\W\d_][\w'\- ]{1,40}?,?\s+\d{1,4}\b"
     r"|(?:οδός|οδ\.|λεωφόρος|λεωφ\.|πλατεία)\s+[^\W\d_][\w'\- ]{1,40}?,?\s+\d{1,4}\b"
     r"|\b[^\W\d_][\w\-]*(?:strasse|straße|str\.|weg|allee|platz|gasse|ring|damm)\s*\d{1,4}\b"
+    r"|\b[^\W\d_][\w\-]*\s+(?:strasse|straße|str\.|weg|allee|platz|gasse|ring|damm)\s*\d{1,4}\b"
     r"|\b\d{1,4}\s+[A-Za-z][A-Za-z ]{1,40}\s(?:street|road|avenue|lane|drive)\b)"
 )
 
@@ -129,17 +134,36 @@ def _dates(value: str) -> list[date]:
             d = _safe_date(int(m.group("y2")), int(m.group("m2")), int(m.group("d2")))
         if d:
             out.append(d)
-    for m in _DATE_WORD.finditer(value):
-        month = _MONTHS.get(unicodedata.normalize("NFKD", m.group(2).lower()).encode("ascii", "ignore").decode())
-        if month:
-            d = _safe_date(int(m.group(3)), month, int(m.group(1)))
-            if d:
-                out.append(d)
+    for rx, day_g, mon_g in ((_DATE_WORD, 1, 2), (_DATE_WORD_MDY, 2, 1)):
+        for m in rx.finditer(value):
+            month = _month(m.group(mon_g))
+            if month:
+                d = _safe_date(int(m.group(3)), month, int(m.group(day_g)))
+                if d:
+                    out.append(d)
     return out
 
 
+def _month(word: str) -> int | None:
+    w = "".join(c for c in unicodedata.normalize("NFKD", word.lower()) if not unicodedata.combining(c))
+    return _MONTHS.get(w) or _MONTHS_EL.get(w)
+
+
+def _years_before(d: date, years: int) -> date:
+    try:
+        return d.replace(year=d.year - years)
+    except ValueError:  # 29 February → 28 February
+        return d.replace(year=d.year - years, day=28)
+
+
 def _window(scan_date: date) -> tuple[date, date]:
-    return scan_date.replace(year=scan_date.year - 110), scan_date.replace(year=scan_date.year - 16)
+    return _years_before(scan_date, 110), _years_before(scan_date, 16)
+
+
+# Placeholder dates legacy systems write for "unknown". They are neither births nor evidence against.
+SENTINELS = frozenset(
+    {date(1, 1, 1), date(1800, 1, 1), date(1899, 12, 31), date(1900, 1, 1), date(1970, 1, 1), date(9999, 12, 31)}
+)
 
 
 def scan_value(value: str, scan_date: date) -> dict[str, int]:
@@ -168,7 +192,7 @@ def scan_value(value: str, scan_date: date) -> dict[str, int]:
             found["imei"] += 1
     found["email"] = len(_EMAIL.findall(value))
     lo, hi = _window(scan_date)
-    ds = _dates(value)
+    ds = [d for d in _dates(value) if d not in SENTINELS]
     found["birth_date"] = sum(1 for d in ds if lo <= d <= hi)
     if ds and value.strip() and len(_DATE_NUM.sub("", value).strip()) == 0:
         found["_bare_date"] = 1
@@ -188,22 +212,27 @@ class ColumnDetection:
 
 
 def _birth_column(n: int, bare: int, births: int) -> bool:
-    """A structured date column (≥80% bare dates) is a birth-date column only if ≥90% of its dates
-    fall in the 16–110-year window; otherwise (free text, mixed) one in-window date is enough."""
+    """A structured date column (≥80% of its non-sentinel values are bare dates) is a birth-date
+    column if at least half of those dates fall in the 16–110-year window — minors and a few typos
+    must not hide it; a column of recent `created` dates is not one. Free text and mixed columns:
+    one in-window date is enough."""
     if n and bare >= 0.8 * n:
-        return births >= 0.9 * bare
+        return births >= 0.5 * bare
     return births >= 1
 
 
 def detect_column(column: str, values: list, scan_date: date) -> ColumnDetection:
     vals = [str(v) for v in values if v is not None and str(v) != ""]
     per_kind: Counter[str] = Counter()
+    n_sentinel = sum(
+        1 for v in vals if (ds := _dates(v)) and all(d in SENTINELS for d in ds) and not _DATE_NUM.sub("", v).strip()
+    )
     for v in vals:
         for k in scan_value(v, scan_date):
             per_kind[k] += 1
     bare = per_kind.pop("_bare_date", 0)
     kinds = sorted(k for k, c in per_kind.items() if c >= 1 and k != "birth_date")
-    if per_kind.get("birth_date") and _birth_column(len(vals), bare, per_kind["birth_date"]):
+    if per_kind.get("birth_date") and _birth_column(len(vals) - n_sentinel, bare, per_kind["birth_date"]):
         kinds = sorted([*kinds, "birth_date"])
     return ColumnDetection(column, len(vals), dict(sorted(per_kind.items())), kinds)
 

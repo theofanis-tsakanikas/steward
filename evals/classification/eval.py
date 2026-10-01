@@ -73,6 +73,10 @@ def evaluate() -> dict:
         got = "imei" if "imei" in sig else "imsi" if "imsi" in sig else "none"
         case_results.append({"value": c["value"], "expected": [c["expect"]], "got": [got], "ok": got == c["expect"]})
 
+    over = [
+        {"value": c["value"], "kind": c["kind"], "flagged": c["kind"] in kinds_of(c["value"]), "why": c["why"]}
+        for c in cases.get("known_over_flags", [])
+    ]
     e = pipeline.load()
     findings = gate(detections, e.contracts, e.compiled_tags, e.broken)
     flagged_innocent = {d.column for d in detections if d.kinds and d.column in innocent_cols}
@@ -98,6 +102,7 @@ def evaluate() -> dict:
             "held_at_safe_state_no_contract": sorted(held & innocent_cols),
         },
         "hard_cases": {"n": len(case_results), "passed": sum(r["ok"] for r in case_results), "results": case_results},
+        "known_over_flags": {"n": len(over), "flagged": sum(o["flagged"] for o in over), "cases": over},
         "detections": [d.to_dict() for d in detections if d.kinds],
         "gate_findings": [f.to_dict() for f in findings],
         "limit": "generator and detector share an author: part A is a pipeline check (the planted PII reaches the gate), not a measure of detection in the wild; C is the independent part (see T014 for Google DLP on the same samples)",
@@ -133,6 +138,10 @@ def main() -> int:
     for c in hc["results"]:
         if not c["ok"]:
             print(f"    MISS {c['value']!r}: expected {c['expected']} got {c['got']}")
+    ko = r["known_over_flags"]
+    print(
+        f"D known over-flags    {ko['flagged']}/{ko['n']} non-PII values flagged — the declared cost of one-hit flagging (not a failure)"
+    )
     code, lines = report("classification", [Finding(**f) for f in r["gate_findings"]])
     print("\n".join("  " + ln for ln in lines))
     print(f"limit: {r['limit']}")

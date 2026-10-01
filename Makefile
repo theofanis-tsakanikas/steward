@@ -38,7 +38,7 @@ check: ## every structural gate + every generator in --check mode
 	$(PY) scripts/generate.py --check
 
 gate-proof: ## plant violations; the NAMED gate must refuse each one
-	$(PY) scripts/gate_proof.py
+	$(PY) scripts/gate_proof.py --json out/gate_proof.json
 
 preflight: lint test check evals gate-proof tf-validate ## everything CI runs, offline
 

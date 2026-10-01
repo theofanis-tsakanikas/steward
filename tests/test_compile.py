@@ -4,7 +4,7 @@ import pytest
 
 from steward import io, pipeline
 from steward.core.compile import RESTRICTED, check
-from steward.core.simulate import DENIED_COLUMN, effective, model
+from steward.core.simulate import DENIED_COLUMN, DENIED_DATASET, effective, model
 
 
 def gate(docs=None, roles=None):
@@ -65,8 +65,45 @@ def test_role_absent_from_masking_gets_no_reader_role():
     del docs["crm"]["tables"]["customers"]["columns"]["email"]["masking"]["steward"]
     e = pipeline.load(contract_docs=docs)
     am = model(e.compiled["infra/estate/generated.tf.json"], e.compiled["infra/governance/generated.tf.json"])
-    assert effective(am, "steward", "crm.customers.email") == DENIED_COLUMN
-    assert effective(am, "steward", "crm.customers.msisdn") == "LAST_FOUR_CHARACTERS"
+    steward = "group:crm-stewards@halverra.example"
+    assert effective(am, steward, "crm.customers.email") == DENIED_COLUMN
+    assert effective(am, steward, "crm.customers.msisdn") == "LAST_FOUR_CHARACTERS"
+
+
+def test_a_dataset_steward_governs_only_its_dataset():
+    e = pipeline.load()
+    am = model(e.compiled["infra/estate/generated.tf.json"], e.compiled["infra/governance/generated.tf.json"])
+    assert effective(am, "group:finance-stewards@halverra.example", "crm.customers.msisdn") == DENIED_DATASET
+    assert effective(am, "group:finance-stewards@halverra.example", "finance.billing.iban") == "LAST_FOUR_CHARACTERS"
+
+
+def test_custodian_writes_but_never_reads_a_tag_in_clear():
+    e = pipeline.load()
+    am = model(e.compiled["infra/estate/generated.tf.json"], e.compiled["infra/governance/generated.tf.json"])
+    custodian = "group:data-platform@halverra.example"
+    assert all(custodian not in seats for seats in am.fine_grained.values())
+    assert custodian in am.editors["crm"]
+    assert effective(am, custodian, "crm.customers.msisdn") == DENIED_COLUMN
+
+
+def test_undeclared_column_of_a_declared_table_compiles_restricted():
+    harvest = copy.deepcopy(io.harvest())
+    harvest["crm.customers"]["fields"].append({"name": "alt_phone", "type": "STRING", "mode": "NULLABLE"})
+    assert pipeline.load(harvest=harvest).compiled_tags["crm.customers.alt_phone"] == RESTRICTED
+
+
+def test_unmodelled_iam_is_refused():
+    from steward.core.simulate import Unmodelled
+
+    e = pipeline.load()
+    gov = copy.deepcopy(e.compiled["infra/governance/generated.tf.json"])
+    gov["resource"]["google_project_iam_member"]["x"] = {
+        "project": "p",
+        "role": "roles/bigquery.dataOwner",
+        "member": '${var.principals["analyst@GR"]}',
+    }
+    with pytest.raises(Unmodelled):
+        model(e.compiled["infra/estate/generated.tf.json"], gov)
 
 
 def test_compiled_output_is_deterministic():

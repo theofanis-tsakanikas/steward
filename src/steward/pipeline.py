@@ -39,7 +39,10 @@ def load(contract_docs: dict | None = None, roles_doc: dict | None = None, harve
         if c:
             contracts.append(c)
             names.add(c.dataset)
-    broken = frozenset(str(d.get("dataset", n)) if isinstance(d, dict) else n for n, d in docs.items()) - names
+    # A contract that fails to load protects nothing — under its file name AND whatever dataset it
+    # claims (a typo in `dataset:` must not make the real dataset look merely uncontracted).
+    claimed = {str(d.get("dataset")) for d in docs.values() if isinstance(d, dict) and d.get("dataset")}
+    broken = (frozenset(docs) | frozenset(claimed)) - names
     roles = Roles.model_validate(io.roles_doc() if roles_doc is None else roles_doc)
     hv = io.harvest() if harvest is None else harvest
     e = Estate(contracts, broken, roles, hv)

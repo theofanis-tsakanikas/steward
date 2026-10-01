@@ -380,6 +380,7 @@ def validate_all(
     findings += werrs
     findings += cross_check(contracts, roles)
     loaded = {c.dataset for c in contracts}
-    broken = frozenset(str(d.get("dataset", n)) for n, d in contract_docs.items() if isinstance(d, dict)) - loaded
+    claimed = {str(d.get("dataset")) for d in contract_docs.values() if isinstance(d, dict) and d.get("dataset")}
+    broken = (frozenset(contract_docs) | frozenset(claimed)) - loaded
     findings += against_estate(contracts, harvest, broken)
     return contracts, apply_waivers(findings, waivers, roles, contracts, today)
