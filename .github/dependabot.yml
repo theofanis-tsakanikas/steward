@@ -1,0 +1,40 @@
+# Pinned reference implementation: version-update PRs are off. Security updates stay on
+# in repository settings. Turn version updates back on only when CI installs from the
+# same files a bump would change (readme-standard / Dependabot policy).
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+  - package-ecosystem: terraform
+    directory: /infra/bootstrap
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+  - package-ecosystem: terraform
+    directory: /infra/estate
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+  - package-ecosystem: terraform
+    directory: /infra/governance
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+  - package-ecosystem: terraform
+    directory: /infra/assurance
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+  - package-ecosystem: terraform
+    directory: /infra/marketplace
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0

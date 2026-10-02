@@ -8,6 +8,9 @@ The adapter speaks Collibra's **documented** REST API. Two modes, chosen by conf
 Every output (payload, sync report, reconciliation, demo banner, README first line) carries the mode.
 Saying "integrated with Collibra" while running the mock is a defect.
 
+The evidence committed in this repository, and the recorded demo, are **MOCK**. REAL is recorded
+when DAY-ONE step 7 completes.
+
 ## The model (what the payload builds)
 - **Community** → **Domain** → **Asset**. Assets have a **type** (e.g. Database / Schema / Table / Column,
   Report, Business Term, Data Set), a **status**, **attributes** (e.g. Description, classification)
