@@ -417,3 +417,20 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   `FAILED_PRECONDITION` right after it is a wait, not a second fault. All 87 bootstrap resources exist and
   `terraform plan` reports no difference. The budget measures gross usage (B49); the guard was exercised live with a
   below-threshold notification published to the topic and logged `cost 1.0 stop at 45.0`, taking no action.
+
+- **B54 — First-apply and first-capture findings, 2026-10-02 (each is now code, a test and, where it can be, a gate).**
+  (1) **A Dataplex scan location is a region** (`europe-west1`, with the DLP template), not `eu`; the compiler used
+  `var.location`. (2) **Dataplex's service agent must be allowed to mint tokens for each custodian seat**
+  (`roles/iam.serviceAccountShortTermTokenMinter`, one account, never the project) and the grant needs ~a minute: the
+  assurance layer has a `time_sleep`, and `ASSURANCE_NO_MINTER` fails a scan whose agent grant is missing, broader or
+  elsewhere. (3) **Scan creation is a long-running operation** (3 minutes for five scans, ~12 for the sixth); the scans
+  carry 30-minute `timeouts`. A scan left half-created by a timed-out apply was deleted by hand once, and the next apply
+  recreated it. (4) **Analytics Hub's `request_access` is a bare address**, not `mailto:`. (5) **BigQuery cannot mask a
+  column that partitions or clusters its table**: every masked read of `network.usage_events` was refused ("Data masking
+  cannot be applied ... as the field is used for partitioning or clustering"). The tables were clustered by `msisdn`
+  and `cell_id`, both masked; they are now clustered by `country` and an untagged column, `network` is contract
+  version 3, and `MASKED_COLUMN_CLUSTERED` fails the build for any tagged partition or cluster column. (6)
+  `datasets.getIamPolicy` is not open to this project ("requires allowlisting"): the IAM capture reads the dataset's
+  access list, which is what the Terraform provider writes, conditions included; a conditional role is stored as
+  `<role>_withcond_<hash>` and normalised. (7) The Dataplex judge compares only the rules the compiled scans carry;
+  a rule left out on purpose (a referential check, a policy-tagged column) is reported as not scanned.

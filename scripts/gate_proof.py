@@ -1131,6 +1131,16 @@ MUTATIONS: list[Mutation] = [
         "5",
     ),
     Mutation(
+        "a masked column used as a clustering field",
+        "contracts",
+        "synthetic/data/_schema.json",
+        '"network.usage_events": {\n    "cluster": [\n      "country",\n      "event_type"\n    ],',
+        '"network.usage_events": {\n    "cluster": [\n      "msisdn",\n      "event_type"\n    ],',
+        ("MASKED_COLUMN_CLUSTERED", "network.usage_events.msisdn"),
+        "BigQuery refuses every masked read of such a table: the live capture of 2026-10-02 found it the hard way",
+        "2",
+    ),
+    Mutation(
         "a scan that ignores the row ceiling",
         "assurance",
         "src/steward/core/sampling.py",

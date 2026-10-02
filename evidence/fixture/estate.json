@@ -866,7 +866,7 @@
      "network_events",
      "usage_events"
     ],
-    "version": 2
+    "version": 3
    }
   ],
   "operator": "Halverra Telecom (fictional)",
@@ -895,7 +895,7 @@
   "as_of": "2026-09-30",
   "claim": "1,4,7",
   "data": "synthetic",
-  "digest": "424ec9a9e03506f58f618fdb370842c8a55ffee332d565a296c8b0a8237f99d1",
+  "digest": "e05d761c8ee1845174bcd3c95079a928e2b56f4e195c48129d4752ce6726cbbc",
   "mode": "fixture",
   "name": "estate",
   "operator": "fictional (Halverra Telecom)",

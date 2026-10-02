@@ -180,7 +180,7 @@ SCHEMA: dict[str, dict] = {
     },
     "network.usage_events": {
         "partition": "event_date",
-        "cluster": ["msisdn", "cell_id"],
+        "cluster": ["country", "event_type"],  # never a tagged column: BigQuery cannot mask one (MASKED_COLUMN_CLUSTERED)
         "fields": [
             f("event_id", "STRING", "REQUIRED"),
             f("event_date", "DATE", "REQUIRED"),
@@ -196,7 +196,7 @@ SCHEMA: dict[str, dict] = {
     },
     "network.network_events": {
         "partition": "event_date",
-        "cluster": ["cell_id"],
+        "cluster": ["country", "rat"],
         "fields": [
             f("attach_id", "STRING", "REQUIRED"),
             f("event_date", "DATE", "REQUIRED"),
