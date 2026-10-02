@@ -54,7 +54,15 @@ def test_the_committed_gate_has_no_extra_ids():
 
 
 def test_ci_without_identifiers_fails_closed(monkeypatch, capsys):
-    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setenv("STEWARD_IDS_REQUIRED", "1")
     monkeypatch.setattr(ids, "identifiers", lambda extra=(): set())
     assert ids.main([]) == 1
     assert "ID_UNCONFIGURED" in capsys.readouterr().out
+
+
+def test_unconfigured_is_not_a_baseline_failure(monkeypatch, capsys):
+    monkeypatch.delenv("STEWARD_IDS_REQUIRED", raising=False)
+    monkeypatch.setattr(ids, "identifiers", lambda extra=(): set())
+    monkeypatch.setattr(ids, "hits", lambda *a, **k: [])
+    assert ids.main([]) == 0
+    assert "ID_UNCONFIGURED" not in capsys.readouterr().out

@@ -123,7 +123,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--id", action="append", default=[], help="extra identifier (used by gate-proof; never a real id)")
     args = ap.parse_args(argv)
     live = identifiers(extra=(*EXTRA_IDS, *args.id))
-    if os.environ.get("GITHUB_ACTIONS") == "true" and not live:
+    # STEWARD_IDS_REQUIRED is set only on the CI `make check` step. gate-proof must
+    # stay green on an unmutated tree even when that job has no secrets.
+    if os.environ.get("STEWARD_IDS_REQUIRED") == "1" and not live:
         print("ERROR ID_UNCONFIGURED CI has no identifiers to refuse — set the STEWARD_* secrets")
         return 1
     ids = live | {CANARY}

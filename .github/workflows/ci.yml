@@ -33,6 +33,7 @@ jobs:
       - run: make test
       - run: make check
         env:
+          STEWARD_IDS_REQUIRED: "1"
           STEWARD_PROJECT_ID: ${{ secrets.STEWARD_PROJECT_ID }}
           STEWARD_PROJECT_NUMBER: ${{ secrets.STEWARD_PROJECT_NUMBER }}
           STEWARD_ORG_ID: ${{ secrets.STEWARD_ORG_ID }}
@@ -55,6 +56,11 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --group dev --all-extras
       - run: make gate-proof
+        env:
+          STEWARD_PROJECT_ID: ${{ secrets.STEWARD_PROJECT_ID }}
+          STEWARD_PROJECT_NUMBER: ${{ secrets.STEWARD_PROJECT_NUMBER }}
+          STEWARD_ORG_ID: ${{ secrets.STEWARD_ORG_ID }}
+          STEWARD_BILLING_ACCOUNT: ${{ secrets.STEWARD_BILLING_ACCOUNT }}
 
   infrastructure:
     runs-on: ubuntu-latest
