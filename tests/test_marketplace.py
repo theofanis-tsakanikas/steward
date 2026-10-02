@@ -269,3 +269,11 @@ def test_the_offline_snapshot_sees_marketplace_grants(e):
 def test_grantees_variable_is_declared_and_refuses_groups(e):
     var = e.compiled["infra/marketplace/generated.tf.json"]["variable"]["grantees"]
     assert any("never a group" in v["error_message"] for v in var["validation"])
+
+
+def test_a_listing_names_its_approver_as_a_bare_address(e):
+    """Analytics Hub refuses `mailto:...` as request_access: it must be an email address or a URL (first apply)."""
+    listings = e.compiled["infra/marketplace/generated.tf.json"]["resource"]["google_bigquery_analytics_hub_listing"]
+    assert listings
+    for node in listings.values():
+        assert "@" in node["request_access"] and not node["request_access"].startswith(("mailto:", "group:"))
