@@ -88,6 +88,62 @@
    },
    {
     "claim": "2",
+    "detail": "ERROR LIVE_ROW_POLICY crm.customers as analyst@GR — 1 returned row(s) fail the compiled row access policy country = \"GR\"",
+    "expect": [
+     "LIVE_ROW_POLICY",
+     "customers"
+    ],
+    "file": "evidence/live/access.json",
+    "gate": "live",
+    "n": 7,
+    "name": "an analyst transcript that includes another country's row",
+    "status": "REFUSED",
+    "why": "the row access policy is compiled Terraform; a GR analyst seeing an IT row is the claim failing"
+   },
+   {
+    "claim": "2",
+    "detail": "ERROR LIVE_VALUE_NOT_MASKED crm.customers as analyst@GR — msisdn: expected SHA256, live value 'pg9iBijnKlcybKMorcVv2EQFHQ0rkdt5tXT7GoQ4NSM=' fits no stored row",
+    "expect": [
+     "LIVE_VALUE_NOT_MASKED",
+     "customers"
+    ],
+    "file": "evidence/live/access.json",
+    "gate": "live",
+    "n": 8,
+    "name": "a hashed identifier replaced with a different row's hash",
+    "status": "REFUSED",
+    "why": "SHA256 is judged against the true value, not 'looks like a hash'"
+   },
+   {
+    "claim": "6",
+    "detail": "ERROR LIVE_AUDIT_EMPTY access review — the sink answered no events",
+    "expect": [
+     "LIVE_AUDIT_EMPTY",
+     "access review"
+    ],
+    "file": "evidence/live/audit.json",
+    "gate": "live",
+    "n": 9,
+    "name": "the access-review sink answered no events",
+    "status": "REFUSED",
+    "why": "an empty audit trail is not evidence that the sink saw the grant being used"
+   },
+   {
+    "claim": "6",
+    "detail": "ERROR LIVE_IAM_UNKNOWN_MEMBER analytics user:attacker@evil.example — roles/bigquery.dataViewer held by a principal that is neither a seat nor a requester and not a documented default",
+    "expect": [
+     "LIVE_IAM_UNKNOWN_MEMBER",
+     "attacker@evil.example"
+    ],
+    "file": "evidence/live/iam.json",
+    "gate": "live",
+    "n": 10,
+    "name": "an unexplained principal holds dataViewer",
+    "status": "REFUSED",
+    "why": "a principal that is not a seat, a requester, or a documented default is a grant nobody approved"
+   },
+   {
+    "claim": "2",
     "detail": "ERROR WORKFLOW_IDENTITY .github/workflows/capture.yml — must authenticate as vars.GCP_DEPLOYER_SERVICE_ACCOUNT and never as vars.GCP_DESTROYER_SERVICE_ACCOUNT",
     "expect": [
      "WORKFLOW_IDENTITY",
@@ -95,7 +151,7 @@
     ],
     "file": ".github/workflows/capture.yml",
     "gate": "workflows",
-    "n": 7,
+    "n": 11,
     "name": "capture runs as the destroyer",
     "status": "REFUSED",
     "why": "a capture holds the deployer's reach (seat impersonation) and not the destroyer's"
@@ -109,7 +165,7 @@
     ],
     "file": ".github/workflows/capture.yml",
     "gate": "workflows",
-    "n": 8,
+    "n": 12,
     "name": "a capture workflow that also applies",
     "status": "REFUSED",
     "why": "a capture reads the estate and nothing else may ride on its identity"
@@ -123,7 +179,7 @@
     ],
     "file": ".github/workflows/deploy.yml",
     "gate": "workflows",
-    "n": 9,
+    "n": 13,
     "name": "deploy also runs on every push",
     "status": "REFUSED",
     "why": "an apply is dispatched by a person, never by a push"
@@ -137,7 +193,7 @@
     ],
     "file": ".github/workflows/deploy.yml",
     "gate": "workflows",
-    "n": 10,
+    "n": 14,
     "name": "the apply job outside the deploy environment",
     "status": "REFUSED",
     "why": "the federation trust names the environment: without it no credentials are issued"
@@ -151,7 +207,7 @@
     ],
     "file": ".github/workflows/destroy.yml",
     "gate": "workflows",
-    "n": 11,
+    "n": 15,
     "name": "a destroy that can be cancelled half way",
     "status": "REFUSED",
     "why": "a cancelled destroy leaves a lock and a half-removed estate"
@@ -165,7 +221,7 @@
     ],
     "file": ".github/workflows/destroy.yml",
     "gate": "workflows",
-    "n": 12,
+    "n": 16,
     "name": "a layer destroyed under another state prefix than it was applied with",
     "status": "REFUSED",
     "why": "a layer left out of destroy outlives the estate and keeps costing"
@@ -179,7 +235,7 @@
     ],
     "file": ".github/workflows/destroy.yml",
     "gate": "workflows",
-    "n": 13,
+    "n": 17,
     "name": "destroy runs as the identity the budget guard switches off",
     "status": "REFUSED",
     "why": "a spend stop must never close the way to take the estate down"
@@ -193,7 +249,7 @@
     ],
     "file": ".github/workflows/deploy.yml",
     "gate": "workflows",
-    "n": 14,
+    "n": 18,
     "name": "an input expanded inside a script run as the deployer",
     "status": "REFUSED",
     "why": "a typed input is code the moment it is expanded into a script that holds the deployer identity"
@@ -207,7 +263,7 @@
     ],
     "file": ".github/workflows/destroy.yml",
     "gate": "workflows",
-    "n": 15,
+    "n": 19,
     "name": "a destroy step that no longer destroys",
     "status": "REFUSED",
     "why": "a prefix with no destroy behind it leaves the layer standing and the run green"
@@ -221,7 +277,7 @@
     ],
     "file": ".github/workflows/destroy.yml",
     "gate": "workflows",
-    "n": 16,
+    "n": 20,
     "name": "a destroy that runs without the typed confirmation",
     "status": "REFUSED",
     "why": "destroy is the one irreversible button"
@@ -235,7 +291,7 @@
     ],
     "file": ".github/workflows/destroy.yml",
     "gate": "workflows",
-    "n": 17,
+    "n": 21,
     "name": "a destroy step that is skipped when an earlier one fails",
     "status": "REFUSED",
     "why": "one failed layer must not strand the datasets behind it"
@@ -249,7 +305,7 @@
     ],
     "file": ".github/workflows/deploy.yml",
     "gate": "workflows",
-    "n": 18,
+    "n": 22,
     "name": "the provider read from a secret",
     "status": "REFUSED",
     "why": "no secret exists in this project: federation only"
@@ -263,7 +319,7 @@
     ],
     "file": ".github/workflows/deploy.yml",
     "gate": "workflows",
-    "n": 19,
+    "n": 23,
     "name": "id-token granted to every job",
     "status": "REFUSED",
     "why": "a token minted outside the environment is a token the trust never meant to issue"
@@ -277,7 +333,7 @@
     ],
     "file": ".github/workflows/deploy.yml",
     "gate": "workflows",
-    "n": 20,
+    "n": 24,
     "name": "a key in the deploy workflow",
     "status": "REFUSED",
     "why": "no long-lived credential exists anywhere (CLAUDE.md)"
@@ -291,7 +347,7 @@
     ],
     "file": ".github/workflows/ci.yml",
     "gate": "workflows",
-    "n": 21,
+    "n": 25,
     "name": "offline CI handed a cloud identity",
     "status": "REFUSED",
     "why": "every claim is provable with no GCP account: CI holds no credentials"
@@ -305,7 +361,7 @@
     ],
     "file": "contracts/finance.yaml",
     "gate": "contracts",
-    "n": 22,
+    "n": 26,
     "name": "retention deleted",
     "status": "REFUSED",
     "why": "a dataset with no retention period fails the build (doctrine 3)"
@@ -319,7 +375,7 @@
     ],
     "file": "contracts/crm.yaml",
     "gate": "contracts",
-    "n": 23,
+    "n": 27,
     "name": "owner deleted",
     "status": "REFUSED",
     "why": "a dataset with no owner fails the build (doctrine 3)"
@@ -333,7 +389,7 @@
     ],
     "file": "synthetic/data/_schema.json",
     "gate": "contracts",
-    "n": 24,
+    "n": 28,
     "name": "new column, no contract entry",
     "status": "REFUSED",
     "why": "a column the estate has and the contract does not is drift"
@@ -347,7 +403,7 @@
     ],
     "file": "contracts/_waivers.yaml",
     "gate": "contracts",
-    "n": 25,
+    "n": 29,
     "name": "waiver for personal data",
     "status": "REFUSED",
     "why": "no waiver can open personal data (doctrine 7)"
@@ -361,7 +417,7 @@
     ],
     "file": "contracts/crm.yaml",
     "gate": "contract-versions",
-    "n": 26,
+    "n": 30,
     "name": "contract edited without a version bump",
     "status": "REFUSED",
     "why": "a changed contract must be a new version (doctrine 4)"
@@ -375,7 +431,7 @@
     ],
     "file": "contracts/crm.yaml",
     "gate": "classification",
-    "n": 27,
+    "n": 31,
     "name": "the tag removed from ref_2",
     "status": "REFUSED",
     "why": "phone numbers found by value in a column the contract calls internal"
@@ -389,7 +445,7 @@
     ],
     "file": "src/steward/core/compile.py",
     "gate": "classification",
-    "n": 28,
+    "n": 32,
     "name": "compiler forgets the safe state",
     "status": "REFUSED",
     "why": "an uncontracted table's PII must compile to `restricted`"
@@ -403,7 +459,7 @@
     ],
     "file": "contracts/crm.yaml",
     "gate": "access",
-    "n": 29,
+    "n": 33,
     "name": "analyst sees MSISDN in clear",
     "status": "REFUSED",
     "why": "a role ceiling the contract cannot raise"
@@ -417,7 +473,7 @@
     ],
     "file": "contracts/crm.yaml",
     "gate": "access",
-    "n": 30,
+    "n": 34,
     "name": "year mask on a STRING",
     "status": "REFUSED",
     "why": "a masking rule BigQuery would reject on that type"
@@ -431,7 +487,7 @@
     ],
     "file": "src/steward/core/compile.py",
     "gate": "access-eval",
-    "n": 31,
+    "n": 35,
     "name": "compiler grants clear to every masked seat",
     "status": "REFUSED",
     "why": "compiled controls must be exactly what the contracts imply"
@@ -445,7 +501,7 @@
     ],
     "file": "src/steward/core/compile.py",
     "gate": "access-eval",
-    "n": 32,
+    "n": 36,
     "name": "pipeline SA handed Fine-Grained Reader",
     "status": "REFUSED",
     "why": "the custodian writes data and reads no tagged column in clear (doctrine 5)"
@@ -459,7 +515,7 @@
     ],
     "file": "src/steward/core/compile.py",
     "gate": "access-eval",
-    "n": 33,
+    "n": 37,
     "name": "project-level Fine-Grained Reader",
     "status": "REFUSED",
     "why": "access the simulator cannot evaluate is refused, never ignored"
@@ -473,7 +529,7 @@
     ],
     "file": "src/steward/core/compile.py",
     "gate": "access-eval",
-    "n": 34,
+    "n": 38,
     "name": "last-four compiled as a hash",
     "status": "REFUSED",
     "why": "the eval reads the contract vocabulary with its own map, not the compiler's"
@@ -487,7 +543,7 @@
     ],
     "file": "src/steward/core/compile.py",
     "gate": "access-eval",
-    "n": 35,
+    "n": 39,
     "name": "an inline access block on a dataset",
     "status": "REFUSED",
     "why": "a grant hidden inside a non-IAM resource is still a grant"
@@ -501,7 +557,7 @@
     ],
     "file": "src/steward/core/compile.py",
     "gate": "access-eval",
-    "n": 36,
+    "n": 40,
     "name": "a Fine-Grained Reader in the estate layer",
     "status": "REFUSED",
     "why": "IAM in a layer the model does not read is refused, not ignored"
@@ -515,7 +571,7 @@
     ],
     "file": "src/steward/quality_run.py",
     "gate": "quality",
-    "n": 37,
+    "n": 41,
     "name": "a loader that drops a quarantined row",
     "status": "REFUSED",
     "why": "source = loaded + quarantined, counted from what was written (claim 5)"
@@ -529,7 +585,7 @@
     ],
     "file": "src/steward/core/quality.py",
     "gate": "quality",
-    "n": 38,
+    "n": 42,
     "name": "quarantine without its rule id",
     "status": "REFUSED",
     "why": "a quarantined row carries the rule that sent it there"
@@ -543,7 +599,7 @@
     ],
     "file": "src/steward/core/marketplace.py",
     "gate": "marketplace-eval",
-    "n": 39,
+    "n": 43,
     "name": "the self-approval check deleted",
     "status": "REFUSED",
     "why": "R-004's approver owns network and sits in analyst@IT — only the self-approval check stops it (doctrine 5)"
@@ -557,7 +613,7 @@
     ],
     "file": "src/steward/core/marketplace.py",
     "gate": "marketplace-eval",
-    "n": 40,
+    "n": 44,
     "name": "a service account's approval accepted",
     "status": "REFUSED",
     "why": "no pipeline approves access (doctrine 5); the refusal still holds as APPROVER_NOT_HUMAN — this proves the eval checks the reason"
@@ -571,7 +627,7 @@
     ],
     "file": "src/steward/core/marketplace.py",
     "gate": "marketplace-eval",
-    "n": 41,
+    "n": 45,
     "name": "a grant handed to the whole seat",
     "status": "REFUSED",
     "why": "the grant goes to the person who asked, never to their whole seat"
@@ -585,7 +641,7 @@
     ],
     "file": "src/steward/core/compile_marketplace.py",
     "gate": "marketplace",
-    "n": 42,
+    "n": 46,
     "name": "a grant compiled without its expiry",
     "status": "REFUSED",
     "why": "every grant carries an IAM Condition expiry"
@@ -599,7 +655,7 @@
     ],
     "file": "src/steward/core/marketplace.py",
     "gate": "core-purity",
-    "n": 43,
+    "n": 47,
     "name": "the evaluator reads the clock",
     "status": "REFUSED",
     "why": "now comes from the evidence capture time, never from a clock the code controls (claim 6 trap)"
@@ -613,7 +669,7 @@
     ],
     "file": "src/steward/core/compile.py",
     "gate": "retention",
-    "n": 44,
+    "n": 48,
     "name": "partition expiry from the dataset, not the table",
     "status": "REFUSED",
     "why": "the compiled expiry is exactly the declared period, table override included (claim 7)"
@@ -627,7 +683,7 @@
     ],
     "file": "src/steward/core/retention.py",
     "gate": "retention",
-    "n": 45,
+    "n": 49,
     "name": "a row-retention DELETE never compiled",
     "status": "REFUSED",
     "why": "a declared row retention with no DELETE behind it is a promise nobody keeps"
@@ -641,7 +697,7 @@
     ],
     "file": "src/steward/core/retention.py",
     "gate": "retention-eval",
-    "n": 46,
+    "n": 50,
     "name": "the erasure caveat dropped from the report",
     "status": "REFUSED",
     "why": "the report's first line says deletion is not immediate (time travel + fail-safe)"
@@ -655,7 +711,7 @@
     ],
     "file": "src/steward/core/contract.py",
     "gate": "contract-fields",
-    "n": 47,
+    "n": 51,
     "name": "a contract field nothing reads, named like one that is read elsewhere",
     "status": "REFUSED",
     "why": "a field in a contract that no generator reads is a defect (CLAUDE.md, the contract layer)"
@@ -669,7 +725,7 @@
     ],
     "file": "src/steward/core/classify.py",
     "gate": "classification-eval",
-    "n": 48,
+    "n": 52,
     "name": "a detector that reads column names",
     "status": "REFUSED",
     "why": "claim 1's trap: detection by name misses ref_2, notes_free_text and the legacy columns"
@@ -683,7 +739,7 @@
     ],
     "file": "src/steward/core/quality.py",
     "gate": "quality-eval",
-    "n": 49,
+    "n": 53,
     "name": "duplicates loaded instead of quarantined",
     "status": "REFUSED",
     "why": "the two planted duplicate invoices must be quarantined by Q-FIN-002, not loaded"
@@ -697,7 +753,7 @@
     ],
     "file": "synthetic/data/finance.billing.jsonl",
     "gate": "synthetic-check",
-    "n": 50,
+    "n": 54,
     "name": "a synthetic row edited by hand",
     "status": "REFUSED",
     "why": "the synthetic estate is generated, seeded and byte-identical; a hand edit is drift"
@@ -711,7 +767,7 @@
     ],
     "file": "contracts/_waivers.yaml",
     "gate": "contracts",
-    "n": 51,
+    "n": 55,
     "name": "a waiver left to lapse",
     "status": "REFUSED",
     "why": "exceptions expire; on expiry the finding returns and CI goes red (doctrine 6)"
@@ -725,7 +781,7 @@
     ],
     "file": "src/steward/core/validate.py",
     "gate": "contract-fields",
-    "n": 52,
+    "n": 56,
     "name": "the type-drift check dropped",
     "status": "REFUSED",
     "why": "a field whose only reader is removed is a promise nobody keeps"
@@ -739,7 +795,7 @@
     ],
     "file": "contracts/_roles.yaml",
     "gate": "contract-versions",
-    "n": 53,
+    "n": 57,
     "name": "a ceiling raised in the same PR, unapproved",
     "status": "REFUSED",
     "why": "raising a ceiling is an approval by someone else, not an edit (doctrines 5 and 7)"
@@ -753,7 +809,7 @@
     ],
     "file": "lookml/dashboards/billing_health.dashboard.lookml",
     "gate": "lineage",
-    "n": 54,
+    "n": 58,
     "name": "a dashboard field renamed in LookML only",
     "status": "REFUSED",
     "why": "every dashboard field resolves to a catalogued column (claim 3)"
@@ -767,7 +823,7 @@
     ],
     "file": "src/steward/core/lineage.py",
     "gate": "lineage-eval",
-    "n": 55,
+    "n": 59,
     "name": "the job-history cross-check merged instead of compared",
     "status": "REFUSED",
     "why": "a disagreement between LookML and the job history is a finding, never a merge (claim 3 trap)"
@@ -781,7 +837,7 @@
     ],
     "file": "src/steward/core/lineage.py",
     "gate": "lineage-eval",
-    "n": 56,
+    "n": 60,
     "name": "the sensitive-on-dashboard check removed",
     "status": "REFUSED",
     "why": "a tagged column reaches a dashboard only masked for the connection's role (claim 3)"
@@ -795,7 +851,7 @@
     ],
     "file": "src/steward/core/lineage.py",
     "gate": "lineage",
-    "n": 57,
+    "n": 61,
     "name": "dashboards judged as the wrong role",
     "status": "REFUSED",
     "why": "a field is judged by what its model's connection role reads, not any role's"
@@ -809,7 +865,7 @@
     ],
     "file": "evals/lineage/query_history.json",
     "gate": "lineage",
-    "n": 58,
+    "n": 62,
     "name": "a load job that no longer lands the billing table",
     "status": "REFUSED",
     "why": "every table a dashboard reads traces back to a landing source (claim 3)"
@@ -823,7 +879,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog",
-    "n": 59,
+    "n": 63,
     "name": "a dataset's domain generated without its owners",
     "status": "REFUSED",
     "why": "the catalog names an owner, steward and custodian for every contracted dataset — read back, not assumed (claim 4)"
@@ -837,7 +893,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog",
-    "n": 60,
+    "n": 64,
     "name": "a weaker classification written to the catalog",
     "status": "REFUSED",
     "why": "the catalog never says less than the contract (claim 4; doctrine 1)"
@@ -851,7 +907,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog",
-    "n": 61,
+    "n": 65,
     "name": "a diff that resends everything",
     "status": "REFUSED",
     "why": "a second sync of an unchanged estate sends 0 commands (claim 4)"
@@ -865,7 +921,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog",
-    "n": 62,
+    "n": 66,
     "name": "a timestamp counted as content",
     "status": "REFUSED",
     "why": "`Last Changed` is when content changed, not content: the reconciliation must not report it as drift (claim 4)"
@@ -879,7 +935,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog",
-    "n": 63,
+    "n": 67,
     "name": "the catalog's mode left unsaid",
     "status": "REFUSED",
     "why": "the catalog says whether it was generated for MOCK or REAL (doctrine 2)"
@@ -893,7 +949,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog",
-    "n": 64,
+    "n": 68,
     "name": "a relation written in the shorthand",
     "status": "REFUSED",
     "why": "the validating mock refuses a relation key the Import API guide does not document (claim 4)"
@@ -907,7 +963,7 @@
     ],
     "file": "src/steward/adapters/collibra/mock.py",
     "gate": "catalog-eval",
-    "n": 65,
+    "n": 69,
     "name": "a mock that accepts any asset type",
     "status": "REFUSED",
     "why": "a mock that accepts anything proves nothing (claim 4 trap)"
@@ -921,7 +977,7 @@
     ],
     "file": "src/steward/adapters/collibra/mock.py",
     "gate": "catalog-eval",
-    "n": 66,
+    "n": 70,
     "name": "a mock that lets dangling relations through",
     "status": "REFUSED",
     "why": "a relation to an asset that does not exist is refused (claim 4)"
@@ -935,7 +991,7 @@
     ],
     "file": "src/steward/adapters/collibra/mock.py",
     "gate": "catalog-eval",
-    "n": 67,
+    "n": 71,
     "name": "a mock that writes before it validates",
     "status": "REFUSED",
     "why": "a refused job commits nothing — one transaction (continueOnError=false)"
@@ -949,7 +1005,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog-eval",
-    "n": 68,
+    "n": 72,
     "name": "reconciliation blind to hand edits",
     "status": "REFUSED",
     "why": "an owner or description changed by hand in the catalog is drift the reconciliation reports (claim 4)"
@@ -963,7 +1019,7 @@
     ],
     "file": "src/steward/adapters/collibra/mock.py",
     "gate": "catalog-eval",
-    "n": 69,
+    "n": 73,
     "name": "the previous description not kept",
     "status": "REFUSED",
     "why": "a correction never erases what was previously stated (doctrine 4)"
@@ -977,7 +1033,7 @@
     ],
     "file": "src/steward/catalog_sync.py",
     "gate": "catalog-eval",
-    "n": 70,
+    "n": 74,
     "name": "a failed sync that is never stale",
     "status": "REFUSED",
     "why": "when the catalog cannot be updated it says so, with the age of the last good sync (doctrine 1)"
@@ -991,7 +1047,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog-eval",
-    "n": 71,
+    "n": 75,
     "name": "an owner nobody declared, invented",
     "status": "REFUSED",
     "why": "no default owner (doctrine 3)"
@@ -1005,7 +1061,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog",
-    "n": 72,
+    "n": 76,
     "name": "a retention period misstated in the catalog",
     "status": "REFUSED",
     "why": "the catalog states the retention the contract declares — read back (claim 4, claim 7)"
@@ -1019,7 +1075,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog",
-    "n": 73,
+    "n": 77,
     "name": "masking dropped from the catalog",
     "status": "REFUSED",
     "why": "the catalog states the masking each role gets, as the contract declares it (claim 4)"
@@ -1033,7 +1089,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog",
-    "n": 74,
+    "n": 78,
     "name": "an undeclared column catalogued as public",
     "status": "REFUSED",
     "why": "a column no contract declares is held at restricted — never `public` (doctrine 1, 3)"
@@ -1047,7 +1103,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog",
-    "n": 75,
+    "n": 79,
     "name": "a drafted glossary term born Accepted",
     "status": "REFUSED",
     "why": "nothing accepts its own drafted description (doctrine 5)"
@@ -1061,7 +1117,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog-eval",
-    "n": 76,
+    "n": 80,
     "name": "reconciliation blind to relations",
     "status": "REFUSED",
     "why": "a relation removed by hand is drift the reconciliation reports (claim 4)"
@@ -1075,7 +1131,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog-eval",
-    "n": 77,
+    "n": 81,
     "name": "reconciliation blind to status",
     "status": "REFUSED",
     "why": "a status changed by hand on a contracted asset is drift (claim 4)"
@@ -1089,7 +1145,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog-eval",
-    "n": 78,
+    "n": 82,
     "name": "reconciliation blind to stale generated assets",
     "status": "REFUSED",
     "why": "a retired dashboard must not go on advertising its columns (claim 4)"
@@ -1103,7 +1159,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog-eval",
-    "n": 79,
+    "n": 83,
     "name": "diff counting what Steward does not write",
     "status": "REFUSED",
     "why": "a second sync sends 0 even when the catalog holds something an import cannot remove (claim 4)"
@@ -1117,7 +1173,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog-eval",
-    "n": 80,
+    "n": 84,
     "name": "a steward's acceptance overwritten",
     "status": "REFUSED",
     "why": "the pipeline proposes, a steward accepts, the sync never undoes it (doctrine 5)"
@@ -1131,7 +1187,7 @@
     ],
     "file": "src/steward/core/catalog.py",
     "gate": "catalog-eval",
-    "n": 81,
+    "n": 85,
     "name": "an unscanned column reported clean",
     "status": "REFUSED",
     "why": "an absence of findings is not a finding of absence (doctrine 1)"
@@ -1145,7 +1201,7 @@
     ],
     "file": "src/steward/catalog_sync.py",
     "gate": "catalog-eval",
-    "n": 82,
+    "n": 86,
     "name": "the log-sink exception that never expires",
     "status": "REFUSED",
     "why": "an exception expires and the finding returns (doctrine 6)"
@@ -1159,7 +1215,7 @@
     ],
     "file": "src/steward/catalog_sync.py",
     "gate": "catalog-eval",
-    "n": 83,
+    "n": 87,
     "name": "a stale marker kept out of the catalog",
     "status": "REFUSED",
     "why": "the catalog shows a stale marker with its age (doctrine 1)"
@@ -1173,7 +1229,7 @@
     ],
     "file": "src/steward/adapters/collibra/mock.py",
     "gate": "catalog-eval",
-    "n": 84,
+    "n": 88,
     "name": "a mock with no anchor check",
     "status": "REFUSED",
     "why": "a relation is refused when its anchor is the wrong type, whatever its target (claim 4)"
@@ -1187,7 +1243,7 @@
     ],
     "file": "src/steward/adapters/collibra/mock.py",
     "gate": "catalog-eval",
-    "n": 85,
+    "n": 89,
     "name": "a mock that skips required attributes",
     "status": "REFUSED",
     "why": "a required attribute missing is refused (claim 4)"
@@ -1201,7 +1257,7 @@
     ],
     "file": "src/steward/adapters/collibra/mock.py",
     "gate": "catalog-eval",
-    "n": 86,
+    "n": 90,
     "name": "a mock that skips the domain-type rule",
     "status": "REFUSED",
     "why": "an asset type belongs in its domain type (claim 4)"
@@ -1215,7 +1271,7 @@
     ],
     "file": "src/steward/adapters/collibra/mock.py",
     "gate": "catalog-eval",
-    "n": 87,
+    "n": 91,
     "name": "a mock that trusts any user group id",
     "status": "REFUSED",
     "why": "an owner is a group the directory knows (doctrine 3)"
@@ -1229,7 +1285,7 @@
     ],
     "file": "src/steward/adapters/collibra/mock.py",
     "gate": "catalog-eval",
-    "n": 88,
+    "n": 92,
     "name": "a mock with asset responsibilities on",
     "status": "REFUSED",
     "why": "the default instance refuses asset-level responsibilities; so does the mock (claim 4)"
@@ -1243,7 +1299,7 @@
     ],
     "file": "src/steward/adapters/collibra/mock.py",
     "gate": "catalog-eval",
-    "n": 89,
+    "n": 93,
     "name": "a mock that accepts a relation target twice",
     "status": "REFUSED",
     "why": "a malformed relation list is refused (claim 4)"
@@ -1257,7 +1313,7 @@
     ],
     "file": "src/steward/adapters/collibra/mock.py",
     "gate": "catalog-eval",
-    "n": 90,
+    "n": 94,
     "name": "a mock that accepts unknown identifier keys",
     "status": "REFUSED",
     "why": "the mock refuses shapes the guide does not document (claim 4)"
@@ -1271,7 +1327,7 @@
     ],
     "file": "app/pages/4_Quality.py",
     "gate": "demo-figures",
-    "n": 91,
+    "n": 95,
     "name": "a figure typed into a page",
     "status": "REFUSED",
     "why": "every number the demo shows comes from an evidence file"
@@ -1285,7 +1341,7 @@
     ],
     "file": "app/pages/7_Retention.py",
     "gate": "demo-figures",
-    "n": 92,
+    "n": 96,
     "name": "a date typed into a page",
     "status": "REFUSED",
     "why": "a date or a count in prose is a figure too"
@@ -1299,7 +1355,7 @@
     ],
     "file": "infra/bootstrap/wif.tf",
     "gate": "oidc-subjects",
-    "n": 93,
+    "n": 97,
     "name": "the trust clauses joined by OR",
     "status": "REFUSED",
     "why": "with OR any one clause is enough: any repository with a deploy environment gets in"
@@ -1313,7 +1369,7 @@
     ],
     "file": "infra/bootstrap/wif.tf",
     "gate": "oidc-subjects",
-    "n": 94,
+    "n": 98,
     "name": "a trust that is written but not applied",
     "status": "REFUSED",
     "why": "the clauses only protect if the provider applies them"
@@ -1327,7 +1383,7 @@
     ],
     "file": "infra/bootstrap/wif.tf",
     "gate": "oidc-subjects",
-    "n": 95,
+    "n": 99,
     "name": "the repository id pinned to the wrong variable",
     "status": "REFUSED",
     "why": "a clause that names the wrong value pins nothing, and a substring check would not notice"
@@ -1341,7 +1397,7 @@
     ],
     "file": "infra/bootstrap/wif.tf",
     "gate": "oidc-subjects",
-    "n": 96,
+    "n": 100,
     "name": "a third environment in the trust",
     "status": "REFUSED",
     "why": "an environment anyone can create is a door"
@@ -1355,7 +1411,7 @@
     ],
     "file": "infra/bootstrap/wif.tf",
     "gate": "oidc-subjects",
-    "n": 97,
+    "n": 101,
     "name": "the repository matched by prefix",
     "status": "REFUSED",
     "why": "every value in the trust is an exact match, never a pattern"
@@ -1369,7 +1425,7 @@
     ],
     "file": "infra/bootstrap/wif.tf",
     "gate": "oidc-subjects",
-    "n": 98,
+    "n": 102,
     "name": "the trust no longer pins the main branch",
     "status": "REFUSED",
     "why": "a branch someone pushes to must not be able to apply"
@@ -1383,7 +1439,7 @@
     ],
     "file": "infra/bootstrap/wif.tf",
     "gate": "oidc-subjects",
-    "n": 99,
+    "n": 103,
     "name": "the deployer open to a whole owner",
     "status": "REFUSED",
     "why": "only a job in the deploy environment may become the deployer, not everything the owner has"
@@ -1397,7 +1453,7 @@
     ],
     "file": "infra/bootstrap/deployer.tf",
     "gate": "oidc-subjects",
-    "n": 100,
+    "n": 104,
     "name": "a public principal granted on the state bucket",
     "status": "REFUSED",
     "why": "state holds every resource id; nobody outside the project reads it"
@@ -1411,7 +1467,7 @@
     ],
     "file": "infra/bootstrap/deployer.tf",
     "gate": "oidc-subjects",
-    "n": 101,
+    "n": 105,
     "name": "a service-account key",
     "status": "REFUSED",
     "why": "no long-lived credential exists anywhere (CLAUDE.md)"
@@ -1425,7 +1481,7 @@
     ],
     "file": "src/steward/core/compile_assurance.py",
     "gate": "assurance",
-    "n": 102,
+    "n": 106,
     "name": "a quality rule on a policy-tagged column",
     "status": "REFUSED",
     "why": "a scan identity with no Fine-Grained Reader can only fail there, or be given a grant nobody made"
@@ -1439,7 +1495,7 @@
     ],
     "file": "src/steward/core/compile_assurance.py",
     "gate": "assurance",
-    "n": 103,
+    "n": 107,
     "name": "a scan with no execution identity",
     "status": "REFUSED",
     "why": "a scan as any identity outside the row policies reads zero rows, and zero rows pass"
@@ -1453,7 +1509,7 @@
     ],
     "file": "src/steward/core/compile_assurance.py",
     "gate": "assurance",
-    "n": 104,
+    "n": 108,
     "name": "a scan whose service agent may not mint a token for its custodian",
     "status": "REFUSED",
     "why": "without the minter Dataplex refuses the scan at creation; with a broader role the agent could impersonate more"
@@ -1467,7 +1523,7 @@
     ],
     "file": "src/steward/core/compile_assurance.py",
     "gate": "assurance",
-    "n": 105,
+    "n": 109,
     "name": "a DLP finding that repeats the value",
     "status": "REFUSED",
     "why": "a finding names the column and the kind, never the value"
@@ -1481,7 +1537,7 @@
     ],
     "file": "synthetic/data/_schema.json",
     "gate": "contracts",
-    "n": 106,
+    "n": 110,
     "name": "a masked column used as a clustering field",
     "status": "REFUSED",
     "why": "BigQuery refuses every masked read of such a table: the live capture of 2026-10-02 found it the hard way"
@@ -1495,7 +1551,7 @@
     ],
     "file": "src/steward/core/sampling.py",
     "gate": "assurance",
-    "n": 107,
+    "n": 111,
     "name": "a scan that ignores the row ceiling",
     "status": "REFUSED",
     "why": "a limit that holds only for today's tiny tables is no limit: a table 1000x larger must still be sampled down"
@@ -1509,7 +1565,7 @@
     ],
     "file": "src/steward/core/sampling.py",
     "gate": "assurance",
-    "n": 108,
+    "n": 112,
     "name": "a row ceiling raised a hundredfold",
     "status": "REFUSED",
     "why": "the ceiling is written down twice, in the code and in the gate, so that moving one is seen"
@@ -1523,7 +1579,7 @@
     ],
     "file": "infra/governance/generated.tf.json",
     "gate": "deployer-grants",
-    "n": 109,
+    "n": 113,
     "name": "a layer grants a project role the deployer may not delegate",
     "status": "REFUSED",
     "why": "the first apply would be refused on a denial, or the condition widened to hide it"
@@ -1537,7 +1593,7 @@
     ],
     "file": "infra/bootstrap/deployer.tf",
     "gate": "deployer-grants",
-    "n": 110,
+    "n": 114,
     "name": "the deployer allowed to delegate a role nothing grants",
     "status": "REFUSED",
     "why": "a power nothing needs is a power someone else can use"
@@ -1551,7 +1607,7 @@
     ],
     "file": "infra/bootstrap/deployer.tf",
     "gate": "deployer-grants",
-    "n": 111,
+    "n": 115,
     "name": "projectIamAdmin bound without its condition",
     "status": "REFUSED",
     "why": "unconditioned, the deployer can grant itself any role"
@@ -1565,7 +1621,7 @@
     ],
     "file": "infra/estate/generated.tf.json",
     "gate": "generated",
-    "n": 112,
+    "n": 116,
     "name": "generated Terraform edited by hand",
     "status": "REFUSED",
     "why": "every control is generated; a hand edit is drift"
@@ -1579,7 +1635,7 @@
     ],
     "file": "src/steward/core/compile.py",
     "gate": "core-purity",
-    "n": 113,
+    "n": 117,
     "name": "a cloud SDK in the core",
     "status": "REFUSED",
     "why": "the core is pure; claims are provable offline"
@@ -1595,7 +1651,7 @@
   "as_of": "2026-09-30",
   "claim": "all",
   "data": "synthetic",
-  "digest": "d84d78bf07a3c9defff368bc8075f6a02a391049155a666365d954c9308e47d4",
+  "digest": "89b29404a421e729982872caf527a4c450d04347670c09a3111fbbb981fedbcf",
   "mode": "fixture",
   "name": "gates",
   "operator": "fictional (Halverra Telecom)",
