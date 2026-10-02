@@ -244,3 +244,11 @@ def test_a_dataset_access_list_becomes_iam_bindings_with_conditions_and_without_
     assert b[0]["members"] == ["specialGroup:projectOwners"]
     assert b[2]["condition"]["expression"].startswith("request.time <")
     assert b[3]["members"] == ["serviceAccount:dep@p.iam.gserviceaccount.com"]
+
+
+def test_the_dataset_request_asks_for_conditions():
+    from steward.adapters import capture
+
+    url, params = capture.dataset_access_request("p", "crm")
+    assert url.endswith("/projects/p/datasets/crm")
+    assert params == {"accessPolicyVersion": 3}

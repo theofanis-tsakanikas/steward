@@ -267,6 +267,16 @@ LEGACY_ROLES = {
 }
 
 
+def dataset_access_request(project: str, dataset: str) -> tuple[str, dict]:
+    """The `datasets.get` request that returns a dataset's access list *with its IAM Conditions*.
+
+    Without `accessPolicyVersion=3` the API drops every condition, and an expiring grant reads as a standing one
+    (found by the second live IAM capture: two approved grants judged GRANT_WITHOUT_EXPIRY)."""
+    return f"https://bigquery.googleapis.com/bigquery/v2/projects/{project}/datasets/{dataset}", {
+        "accessPolicyVersion": 3
+    }
+
+
 def access_to_bindings(access: list[dict]) -> list[dict]:
     """A dataset's `access` list as IAM bindings: `[{role, members: [...], condition?}]`.
 
@@ -439,8 +449,8 @@ def live_main(project: str, what: list[str], out: Path | None = None) -> int:
     def get_policy(dataset):
         # datasets.getIamPolicy is not open to this project ("This feature requires allowlisting", first capture):
         # the dataset's own access list is what the Terraform provider writes, conditions included
-        url = f"https://bigquery.googleapis.com/bigquery/v2/projects/{project}/datasets/{dataset}"
-        r = sess.get(url)
+        url, params = dataset_access_request(project, dataset)
+        r = sess.get(url, params=params)
         _ok(r)
         return {"bindings": access_to_bindings(r.json().get("access", []))}
 
