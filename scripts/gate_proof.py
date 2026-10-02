@@ -1111,6 +1111,16 @@ MUTATIONS: list[Mutation] = [
         "5",
     ),
     Mutation(
+        "a scan whose service agent may not mint a token for its custodian",
+        "assurance",
+        "src/steward/core/compile_assurance.py",
+        '"role": "roles/iam.serviceAccountShortTermTokenMinter",\n                "member": "serviceAccount:service-${data.google_project.this.number}@gcp-sa-dataplex',
+        '"role": "roles/viewer",\n                "member": "serviceAccount:service-${data.google_project.this.number}@gcp-sa-dataplex',
+        ("ASSURANCE_NO_MINTER", "infra/assurance/generated.tf.json"),
+        "without the minter Dataplex refuses the scan at creation; with a broader role the agent could impersonate more",
+        "5",
+    ),
+    Mutation(
         "a DLP finding that repeats the value",
         "assurance",
         "src/steward/core/compile_assurance.py",

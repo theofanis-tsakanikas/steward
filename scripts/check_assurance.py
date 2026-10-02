@@ -9,6 +9,9 @@ against the contracts and the compiled access controls - not against the generat
   ASSURANCE_ROWS         a scanned table's row access policies leave its custodian out of every unfiltered policy
   ASSURANCE_KIND         the DLP template does not ask for a kind the value detector can find
   ASSURANCE_QUOTE        the DLP template repeats the value it found (include_quote)
+  ASSURANCE_NO_MINTER    a scan runs as a custodian seat, and Dataplex's service agent is not allowed to mint tokens for
+                         that seat (the scan is refused at creation: first apply, 2026-10-02) - or is allowed more than
+                         that one role, or on more than the one account
   ASSURANCE_UNBOUNDED    a scan of a table a thousand times larger would read more than the ceiling below (or a scan
                          has no valid sampling_percent): a limit that only holds for today's tiny tables is no limit
 """
@@ -36,6 +39,8 @@ CEILING_ROWS = 10_000
 CEILING_BYTES = 32 * 1024 * 1024
 ASSURANCE = "infra/assurance/generated.tf.json"
 GOVERNANCE = "infra/governance/generated.tf.json"
+# Written out here on purpose, like the ceilings: the member the generator names is the thing under test.
+AGENT = "serviceAccount:service-${data.google_project.this.number}@gcp-sa-dataplex.iam.gserviceaccount.com"
 
 
 def problems() -> list[str]:
@@ -58,6 +63,18 @@ def problems() -> list[str]:
             got = scan.get("execution_identity", {}).get("service_account", {}).get("email")
             if got != want:
                 out.append(f"ERROR ASSURANCE_IDENTITY {at} — runs as {got!r}, not the custodian {c.custodian}")
+            minted = [
+                m
+                for m in doc["resource"].get("google_service_account_iam_member", {}).values()
+                if m["service_account_id"].endswith(f'var.principals["{c.custodian}"], "serviceAccount:")}}')
+            ]
+            if [m["role"] for m in minted] != ["roles/iam.serviceAccountShortTermTokenMinter"] or any(
+                m["member"] != AGENT for m in minted
+            ):
+                out.append(
+                    f"ERROR ASSURANCE_NO_MINTER {at} — the Dataplex service agent must hold exactly the token minter "
+                    f"role on {c.custodian}'s account, got {[(m['role'], m['member']) for m in minted]}"
+                )
             mine = [n for n in policies if n["dataset_id"] == c.dataset and n["table_id"] == tname]
             ref = f'${{var.principals["{c.custodian}"]}}'
             if mine and not any(n["filter_predicate"] == "TRUE" and ref in n["grantees"] for n in mine):
