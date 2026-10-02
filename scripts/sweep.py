@@ -5,14 +5,16 @@ nothing is a destroy that has not been tested (docs/DAY-ONE.md step 10).
     python scripts/sweep.py --project my-project
 
 Allowed to remain: the bootstrap layer (it is applied from a laptop and removed by deleting the project):
-the `<project>-steward-tfstate` bucket, Google-managed Cloud Functions source buckets (`gcf-v2-sources-*`,
-created for the guard and reaper), the deployer / destroyer / guard / reaper / build service accounts, the budget.
+the `<project>-steward-tfstate` bucket, Google-managed Cloud Functions buckets named
+`gcf-v2-(sources|uploads)-<project-number>-<region>` (guard and reaper), the deployer / destroyer /
+guard / reaper / build service accounts, the budget.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 import urllib.error
@@ -20,8 +22,8 @@ import urllib.request
 
 BOOTSTRAP_ACCOUNTS = {"steward-deployer", "steward-destroyer", "steward-guard", "steward-reaper", "steward-build"}
 SEAT_PREFIXES = ("seat-", "person-")
-# Google creates these when it deploys the bootstrap Cloud Run functions; they are not estate.
-GCF_BUCKET_PREFIXES = ("gcf-v2-sources-", "gcf-v2-uploads-")
+# Google's name for the source/upload buckets it creates when it deploys the bootstrap functions.
+GCF_BUCKET = re.compile(r"^gcf-v2-(?:sources|uploads)-\d+-[a-z0-9-]+$")
 
 # Things with no gcloud listing command (checked against gcloud 571: `gcloud dlp inspect-templates` and
 # `gcloud bigquery analytics-hub` do not exist) are listed through their REST collection. kind -> (url, key).
@@ -68,7 +70,7 @@ def leftovers(project: str, inventory: dict) -> list[str]:
 
 
 def _bootstrap_bucket(project: str, name: str) -> bool:
-    return name == f"{project}-steward-tfstate" or name.startswith(GCF_BUCKET_PREFIXES)
+    return name == f"{project}-steward-tfstate" or bool(GCF_BUCKET.fullmatch(name))
 
 
 def _run(cmd: list[str]) -> str:
@@ -79,18 +81,28 @@ def _run(cmd: list[str]) -> str:
 
 
 def _json(cmd: list[str]) -> list:
-    """Parse a gcloud/bq `--format=json` listing. Empty output, or a notice on stdout before the JSON
-    (bq does this when there is nothing to list), is an empty list — not a crash that looks like leftovers."""
+    """Parse a gcloud/bq `--format=json` listing. Empty stdout is empty. A notice may precede the
+    document; unparseable stdout is an exit, never an empty inventory that looks like a clean sweep."""
     raw = (_run(cmd) or "").strip()
     if not raw:
         return []
+    parsed = False
+    data = None
     try:
         data = json.loads(raw)
+        parsed = True
     except json.JSONDecodeError:
-        start = min((i for i in (raw.find("["), raw.find("{")) if i >= 0), default=-1)
-        if start < 0:
-            return []
-        data = json.loads(raw[start:])
+        for i, ch in enumerate(raw):
+            if ch not in "[{":
+                continue
+            try:
+                data = json.loads(raw[i:])
+                parsed = True
+                break
+            except json.JSONDecodeError:
+                continue
+    if not parsed:
+        raise SystemExit(f"sweep cannot parse listing from `{' '.join(cmd)}`: {raw[:200]}")
     if data is None:
         return []
     return [data] if isinstance(data, dict) else list(data)

@@ -36,10 +36,21 @@ def test_a_clean_project_sweeps_clean():
 
 
 def test_an_estate_bucket_is_still_a_leftover():
-    inv = {**EMPTY, "buckets": [f"{P}-steward-tfstate", f"{P}-landing", "gcf-v2-sources-123-europe-west1"]}
+    inv = {
+        **EMPTY,
+        "buckets": [
+            f"{P}-steward-tfstate",
+            f"{P}-landing",
+            "gcf-v2-sources-123-europe-west1",
+            "gcf-v2-sources-landing",
+            "gcf-v2-sources-not-managed",
+        ],
+    }
     left = sweep.leftovers(P, inv)
     assert f"bucket {P}-landing" in left
-    assert not any("gcf-v2" in x or "tfstate" in x for x in left)
+    assert "bucket gcf-v2-sources-landing" in left
+    assert "bucket gcf-v2-sources-not-managed" in left
+    assert not any(x.endswith("gcf-v2-sources-123-europe-west1") or "tfstate" in x for x in left)
 
 
 def test_every_kind_of_leftover_is_named():
@@ -89,7 +100,6 @@ def test_no_listing_uses_a_gcloud_command_that_does_not_exist():
     assert set(sweep.REST) == {"scans", "templates", "exchanges", "taxonomies", "parameters", "transfers"}
     assert "/locations/europe-west1/dataScans" in sweep.REST["scans"][0]
     assert "/locations/eu/" not in sweep.REST["scans"][0]
-    assert "x-goog-user-project" in src  # user ADC 403s on DLP without a quota project (B56)
     for url, key in sweep.REST.values():
         assert url.startswith("https://") and "{p}" in url and key
 
@@ -147,10 +157,53 @@ def test_a_notice_before_the_json_does_not_hide_the_row_count():
     assert mod.rows_in('{"type": "TABLE"}') is None
 
 
-def test_bq_notices_on_stdout_are_an_empty_list_not_a_crash(monkeypatch):
-    monkeypatch.setattr(sweep, "_run", lambda cmd: "BigQuery OS login is now generally available.\n")
-    assert sweep._json(["bq", "ls"]) == []
+def test_json_listings(monkeypatch):
+    import pytest
+
     monkeypatch.setattr(sweep, "_run", lambda cmd: "")
     assert sweep._json(["bq", "ls"]) == []
     monkeypatch.setattr(sweep, "_run", lambda cmd: '[{"datasetReference": {"datasetId": "crm"}}]')
     assert sweep._json(["bq", "ls"])[0]["datasetReference"]["datasetId"] == "crm"
+    monkeypatch.setattr(sweep, "_run", lambda cmd: 'NOTICE: something\n[{"datasetReference": {"datasetId": "crm"}}]')
+    assert sweep._json(["bq", "ls"])[0]["datasetReference"]["datasetId"] == "crm"
+    monkeypatch.setattr(sweep, "_run", lambda cmd: 'WARNING: see [bq] docs\n[{"name": "left"}]')
+    assert sweep._json(["gcloud", "storage", "buckets", "list"])[0]["name"] == "left"
+    monkeypatch.setattr(sweep, "_run", lambda cmd: "BigQuery OS login is now generally available.\n")
+    with pytest.raises(SystemExit, match="cannot parse listing"):
+        sweep._json(["bq", "ls"])
+    monkeypatch.setattr(sweep, "_run", lambda cmd: "ERROR: permission denied listing datasets")
+    with pytest.raises(SystemExit, match="cannot parse listing"):
+        sweep._json(["bq", "ls"])
+
+
+def test_rest_sends_the_quota_project_and_returns_items(monkeypatch):
+    from unittest.mock import MagicMock
+
+    captured: dict = {}
+
+    def fake_urlopen(req, timeout=60):
+        captured["headers"] = {k.lower(): v for k, v in req.header_items()}
+        resp = MagicMock()
+        resp.read.return_value = (
+            b'{"inspectTemplates": [{"name": "projects/p/locations/l/inspectTemplates/steward-inspect"}]}'
+        )
+        resp.__enter__.return_value = resp
+        resp.__exit__.return_value = False
+        return resp
+
+    monkeypatch.setattr(sweep.urllib.request, "urlopen", fake_urlopen)
+    items = sweep._rest("https://example.test/templates", "inspectTemplates", "tok", "my-proj")
+    assert items[0]["name"].endswith("steward-inspect")
+    assert captured["headers"]["x-goog-user-project"] == "my-proj"
+    assert captured["headers"]["authorization"] == "Bearer tok"
+
+
+def test_rest_http_error_is_an_exit_not_empty(monkeypatch):
+    import pytest
+
+    def boom(req, timeout=60):
+        raise sweep.urllib.error.HTTPError(req.full_url, 403, "Forbidden", hdrs={}, fp=None)
+
+    monkeypatch.setattr(sweep.urllib.request, "urlopen", boom)
+    with pytest.raises(SystemExit, match="HTTP 403"):
+        sweep._rest("https://example.test/templates", "inspectTemplates", "tok", "my-proj")

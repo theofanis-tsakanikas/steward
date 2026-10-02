@@ -443,12 +443,13 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   true value (base64 / hex / raw), not as "any 32-character string"; EMAIL_MASK only as `XXXXX@domain`; a returned row
   that fails the compiled row-access predicate is `LIVE_ROW_POLICY`.
 
-- **B56 — Destroy-sweep findings, 2026-10-02 (each is now code and a test).** (1) Dataplex data scans live in
-  `europe-west1` (B54), so listing them at `locations/eu` is HTTP 400 — the sweep uses the region. (2) `bq ls
-  --format=json` can print a notice and no JSON when there is nothing to list; that is an empty inventory, not a
-  crash that looks like leftovers. (3) User Application Default Credentials listing DLP over REST return 403
-  ("quota project, which is not set by default"); every REST call sends `x-goog-user-project`. A true permission
-  error is still an exit. (4) Cloud Functions leaves `gcf-v2-sources-*` (and sometimes `gcf-v2-uploads-*`) buckets
-  labelled `goog-managed-by=cloudfunctions` for the bootstrap guard and reaper; they are allowed the same way as
-  the state bucket. An estate landing bucket is still a leftover.
+- **B56 — Destroy-sweep findings, 2026-10-02 (each is code, and the behaviour is tested).** (1) Dataplex data
+  scans live in `europe-west1` (B54), so listing them at `locations/eu` is HTTP 400 — the sweep uses the region.
+  (2) `bq ls --format=json` can print a notice before the document: the listing is parsed from the first valid
+  JSON array or object; empty stdout is empty; unparseable stdout is an exit, not a clean sweep. (3) User
+  Application Default Credentials listing DLP over REST return 403 ("quota project, which is not set by
+  default"); every REST call sends `x-goog-user-project`. An HTTP error is still an exit (stubbed in the suite).
+  (4) Cloud Functions leaves buckets named `gcf-v2-(sources|uploads)-<project-number>-<region>` for the
+  bootstrap guard and reaper; those names, and the state bucket, are allowed. A prefix match is not: a bucket
+  named `gcf-v2-sources-landing` is a leftover, as is the estate landing bucket.
 
