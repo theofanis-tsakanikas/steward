@@ -162,7 +162,24 @@ def test_json_listings(monkeypatch):
 
     monkeypatch.setattr(sweep, "_run", lambda cmd: "")
     assert sweep._json(["bq", "ls"]) == []
+    monkeypatch.setattr(
+        sweep,
+        "_run",
+        lambda cmd: (
+            "WARNING: `--scopes` flag may not work as expected and will be ignored for account type external_account.\n"
+        ),
+    )
+    assert sweep._json(["bq", "ls"]) == []
     monkeypatch.setattr(sweep, "_run", lambda cmd: '[{"datasetReference": {"datasetId": "crm"}}]')
+    assert sweep._json(["bq", "ls"])[0]["datasetReference"]["datasetId"] == "crm"
+    monkeypatch.setattr(
+        sweep,
+        "_run",
+        lambda cmd: (
+            "WARNING: `--scopes` flag may not work as expected and will be ignored for account type external_account.\n"
+            '[{"datasetReference": {"datasetId": "crm"}}]'
+        ),
+    )
     assert sweep._json(["bq", "ls"])[0]["datasetReference"]["datasetId"] == "crm"
     monkeypatch.setattr(sweep, "_run", lambda cmd: 'NOTICE: something\n[{"datasetReference": {"datasetId": "crm"}}]')
     assert sweep._json(["bq", "ls"])[0]["datasetReference"]["datasetId"] == "crm"

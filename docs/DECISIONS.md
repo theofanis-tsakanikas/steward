@@ -445,8 +445,10 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
 
 - **B56 — Destroy-sweep findings, 2026-10-02 (each is code, and the behaviour is tested).** (1) Dataplex data
   scans live in `europe-west1` (B54), so listing them at `locations/eu` is HTTP 400 — the sweep uses the region.
-  (2) `bq ls --format=json` can print a notice before the document: the listing is parsed from the first valid
-  JSON array or object; empty stdout is empty; unparseable stdout is an exit, not a clean sweep. (3) User
+  (2) `bq ls --format=json` under Workload Identity prints `WARNING: --scopes flag may not work` on stdout
+  (the same line `load_synthetic` already strips). That one pinned notice is dropped; a notice may also
+  precede a document, which is parsed from the first valid JSON array or object; empty stdout is empty;
+  any other unparseable stdout is an exit, not a clean sweep. (3) User
   Application Default Credentials listing DLP over REST return 403 ("quota project, which is not set by
   default"); every REST call sends `x-goog-user-project`. An HTTP error is still an exit (stubbed in the suite).
   (4) Cloud Functions leaves buckets named `gcf-v2-(sources|uploads)-<project-number>-<region>` for the
