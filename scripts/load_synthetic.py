@@ -56,18 +56,24 @@ def show_command(project: str, dataset: str, table: str) -> list[str]:
 
 def rows_in(show_output: str) -> int | None:
     """numRows from `bq show --format=json`; None when the table is missing or the output cannot be read."""
+    # `bq` can print notices (the gcloud wrapper warns about --scopes under federated credentials) on stdout
+    # before the JSON: the document is the part from the first "{" to the last "}".
+    start, end = show_output.find("{"), show_output.rfind("}")
     try:
-        return int(json.loads(show_output)["numRows"])
+        return int(json.loads(show_output[start : end + 1])["numRows"])
     except (KeyError, TypeError, ValueError):
         return None
 
 
 def _rows(project: str, dataset: str, table: str) -> int | None:
     r = subprocess.run(show_command(project, dataset, table), capture_output=True, text=True)
-    return rows_in(r.stdout) if r.returncode == 0 else None
+    n = rows_in(r.stdout) if r.returncode == 0 else None
+    if n is None:  # say why, once per call: an unreadable table and a table without a count look the same otherwise
+        print(f"  {dataset}.{table}: no row count (exit {r.returncode}): {(r.stderr or r.stdout)[-300:].strip()!r}")
+    return n
 
 
-def settled(fetch, want: int, attempts: int = 24, pause: float = 5.0, sleep=time.sleep) -> int | None:
+def settled(fetch, want: int, attempts: int = 8, pause: float = 5.0, sleep=time.sleep) -> int | None:
     """numRows after a load job is updated a little after the job reports DONE: right after the load it is absent
     (read as None), then it appears. Poll until it equals `want`; after `attempts` return what was last seen, so
     a real mismatch is still reported as one (never a count that was only waited into agreement)."""
