@@ -63,3 +63,10 @@ def test_all_zero_base_compares_with_previous_commit(repo):
 def test_env_base_is_explicit(repo, monkeypatch):
     monkeypatch.setenv("STEWARD_BASE_REF", "origin/gone")
     assert ccv.main([], repo=repo) == 1
+
+
+def test_rewritten_history_sha_falls_back_to_parent(repo, monkeypatch):
+    edit(repo, bump=True)
+    sh(repo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qam", "bumped")
+    monkeypatch.setenv("STEWARD_BASE_REF", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+    assert ccv.main([], repo=repo) == 0

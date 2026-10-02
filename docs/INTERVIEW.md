@@ -11,7 +11,7 @@ in brackets. (The employer is private; this file names no company.)
 | Automated harvesting and lineage from sources, ETL/ELT, reports | BigQuery jobs + Dataplex lineage + parsed LookML, cross-checked | 3 |
 | Integrate Looker and Collibra | LookML → lineage → generated Collibra payload, idempotent, reconciled | 3, 5 |
 | DQ rules, monitoring, reconciliation dashboards | Rules from contracts, quarantine with rule id, source = loaded + quarantined | 4 |
-| GDPR, PII, anonymisation / de-anonymisation, retention | Value-based detection, policy tags + masking, tokenisation and controlled re-identification, retention compiled | 2, 7 |
+| GDPR, PII, anonymisation / de-anonymisation, retention | Value-based detection, policy tags + masking (hash, nullify, last-four), retention compiled | 2, 7 |
 | Access | Row policies, masking per role, grants with expiry | 2, 6 |
 | Data Marketplace: onboarding, approvals, ownership changes, archival, report expiration | Listing → named approval → expiring grant; unused dashboards → expiry workflow | 6 |
 
@@ -32,5 +32,7 @@ Open the home page so the MOCK badge and “fictional operator” line are on sc
 - "BigQuery deletion isn't immediate: time travel and fail-safe keep data up to about two weeks; the retention report says so."
 - "It's a reference build on synthetic data, deployed, captured and destroyed — not a client system."
 
-## Interview scenarios this rehearses (job-application/prep/general/TECHNICAL-SCENARIOS.md)
-153 slow BigQuery query · 155 lineage to Collibra · 156 DQ rules · 157 PII end to end · 158 pseudonymisation vs anonymisation · 159 retention · 160 Data Marketplace · 161 legacy metadata · 164 a governance control you built.
+## Interview scenarios this rehearses
+Slow BigQuery query · lineage to the catalog · DQ rules · PII end to end · pseudonymisation vs hashing · retention · Data Marketplace · legacy metadata · a governance control you built.
+
+Rehearsal with the author is still open (T030).

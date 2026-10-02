@@ -36,6 +36,11 @@ def resolve(repo: Path, ref: str) -> str | None:
     return r.stdout.strip() if r.returncode == 0 else None
 
 
+def _rewritten_sha(ref: str) -> bool:
+    """github.event.before after filter-repo is a 40-char SHA that no longer exists."""
+    return len(ref) == 40 and set(ref) <= set("0123456789abcdef")
+
+
 def main(argv: list[str] | None = None, repo: Path = REPO) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default=None)
@@ -46,6 +51,11 @@ def main(argv: list[str] | None = None, repo: Path = REPO) -> int:
         base = "HEAD~1"
         print("contract-versions: all-zero base (first push) — comparing with HEAD~1")
     sha = resolve(repo, base)
+    if sha is None and explicit and not args.base and _rewritten_sha(explicit):
+        # A force-push after history rewrite leaves github.event.before pointing at a ghost.
+        print(f"::notice:: contract-versions: base {base} is not in this history — comparing with HEAD~1")
+        base = "HEAD~1"
+        sha = resolve(repo, base)
     if sha is None:
         if explicit:
             print(f"FAIL contract-versions: base {base!r} does not resolve to a commit")

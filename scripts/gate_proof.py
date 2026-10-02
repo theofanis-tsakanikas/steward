@@ -101,7 +101,7 @@ MUTATIONS: list[Mutation] = [
         "# Changelog\n",
         f"# Changelog\n\n{_IDS_CANARY}\n",
         ("ID_IN_TREE", "CHANGELOG.md"),
-        "a planted identifier in a tracked file that is not the scanner is a leak; env/tfvars supply live ids",
+        "env supplies the identifier (same path as STEWARD_* / tfvars); a plant the scanner never reads is not a leak",
         "1",
     ),
     Mutation(
@@ -1358,6 +1358,10 @@ def _drop_snapshot(dst: Path) -> None:
 
 def _run(root: Path, gate: str) -> tuple[int | None, str]:
     env = {**os.environ, "PYTHONPATH": str(root / "src"), "STEWARD_BASE_REF": ""}
+    if gate == "ids":
+        # Stand-in for a live identifier: the mutation plants this value; identifiers() must read it
+        # from the environment. A canary hard-wired in check_ids.py would refuse itself.
+        env["STEWARD_PROJECT_NUMBER"] = _IDS_CANARY
     try:
         r = subprocess.run(GATES[gate], cwd=root, env=env, capture_output=True, text=True, timeout=600)
     except subprocess.TimeoutExpired:

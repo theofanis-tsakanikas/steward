@@ -306,7 +306,7 @@ closes        public Streamlit link works with no login; README to readme-standa
 out_of_scope  phase-4 model proposals unless time remains
 stop_at       link sent to the author
 review        yes
-status        closed 2026-10-02 — README, ids gate, public repo, required reviewers; hosted Streamlit URL waits on the author's Create-app click; INTERVIEW script not yet rehearsed together
+status        open 2026-10-02 — public repo and reviewers landed; unlocks: (a) author Create-app, README Status is the live URL; (b) INTERVIEW rehearsed, dated in SESSION-LOG
 ```
 
 ```
