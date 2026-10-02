@@ -102,7 +102,7 @@
           "dataset": "analytics",
           "table": "weekly_usage_by_cell"
         },
-        "location": "${lower(var.location)}"
+        "location": "${var.region}"
       },
       "dq_crm_customers": {
         "data": {
@@ -160,7 +160,7 @@
           "dataset": "crm",
           "table": "customers"
         },
-        "location": "${lower(var.location)}"
+        "location": "${var.region}"
       },
       "dq_crm_support_tickets": {
         "data": {
@@ -221,7 +221,7 @@
           "dataset": "crm",
           "table": "support_tickets"
         },
-        "location": "${lower(var.location)}"
+        "location": "${var.region}"
       },
       "dq_finance_billing": {
         "data": {
@@ -308,7 +308,7 @@
           "dataset": "finance",
           "table": "billing"
         },
-        "location": "${lower(var.location)}"
+        "location": "${var.region}"
       },
       "dq_network_network_events": {
         "data": {
@@ -346,7 +346,7 @@
           "dataset": "network",
           "table": "network_events"
         },
-        "location": "${lower(var.location)}"
+        "location": "${var.region}"
       },
       "dq_network_usage_events": {
         "data": {
@@ -435,7 +435,7 @@
           "dataset": "network",
           "table": "usage_events"
         },
-        "location": "${lower(var.location)}"
+        "location": "${var.region}"
       }
     }
   }

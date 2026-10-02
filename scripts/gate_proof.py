@@ -88,6 +88,26 @@ class Mutation:
 
 MUTATIONS: list[Mutation] = [
     Mutation(
+        "capture runs as the destroyer",
+        "workflows",
+        ".github/workflows/capture.yml",
+        "vars.GCP_DEPLOYER_SERVICE_ACCOUNT",
+        "vars.GCP_DESTROYER_SERVICE_ACCOUNT",
+        ("WORKFLOW_IDENTITY", ".github/workflows/capture.yml"),
+        "a capture holds the deployer's reach (seat impersonation) and not the destroyer's",
+        "2",
+    ),
+    Mutation(
+        "a capture workflow that also applies",
+        "workflows",
+        ".github/workflows/capture.yml",
+        '          uv run steward capture --project "$PROJECT" --what "${captures[@]}" --out out/live\n',
+        '          uv run steward capture --project "$PROJECT" --what "${captures[@]}" --out out/live\n          terraform apply -auto-approve\n',
+        ("WORKFLOW_CAPTURE_APPLIES", ".github/workflows/capture.yml"),
+        "a capture reads the estate and nothing else may ride on its identity",
+        "2",
+    ),
+    Mutation(
         "deploy also runs on every push",
         "workflows",
         ".github/workflows/deploy.yml",

@@ -1,0 +1,8 @@
+---
+description: Steward project rules — always read before working
+alwaysApply: true
+---
+Read `AGENTS.md` first, then follow `CLAUDE.md` exactly (claims, doctrine, non-negotiables, autonomous
+Git workflow, hard stops). Open work lives only in `TASKS.md`; log every closed atom in Greek in
+`SESSION-LOG.md`. Talk to the author in Greek; write the repository in English. Never name a real
+company in the repo (fictional operator only). Never create or apply GCP resources without the author's go.
