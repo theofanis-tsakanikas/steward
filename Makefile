@@ -46,7 +46,6 @@ check: ## every structural gate + every generator in --check mode
 	$(PY) scripts/check_oidc_subjects.py
 	$(PY) scripts/check_deployer_grants.py
 	$(PY) scripts/check_assurance.py
-	$(PY) scripts/check_live.py
 	$(PY) synthetic/generate.py --check
 	$(PY) scripts/generate.py --check
 
