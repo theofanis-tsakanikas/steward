@@ -17,7 +17,17 @@ from steward import evidence
 
 
 def source() -> str:
-    return evidence.available_source()
+    """The offline fixture: every page's figures. Live captures are shown beside it (`live()`), never instead of it."""
+    return evidence.FIXTURE
+
+
+def live(name: str) -> dict | None:
+    """A live capture's document (digest re-verified), or None when this repository holds none."""
+    try:
+        return evidence.load_live(name)
+    except ValueError as ex:
+        st.error(f"Live evidence refused: {ex}. Run `make evidence-check`.")
+        st.stop()
 
 
 def doc(name: str) -> dict:
@@ -56,10 +66,16 @@ def banner() -> None:
         if mode == "REAL"
         else "unknown"
     )
-    kind = "offline fixture, computed from the repository" if src == evidence.FIXTURE else "captured from a live estate"
+    captured = evidence.live_names()
+    live_line = (
+        f"**Live captures held: {', '.join(captured)}** — see the Live estate page  \n"
+        if captured
+        else "No live capture is held: everything shown is the offline fixture  \n"
+    )
     st.info(
-        f"**RECORDED mode** · evidence `{src}` ({kind}) · data as of {as_of}  \n"
-        f"**Collibra mode: {mode}** — {what}  \n"
+        f"**RECORDED mode** · evidence `{src}` (offline fixture, computed from the repository) · data as of {as_of}  \n"
+        + live_line
+        + f"**Collibra mode: {mode}** — {what}  \n"
         "Fictional operator (Halverra Telecom), synthetic data."
     )
 

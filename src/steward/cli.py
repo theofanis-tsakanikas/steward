@@ -279,7 +279,7 @@ def main(argv: list[str] | None = None) -> int:
         "capture", help="capture evidence from the live estate into evidence/live/ (gcp extra, credentials)"
     )
     cp.add_argument("--project", required=True)
-    cp.add_argument("--what", nargs="+", help="access iam dlp dataplex audit (default: all)")
+    cp.add_argument("--what", nargs="+", help="access iam dlp dataplex audit history (default: all)")
     cp.add_argument("--out", help="directory to write into (default: evidence/live)")
     sub.add_parser(
         "evidence-check", help="every evidence file matches its digest and the repository; gate-proof recorded"

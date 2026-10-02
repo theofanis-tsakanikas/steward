@@ -100,6 +100,31 @@ def verify_dlp(data: dict, tags: dict[str, str | None], tables: set[str]) -> lis
     return out
 
 
+def verify_history(data: dict, tables: set[str]) -> list[Finding]:
+    """Claim 3, live: BigQuery's own job history agrees with the catalogued estate.
+
+      LIVE_HISTORY_ERROR          the history could not be read
+      LIVE_HISTORY_NOT_LOADED     a catalogued table that no job in the window wrote
+      LIVE_HISTORY_UNKNOWN_TABLE  a job wrote or read a table no contract or harvest knows
+    The dashboard edges stay the offline cross-check's business: no Looker instance exists to run dashboard queries."""
+    if data.get("outcome") == "error":
+        return [Finding("LIVE_HISTORY_ERROR", "history", "job history", str(data.get("error", ""))[:200])]
+    out: list[Finding] = []
+    written = {j["destination"] for j in data["jobs"] if j["job_type"] == "LOAD" or j["statement_type"] != "SELECT"}
+    for t in sorted(tables - written):
+        out.append(
+            Finding("LIVE_HISTORY_NOT_LOADED", "history", t, f"no job in the last {data['window_days']} days wrote it")
+        )
+    seen = {j["destination"] for j in data["jobs"]} | {r for j in data["jobs"] for r in j["referenced_tables"]}
+    for t in sorted(seen - tables):
+        out.append(
+            Finding(
+                "LIVE_HISTORY_UNKNOWN_TABLE", "history", t, "written or read by a job, and not in the catalogued estate"
+            )
+        )
+    return out
+
+
 def scan_table(scan_id: str, tables: list[str]) -> str | None:
     """`steward-dq-crm-customers` -> `crm.customers` (the id is the compiler's own slug of dataset and table)."""
     for t in tables:

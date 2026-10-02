@@ -287,9 +287,58 @@ def capture_audit(project: str, run: Callable[[str, str], dict], redact: Callabl
     return out
 
 
+HISTORY_DAYS = 7
+
+
+def history_sql(datasets: list[str]) -> str:
+    """The estate's own job history: what wrote which table, who ran it, what it read. Anonymous result tables
+    (`_...` datasets) and other projects' datasets never match the list."""
+    names = ", ".join(f"'{d}'" for d in sorted(datasets))
+    return f"""
+SELECT
+  job_id,
+  job_type,
+  statement_type,
+  creation_time,
+  user_email AS principal,
+  CONCAT(destination_table.dataset_id, '.', destination_table.table_id) AS destination,
+  ARRAY(SELECT CONCAT(r.dataset_id, '.', r.table_id) FROM UNNEST(referenced_tables) AS r ORDER BY 1) AS referenced_tables
+FROM `region-eu`.INFORMATION_SCHEMA.JOBS_BY_PROJECT
+WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {HISTORY_DAYS} DAY)
+  AND job_type IN ('LOAD', 'QUERY')
+  AND destination_table.dataset_id IN ({names})
+ORDER BY creation_time, job_id
+""".strip()
+
+
+def capture_history(
+    project: str, run: Callable[[str | None, str], dict], redact: Callable[[str], str], datasets: list[str]
+) -> dict:
+    """Claim 3, live: the BigQuery job history that wrote the estate's tables, read as the deployer."""
+    sql = history_sql(datasets)
+    res = run(None, sql)
+    names = principal_names(project)
+    out = {"captured_at": now(), "window_days": HISTORY_DAYS, "sql": sql, "outcome": res["outcome"], "jobs": []}
+    if res["outcome"] == "error":
+        out["error"] = redact(res["error"])
+        return out
+    for r in res["rows"]:
+        out["jobs"].append(
+            {
+                "job_type": r["job_type"],
+                "statement_type": r["statement_type"],
+                "created": r["creation_time"],
+                "principal": names.get(r["principal"], redact(r["principal"])),
+                "destination": r["destination"],
+                "referenced_tables": r["referenced_tables"],
+            }
+        )
+    return out
+
+
 # ── the real wiring: credentials, the two REST services, the output files ─────────────────────────────────────────
 
-ALL = ("access", "iam", "dlp", "dataplex", "audit")
+ALL = ("access", "iam", "dlp", "dataplex", "audit", "history")
 
 
 def live_main(project: str, what: list[str], out: Path | None = None) -> int:
@@ -373,6 +422,9 @@ def live_main(project: str, what: list[str], out: Path | None = None) -> int:
         elif name == "audit":
             data = capture_audit(project, run_as, redact)
             claim, origin = "6", "steward capture: the access-review query over the audit sink"
+        elif name == "history":
+            data = capture_history(project, run_as, redact, sorted({t.split(".")[0] for t in e.harvest}))
+            claim, origin = "3", "steward capture: INFORMATION_SCHEMA.JOBS_BY_PROJECT, read as the deployer"
         else:
             raise SystemExit(f"unknown capture {name!r}; choose from {', '.join(ALL)}")
         path = write(name, data, claim, origin, data["captured_at"], out)

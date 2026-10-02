@@ -21,9 +21,9 @@ def run(page: str) -> AppTest:
     return AppTest.from_file(str(APP / page), default_timeout=120).run()
 
 
-def test_there_are_eight_pages_and_a_landing_page():
-    assert len(PAGES) == 9
-    assert [p.split("/")[-1].split("_")[0] for p in PAGES[1:]] == [str(i) for i in range(1, 9)]
+def test_there_are_nine_pages_and_a_landing_page():
+    assert len(PAGES) == 10
+    assert [p.split("/")[-1].split("_")[0] for p in PAGES[1:]] == [str(i) for i in range(1, 10)]
 
 
 @pytest.mark.parametrize("page", PAGES)
@@ -58,3 +58,29 @@ def test_every_figure_on_the_home_page_is_in_the_evidence():
     shown = {m.value for m in at.metric}
     estate = evidence.load("fixture", "estate")["data"]
     assert str(len(estate["datasets"])) in shown
+
+
+def test_the_live_page_judges_a_capture_again_and_refuses_a_tampered_one(tmp_path, monkeypatch):
+    """An honest capture is shown with its offline verdict; one edited by hand is refused, not shown."""
+    from steward import live, pipeline
+    from steward.adapters import capture
+    from test_live_access import PROJECT, _honest_runner
+
+    copy = tmp_path / "evidence"
+    shutil.copytree(evidence.ROOT, copy)
+    monkeypatch.setattr(evidence, "ROOT", Path(copy))
+    e = pipeline.load()
+    data = capture.capture_access(PROJECT, _honest_runner(e), e, capture.redactor(PROJECT))
+    assert live.verify_access(data, e) == []
+    capture.write("access", data, "2", "test", data["captured_at"])
+    at = run("pages/9_Live.py")
+    assert not at.exception, [x.value for x in at.exception]
+    assert any("Re-judged offline" in s.value for s in at.success)
+    assert "Live captures held: access" in " ".join(i.value for i in at.info)
+
+    p = copy / "live" / "access.json"
+    doc = json.loads(p.read_text())
+    doc["data"]["transcripts"][0]["rows"] = []  # a transcript quietly emptied
+    p.write_text(json.dumps(doc))
+    at = run("pages/9_Live.py")
+    assert any("Live evidence refused" in x.value for x in at.error)
