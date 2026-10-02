@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 .PHONY: help install test lint fmt evals claims check gate-proof preflight preflight-fast contracts-validate \
-        synthetic generate demo evidence evidence-check tf-fmt tf-validate ci clean
+        synthetic generate demo evidence evidence-check capture tf-fmt tf-validate ci clean
 
 UV  ?= uv
 PY  := $(UV) run python
@@ -74,6 +74,9 @@ evidence: ## rebuild the offline fixture evidence the demo reads
 evidence-gates: ## record a full gate-proof run as evidence (minutes); needed whenever a mutation changes
 	$(PY) scripts/gate_proof.py --worktree --skip evidence --json out/gate_proof.json
 	$(UV) run steward evidence --gates out/gate_proof.json
+
+capture: ## capture live evidence from a deployed estate (needs `uv sync --extra gcp` and credentials); PROJECT=...
+	$(UV) run steward capture --project $(PROJECT) $(if $(WHAT),--what $(WHAT),)
 
 evidence-check: ## re-verify every evidence file against its digest, offline
 	$(UV) run steward evidence-check
