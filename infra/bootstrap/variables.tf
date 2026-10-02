@@ -81,6 +81,12 @@ variable "budget_total" {
   }
 }
 
+variable "budget_counts_credits" {
+  description = "false (default): the budget and the guard measure GROSS usage cost, which is what a Free Trial needs (credits would hold net spend at zero forever). true: subtract credits, for a paid account."
+  type        = bool
+  default     = false
+}
+
 variable "alert_at" {
   description = "Spend levels, in budget_currency, that send an alert (CLAUDE.md: 30 and 50). The guard stops at stop_at, which also sends one."
   type        = list(number)

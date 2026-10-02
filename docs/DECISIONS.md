@@ -339,3 +339,40 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   deployed with (governance reads that parameter version at plan time, destroy included), attempts every layer
   even if an earlier one failed (`if: always()`), and has its own concurrency group because GitHub keeps one
   pending run per group and a queued destroy must not be replaced by a newer deploy.
+- **B49 — Organization and Free Trial billing (decided by the author, 2026-10-02).** B8 is resolved with option
+  (a): the author's Google Workspace domain was activated as a GCP organization and the project lives inside it,
+  so BigQuery data masking is available and claim 2 live can show masked values. The identity that applies is the
+  organization's super-admin account (ADC and gcloud), not a personal one. The billing account is a **Free Trial**
+  account (EUR, 90 days, welcome credit about EUR 264). Identifiers stay in the git-ignored `terraform.tfvars`
+  (P1: private now, public later) — this file records facts, not ids. Consequences:
+  (1) *Net spend is zero while the credit lasts*, so a budget that subtracts credits (the Terraform default,
+  `INCLUDE_ALL_CREDITS`) would never alert and the guard would never fire. `budget_counts_credits` defaults to
+  `false`, the budget uses `EXCLUDE_ALL_CREDITS`, and the guard compares gross usage cost with its stop level.
+  Free-tier usage also counts in the gross figure, which only makes the alarm earlier.
+  (2) *The account is non-billable*: when the credit or the 90 days are exhausted billing is disabled and the
+  resources stop, then are deleted after a 30-day grace period. That is a hard ceiling above ours (EUR 50) and a
+  date the project must finish before; the author records the signup date in DAY-ONE.
+  (3) *Product restrictions*, read from the Free Trial documentation 2026-10-02: no Cloud Marketplace, no quota
+  increases, no GPUs, no generative-AI partner models. None of the services Steward uses is on that list (BigQuery,
+  Analytics Hub, Dataplex, Sensitive Data Protection, Data Catalog, Parameter Manager, Cloud Run functions, Cloud
+  Scheduler, Pub/Sub, Cloud Build, Cloud Storage, Logging, Workload Identity). The documentation also says access to
+  products "may be limited to prevent abuse"; if the first apply meets such a limit it is recorded here and, if it
+  changes a claim, reported to the author. Analytics Hub is BigQuery data sharing, not Cloud Marketplace.
+- **B50 — GitHub environments without a required reviewer.** The environments `deploy` and `destroy` exist with
+  deployment branches limited to `main`, but a private repository on the GitHub Free plan cannot require reviewers
+  (nor protect branches). The trust in `wif.tf` still pins repository, owner, `main` and the environment name; what
+  is missing is a second human at the button. Compensating, in order of strength: the sole writer is the author; the
+  deploy workflow runs the whole offline preflight before any job holding a credential; every input is validated
+  before use (B48); the project is dedicated, capped (budget, stop at EUR 45, a Free Trial ceiling) and short-lived.
+  This is accepted for a demo, not a client system. *Unlock:* a paid GitHub plan or a public repository (P1 makes the
+  repository public later: then required reviewers and branch protection are available and DAY-ONE 6b is repeated).
+- **B51 — B36 narrowed: the deployer can no longer grant itself a role.** `projectIamAdmin` is bound with the
+  documented IAM Condition `api.getAttribute('iam.googleapis.com/modifiedGrantsByRole', []).hasOnly([…])`, listing
+  only `roles/bigquery.jobUser` — the single project role any layer grants. `scripts/check_deployer_grants.py`
+  keeps the two lists equal (a layer granting a role outside the list, a delegable role nobody grants, a missing
+  condition and a bulk project-IAM resource are all refused; three gate-proof mutations). What stays: the deployer
+  can still impersonate any service account in the project (`serviceAccountTokenCreator` is needed to capture the
+  three role transcripts) and holds `storage.admin` and `bigquery.admin` project-wide; those are bounded by the
+  dedicated project, not by a condition. The condition is tested against the live project after the bootstrap
+  apply (a forbidden grant must be denied, a jobUser grant allowed) before any layer relies on it.
+

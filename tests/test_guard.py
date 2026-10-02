@@ -107,3 +107,14 @@ def test_the_deployer_and_the_destroyer_are_different_identities_and_only_the_de
     guard = (root / "guard.tf").read_text()
     assert "google_service_account.deployer.name" in guard.split("guard_may_disable_deployer")[1].split("}")[0]
     assert "google_service_account.destroyer" not in guard  # the way to take the estate down stays open
+
+
+def test_a_free_trial_budget_measures_gross_usage_not_net_of_credits():
+    # On a Free Trial the credit pays everything, so net spend is zero forever and a net budget never alerts.
+    root = io.REPO / "infra" / "bootstrap"
+    assert _default("budget_counts_credits", (root / "variables.tf").read_text()) == "false"
+    budget = (root / "budget.tf").read_text()
+    assert re.search(
+        r'credit_types_treatment\s*=\s*var\.budget_counts_credits \? "INCLUDE_ALL_CREDITS" : "EXCLUDE_ALL_CREDITS"',
+        budget,
+    )
