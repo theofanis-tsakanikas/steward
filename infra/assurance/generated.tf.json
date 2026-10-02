@@ -94,7 +94,7 @@
         },
         "data_scan_id": "steward-dq-analytics-weekly-usage-by-cell",
         "depends_on": [
-          "google_service_account_iam_member.dq_group_data_platform_halverra_example"
+          "time_sleep.dq_iam_propagation"
         ],
         "description": "Rules from the analytics contract (version 2). On demand; reads at most 10000 rows or 32 MiB of the table.",
         "display_name": "steward data quality: analytics.weekly_usage_by_cell",
@@ -155,7 +155,7 @@
         },
         "data_scan_id": "steward-dq-crm-customers",
         "depends_on": [
-          "google_service_account_iam_member.dq_group_data_platform_halverra_example"
+          "time_sleep.dq_iam_propagation"
         ],
         "description": "Rules from the crm contract (version 2). On demand; reads at most 10000 rows or 32 MiB of the table. Not scanned here: Q-CRM-001: customer_id is policy-tagged; Q-CRM-002: customer_id is policy-tagged; Q-CRM-003: msisdn is policy-tagged; Q-CRM-006: nested column contracts.status.",
         "display_name": "steward data quality: crm.customers",
@@ -219,7 +219,7 @@
         },
         "data_scan_id": "steward-dq-crm-support-tickets",
         "depends_on": [
-          "google_service_account_iam_member.dq_group_data_platform_halverra_example"
+          "time_sleep.dq_iam_propagation"
         ],
         "description": "Rules from the crm contract (version 2). On demand; reads at most 10000 rows or 32 MiB of the table. Not scanned here: Q-CRM-012: customer_id is policy-tagged.",
         "display_name": "steward data quality: crm.support_tickets",
@@ -309,7 +309,7 @@
         },
         "data_scan_id": "steward-dq-finance-billing",
         "depends_on": [
-          "google_service_account_iam_member.dq_group_data_platform_halverra_example"
+          "time_sleep.dq_iam_propagation"
         ],
         "description": "Rules from the finance contract (version 3). On demand; reads at most 10000 rows or 32 MiB of the table. Not scanned here: Q-FIN-003: customer_id is policy-tagged.",
         "display_name": "steward data quality: finance.billing",
@@ -350,7 +350,7 @@
         },
         "data_scan_id": "steward-dq-network-network-events",
         "depends_on": [
-          "google_service_account_iam_member.dq_group_data_platform_halverra_example"
+          "time_sleep.dq_iam_propagation"
         ],
         "description": "Rules from the network contract (version 2). On demand; reads at most 10000 rows or 32 MiB of the table.",
         "display_name": "steward data quality: network.network_events",
@@ -442,7 +442,7 @@
         },
         "data_scan_id": "steward-dq-network-usage-events",
         "depends_on": [
-          "google_service_account_iam_member.dq_group_data_platform_halverra_example"
+          "time_sleep.dq_iam_propagation"
         ],
         "description": "Rules from the network contract (version 2). On demand; reads at most 10000 rows or 32 MiB of the table. Not scanned here: Q-NET-001: freshness is judged offline (needs a shared clock); Q-NET-004: msisdn is policy-tagged.",
         "display_name": "steward data quality: network.usage_events",
@@ -468,6 +468,14 @@
         "member": "serviceAccount:service-${data.google_project.this.number}@gcp-sa-dataplex.iam.gserviceaccount.com",
         "role": "roles/iam.serviceAccountShortTermTokenMinter",
         "service_account_id": "projects/${var.project_id}/serviceAccounts/${trimprefix(var.principals[\"group:data-platform@halverra.example\"], \"serviceAccount:\")}"
+      }
+    },
+    "time_sleep": {
+      "dq_iam_propagation": {
+        "create_duration": "90s",
+        "depends_on": [
+          "google_service_account_iam_member.dq_group_data_platform_halverra_example"
+        ]
       }
     }
   }
