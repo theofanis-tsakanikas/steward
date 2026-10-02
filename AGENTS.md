@@ -25,19 +25,10 @@ unchanged**. Read, in order: `CLAUDE.md` → `KICKOFF.md` → `PLAN.md` → `TAS
 2. A `docs/DAY-ONE.md` step only the author can do (billing, credentials, trials).
 3. A doc that is wrong in a way that changes a claim.
 
-## Where things stand (2026-10-01, when Claude Code stopped)
-- Closed and merged on `main`: T000–T009 (PRs #1–#10).
-- **PR #11 (T020, claim 3 — LookML lineage), branch `t020-lookml`:** review + verification pass done and
-  recorded in `SESSION-LOG.md`; last commit `52a78f4`. **`make preflight` has not been run on that last
-  commit** → run it, push if needed, wait for CI green, merge.
-- **T021 is half-built and STASHED:** `git stash list` → `t021-wip` (on `t020-lookml`). It holds the catalog
-  core, the validating mock, the REST client and the sync; `sync` / `reconcile` are not yet wired into
-  the CLI. After merging #11: create branch `t021-collibra` from `main`, `git stash apply` the
-  `t021-wip` stash (not `t003-wip`, which is old), finish T021.
-- Then **T022** (Streamlit demo, recorded mode, fixtures) → write + `terraform validate` the Terraform for
-  **T010–T016** → **hard stop** with a Greek summary: what is built, what the demo shows, estimated GCP
-  cost, the exact DAY-ONE inputs needed to apply.
-- **Known phase-3 issue — DECISIONS B8:** BigQuery data masking needs the project to belong to a GCP
-  organization. Without one, claim 2 live shows deny / clear / row-filtered but not masked values; the
-  options are in `docs/DAY-ONE.md` step 1b. Raise it in the hard-stop summary; it is the author's choice.
+## Where things stand (2026-10-02)
+
+- Closed and merged: T000–T022, T010–T017 (PRs through #41). Claims 1–7 offline; live estate applied, captured, destroyed.
+- **T030 open.** Hosted demo: https://steward-governance.streamlit.app (public, no login). D7 done. Remaining unlock: **D8** — INTERVIEW 3-minute script spoken with the author. Dry-run against the URL is dated in `SESSION-LOG.md`. T031 is cut.
+- **T024** blocked on a Collibra trial (D2 expiry 2026-10-05). Mock stands until then.
+- Bootstrap still in the GCP project until it is deleted. DAY-ONE 4 / 7 / 8 still open (author).
 - Deadline: done before **2026-10-06**. Cut order is in `KICKOFF.md`.

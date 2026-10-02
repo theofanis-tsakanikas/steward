@@ -423,3 +423,14 @@
 - Υπότιτλος Home: «Seven claims · each figure is labelled fixture or live».
 - Ανοιχτό: INTERVIEW rehearsal (D8).
 
+## 2026-10-02 — INTERVIEW dry-run + README από το hosted URL
+
+- **Τι έγινε:** περπάτημα του 3λεπτου script στο https://steward-governance.streamlit.app (χωρίς login).
+  Το `docs/INTERVIEW.md` λέει ακριβώς τι δείχνει κάθε σελίδα τώρα (live-first, MOCK, timestamps).
+- **Screenshots:** `images/status.png`, `privacy.png`, `privacy-roles.png` (claim 2), `catalog.png`,
+  `live.png` ξανατραβηγμένα από το δημόσιο URL. `check_ids.py` 0 hits.
+- **README:** το Status δεν λέει πια «recorded mode»· το claim 2 έχει το live τριών ρόλων δίπλα στον
+  ισχυρισμό. PLAN phases 1–3 κλειστά στο κείμενο· AGENTS.md ενημερωμένο.
+- **Απόδειξη:** τα PNG στο `images/`· το script στο INTERVIEW.md.
+- **Ανοιχτό:** D8 speaking rehearsal με τον συγγραφέα· T024 trial· DAY-ONE 4/7/8· T031 cut.
+

@@ -15,8 +15,8 @@ the pure core, and the evals for claims 1, 2 (compiled side), 5, 6, 7 — plus `
 **Closes when.** `make test evals gate-proof check` is green on a laptop with no credentials; every
 gate has at least one mutation refused for the right reason; generators pass `--check`.
 
-Closed in this phase: —
-Open: see `TASKS.md` (T000–T009).
+Closed 2026-10-01: T000–T009 (PRs #1–#10). Offline claims 1, 2 (compiled), 5, 6, 7 and `gate-proof`.
+Open: none in this phase.
 
 ---
 
@@ -29,8 +29,8 @@ fixture evidence — so that a demo exists **before** any money is spent.
 **Closes when.** `make demo` opens all eight pages from fixtures; `make evals` covers claims 3 and 4;
 the Collibra sync is idempotent (second run: 0 changes) against the mock.
 
-Closed in this phase: —
-Open: see `TASKS.md` (T020–T029).
+Closed 2026-10-01: T020–T022. LookML lineage (claim 3), Collibra validating mock (claim 4), recorded Streamlit demo from fixtures. T024 waits on a trial (D2, expiry 2026-10-05).
+Open: T024 only.
 
 ---
 
@@ -45,8 +45,8 @@ DLP and Dataplex, capture **live evidence** for every claim into `evidence/`, ve
 them offline; the demo switches from fixtures to captured evidence; spend ≤ €50; the estate is
 destroyed and the destroy is recorded.
 
-Closed in this phase: —
-Open: see `TASKS.md` (T010–T019).
+Closed 2026-10-02: T010–T017. Estate applied from CI via WIF, live evidence captured (access, DLP, Dataplex, IAM, audit, history), judged offline, four layers destroyed (`ok sweep: 0`). Gross spend well under the €10 stop; bootstrap remains until the project is deleted.
+Open: none in this phase.
 
 ---
 
@@ -60,8 +60,7 @@ accepts or rejects (doctrine 5), shown as proposals, never applied automatically
 **Closes when.** A public demo link opens in a browser with no login; README passes `readme-standard`;
 the review's findings are fixed or recorded as deferred with an unlock condition.
 
-Closed in this phase: —
-Open: see `TASKS.md` (T030–T039).
+In progress 2026-10-02: T030. Hosted demo is public ([https://steward-governance.streamlit.app](https://steward-governance.streamlit.app), D7 done). README to the portfolio standard; level-2 review findings fixed or deferred. Remaining unlock: D8, the 3-minute script spoken with the author. T031 is cut (D4).
 
 ---
 

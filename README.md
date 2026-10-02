@@ -37,11 +37,11 @@ Steward makes the estate declare itself and makes that drift a failing build. Fi
 
 ## Status
 
-Applied on GCP on 2026-10-02, captured, judged offline, then destroyed. The GitHub `destroy` workflow is green (`ok sweep: 0` leftovers). The bootstrap layer (state bucket, Workload Identity, budget, guard, reaper) remains until the project is deleted — it is not $0 idle. The repository is public. **Demo (recorded, no login):** [https://steward-governance.streamlit.app](https://steward-governance.streamlit.app).
+Applied on GCP on 2026-10-02, captured, judged offline, then destroyed. The GitHub `destroy` workflow is green (`ok sweep: 0` leftovers). The bootstrap layer (state bucket, Workload Identity, budget, guard, reaper) remains until the project is deleted — it is not $0 idle. The repository is public. **Demo (no login):** [https://steward-governance.streamlit.app](https://steward-governance.streamlit.app) — live captures first, fixture only where none exists.
 
 <p align="center">
-  <img src="images/status.png" width="860" alt="Recorded demo home: seven claims and the figures the evidence files actually hold"><br>
-  <sub><b>Recorded mode, seven claims.</b> — Collibra MOCK, fictional operator. 18/18 planted pairs, 3,200 seat × column decisions, second catalog sync sent 0.</sub>
+  <img src="images/status.png" width="860" alt="Hosted demo home: seven claims, each labelled fixture or live with that file's date"><br>
+  <sub><b>Seven claims, each figure labelled.</b> — Collibra MOCK, fictional operator. Live transcripts, DLP, Dataplex, IAM; fixture for catalog, retention, gates.</sub>
 </p>
 
 ## Contents
@@ -88,6 +88,10 @@ Live, Google DLP on the same planted set was 16/18 (two misses listed, not hidde
 
 Contracts compile to policy tags, masking (hash, nullify, last-four) and row access policies. Offline proves the compiled Terraform is what the contract implies — 3,200 seat × column decisions, 0 mismatches. Enforcement was captured live as three role transcripts (analyst / fraud / steward) and is re-checked by `scripts/check_live.py` with no account.
 
+![Privacy: live BigQuery transcripts — analyst hashed, fraud sees usage events in the clear](images/privacy-roles.png)
+
+<sub><b>Same query, different answer, from the estate.</b> — analyst on <code>crm.customers</code>: hashed MSISDN, email <code>XXXXX@domain</code>, GR rows only. Fraud on <code>network.usage_events</code>: IMSI and MSISDN in the clear. Live capture 2026-10-02, then destroyed.</sub>
+
 ## The catalog is generated
 
 The Collibra payload (communities, domains, assets, relations, responsibilities) is built from contracts + harvest. The validating mock rejects unknown asset types, missing attributes and dangling relations. First sync sent 100 changes; second sent 0. Mode **MOCK**.
@@ -98,11 +102,11 @@ The Collibra payload (communities, domains, assets, relations, responsibilities)
 
 ## Live captures, judged offline
 
-The estate answered; the repository judges. Six live files (`access`, `dlp`, `dataplex`, `iam`, `audit`, `history`) sit beside the fixtures. The Live page never replaces recorded mode.
+The estate answered; the repository judges. Six live files (`access`, `dlp`, `dataplex`, `iam`, `audit`, `history`) sit beside the fixtures. Claim pages show a live capture first when one exists; this page re-judges every file with no GCP account.
 
 ![Live estate page: captures listed, judged offline](images/live.png)
 
-<sub><b>Live beside recorded, not instead.</b> — six capture tabs; the judgements are in CI (`check_live.py`), not only on this page.</sub>
+<sub><b>Live, re-judged offline.</b> — six capture tabs; every check passes in CI (`check_live.py`), not only on this page.</sub>
 
 ---
 

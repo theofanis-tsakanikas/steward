@@ -186,7 +186,7 @@ closes        `make demo` opens the eight pages in KICKOFF.md from fixtures with
 out_of_scope  hosting
 stop_at       author clicks through all eight pages
 review        no
-status        closed (2026-10-01) — author click-through of the eight pages still pending (stop_at)
+status        closed (2026-10-01) — hosted click-through of all ten pages 2026-10-02 (public URL)
 ```
 
 ```
@@ -306,7 +306,7 @@ closes        public Streamlit link works with no login; README to readme-standa
 out_of_scope  phase-4 model proposals unless time remains
 stop_at       link sent to the author
 review        yes
-status        open 2026-10-02 — demo URL live; unlock remaining: INTERVIEW rehearsed, dated in SESSION-LOG
+status        open 2026-10-02 — demo URL live; INTERVIEW dry-run against the URL dated; unlock remaining: speaking rehearsal with the author (D8)
 ```
 
 ```
