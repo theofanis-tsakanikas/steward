@@ -141,7 +141,8 @@ def capture_dlp(
         )
         seat = custodians.get(dataset)
         who = account(seat, project) if seat else None
-        rows = read_rows(who, sql)
+        # every column policy-tagged: nothing a reader may inspect, and `SELECT` with an empty list is a syntax error
+        rows = read_rows(who, sql) if scanned else []
         found, truncated, requests = [], False, 0
         for offset, part in _offsets(dlp.chunks(rows)):
             f, t, n = dlp.inspect_rows(inspect, scanned, part, offset)
@@ -151,7 +152,11 @@ def capture_dlp(
         tables.append(
             {
                 "table": table,
-                "read_as": "custodian seat" if seat else "deployer (no contract covers this dataset)",
+                "read_as": (
+                    ("custodian seat" if seat else "deployer (no contract covers this dataset)")
+                    if scanned
+                    else "not read: every column is policy-tagged, so no reader may inspect it"
+                ),
                 "sample": sample.as_record(),
                 "rows_read": len(rows),
                 "columns_scanned": scanned,
