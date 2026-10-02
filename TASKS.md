@@ -290,7 +290,7 @@ closes        `scripts/check_live.py` (and evals/dlp, evals/dataplex) re-judge e
 out_of_scope  —
 stop_at       author confirms the project is empty in the console
 review        yes
-status        in progress 2026-10-02 — live captures committed and re-judged offline; destroy still to run
+status        closed 2026-10-02 — live captures re-judged offline; destroy workflow green (`ok sweep: 0`); spend recorded; author console confirm still pending (stop_at / DAY-ONE 10)
 ```
 
 ---

@@ -355,3 +355,22 @@
 12. Finding σε στήλη εκτός contract tags στο live scan → `LIVE_DLP_UNTAGGED`.
 
 Δεν άλλαξε claim. Το demo παραμένει recorded (fixtures) με τη σελίδα Live δίπλα, όπως λέει το CLAUDE.md.
+
+## 2026-10-02 — T017 destroy έκλεισε (sweep + spend)
+
+- **Τι έκλεισε:** τα τέσσερα layers (marketplace, assurance, governance, estate) καταστράφηκαν· το
+  `destroy` workflow στο GitHub είναι πράσινο· `ok sweep: 0 resource(s) left`. Το bootstrap μένει
+  (state bucket, WIF, guard/reaper, budget) μέχρι να διαγραφεί το project.
+- **Sweep (B56, PRs #34–#35):** το πρώτο destroy έπεσε γιατί (1) `bq ls` τύπωνε notice στο stdout,
+  (2) τα Dataplex scans ζουν σε `europe-west1` όχι `eu`, (3) το user ADC 403 χωρίς quota project,
+  (4) το Google-managed `gcf-v2-sources-<number>-<region>` είναι bootstrap. Εχθρικό review: το
+  unparseable stdout δεν είναι άδειο estate· το GCF allowlist είναι name-shape όχι prefix· το REST
+  403 stubάρεται ως `SystemExit`. Το CI WIF τυπώνει `WARNING: --scopes flag may not work`· αυτή η
+  μία pinned γραμμή αφαιρείται, κάθε άλλο μη-JSON μένει exit.
+- **Κόστος:** BigQuery ~80 MiB billed / 73 jobs· κανένα budget notification στα €30/€50· πολύ κάτω
+  από το όριο των €10. Το net στο Free Trial είναι 0 (B49)· το budget μετράει μεικτή χρήση.
+- **Απόδειξη:** `make preflight` · `tests/test_sweep_and_load.py` · destroy workflow πράσινο ·
+  `scripts/check_live.py` 0 blocking (evidence/live παραμένει, κρίση offline).
+- **stop_at:** ο συγγραφέας επιβεβαιώνει στην κονσόλα ότι το estate είναι άδειο (DAY-ONE βήμα 10).
+  Ανοιχτό: T030 README / hosted demo (DAY-ONE βήμα 9: Streamlit Community Cloud signup).
+

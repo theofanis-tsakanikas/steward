@@ -15,7 +15,7 @@ Nothing here is done silently by a session. Each line gets a date and who did it
 | 7 | **Request a Collibra trial** (collibra.com → Explore / Request a demo); record date and outcome | sales process, no API | |
 | 8 | Check for a **Looker trial** on Google Cloud; record outcome | licence | |
 | 9 | Create a **Streamlit Community Cloud** account linked to GitHub (for the hosted recorded demo) | third-party sign-up | |
-| 10 | After T017: confirm in the console that the project is empty; record final spend | the destroy must be seen | |
+| 10 | After T017: confirm in the console that the project is empty; record final spend | the destroy must be seen | 2026-10-02, session: four Terraform layers destroyed (marketplace, assurance, governance, estate); sweep reported 0 leftovers (GitHub Actions `destroy` workflow green). Bootstrap remains (state bucket, WIF, guard/reaper, budget) until the project is deleted. BigQuery billed ~80 MiB over 73 jobs; no €30/€50 budget notification. **Author still confirms emptiness in the console** (stop_at). |
 
 ## Free Trial billing account (recorded 2026-10-02)
 
