@@ -1,0 +1,118 @@
+{
+ "data": {
+  "captured_at": "2026-10-02T08:47:56Z",
+  "jobs": [
+   {
+    "created": "2026-10-02T04:41:32.986Z",
+    "destination": "analytics.weekly_usage_by_cell",
+    "job_type": "LOAD",
+    "principal": "<service-account>",
+    "referenced_tables": [],
+    "statement_type": null
+   },
+   {
+    "created": "2026-10-02T04:41:44.721Z",
+    "destination": "crm.customers",
+    "job_type": "LOAD",
+    "principal": "<service-account>",
+    "referenced_tables": [],
+    "statement_type": null
+   },
+   {
+    "created": "2026-10-02T04:41:56.411Z",
+    "destination": "crm.support_tickets",
+    "job_type": "LOAD",
+    "principal": "<service-account>",
+    "referenced_tables": [],
+    "statement_type": null
+   },
+   {
+    "created": "2026-10-02T04:42:08.099Z",
+    "destination": "finance.billing",
+    "job_type": "LOAD",
+    "principal": "<service-account>",
+    "referenced_tables": [],
+    "statement_type": null
+   },
+   {
+    "created": "2026-10-02T04:42:20.54Z",
+    "destination": "legacy.legacy_crm_export",
+    "job_type": "LOAD",
+    "principal": "<service-account>",
+    "referenced_tables": [],
+    "statement_type": null
+   },
+   {
+    "created": "2026-10-02T04:42:31.848Z",
+    "destination": "network.network_events",
+    "job_type": "LOAD",
+    "principal": "<service-account>",
+    "referenced_tables": [],
+    "statement_type": null
+   },
+   {
+    "created": "2026-10-02T04:42:44.704Z",
+    "destination": "network.usage_events",
+    "job_type": "LOAD",
+    "principal": "<service-account>",
+    "referenced_tables": [],
+    "statement_type": null
+   },
+   {
+    "created": "2026-10-02T04:54:28.593Z",
+    "destination": "analytics.weekly_usage_by_cell",
+    "job_type": "LOAD",
+    "principal": "<service-account>",
+    "referenced_tables": [],
+    "statement_type": null
+   },
+   {
+    "created": "2026-10-02T04:57:42.194Z",
+    "destination": "crm.customers",
+    "job_type": "LOAD",
+    "principal": "<service-account>",
+    "referenced_tables": [],
+    "statement_type": null
+   },
+   {
+    "created": "2026-10-02T05:00:58.09Z",
+    "destination": "crm.support_tickets",
+    "job_type": "LOAD",
+    "principal": "<service-account>",
+    "referenced_tables": [],
+    "statement_type": null
+   },
+   {
+    "created": "2026-10-02T05:04:13.211Z",
+    "destination": "finance.billing",
+    "job_type": "LOAD",
+    "principal": "<service-account>",
+    "referenced_tables": [],
+    "statement_type": null
+   },
+   {
+    "created": "2026-10-02T05:07:28.187Z",
+    "destination": "legacy.legacy_crm_export",
+    "job_type": "LOAD",
+    "principal": "<service-account>",
+    "referenced_tables": [],
+    "statement_type": null
+   }
+  ],
+  "outcome": "rows",
+  "sql": "SELECT\n  job_id,\n  job_type,\n  statement_type,\n  creation_time,\n  user_email AS principal,\n  CONCAT(destination_table.dataset_id, '.', destination_table.table_id) AS destination,\n  ARRAY(SELECT CONCAT(r.dataset_id, '.', r.table_id) FROM UNNEST(referenced_tables) AS r ORDER BY 1) AS referenced_tables\nFROM `region-eu`.INFORMATION_SCHEMA.JOBS_BY_PROJECT\nWHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)\n  AND job_type IN ('LOAD', 'QUERY')\n  AND destination_table.dataset_id IN ('analytics', 'crm', 'finance', 'legacy', 'network')\nORDER BY creation_time, job_id",
+  "window_days": 7
+ },
+ "meta": {
+  "as_of": "2026-10-02T08:47:56Z",
+  "captured_at": "2026-10-02T08:47:56Z",
+  "claim": "3",
+  "data": "synthetic",
+  "digest": "3526997e3271cfa8f058be1be9654d1d003f28f655bbcc503a3d49e345b23587",
+  "mode": "live",
+  "name": "history",
+  "operator": "fictional (Halverra Telecom)",
+  "origin": "steward capture: INFORMATION_SCHEMA.JOBS_BY_PROJECT, read as the deployer",
+  "schema": 1
+ }
+}

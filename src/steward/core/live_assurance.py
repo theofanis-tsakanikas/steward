@@ -74,7 +74,19 @@ def verify_dlp(data: dict, tags: dict[str, str | None], tables: set[str]) -> lis
     for label, rows in (("tables", data.get("findings", [])), ("control", data.get("control", {}).get("findings", []))):
         for r in rows:
             col = f"{r['table']}.{r['column']}"
-            if col in tags and tags[col] is None:
+            if col not in tags:
+                if label == "tables":
+                    out.append(
+                        Finding(
+                            "LIVE_DLP_UNTAGGED",
+                            "dlp",
+                            col,
+                            f"{r['info_type']} found in {r['rows_with_a_finding']} row(s) ({label}), "
+                            "and no contract names this column",
+                        )
+                    )
+                continue
+            if tags[col] is None:
                 out.append(
                     Finding(
                         "LIVE_DLP_UNTAGGED",

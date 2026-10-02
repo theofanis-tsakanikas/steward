@@ -15,6 +15,7 @@ from the synthetic data the estate was loaded from).
   LIVE_ROWS                the number of rows differs from the row access policy's prediction
   LIVE_VALUE_NOT_MASKED    a masked column came back equal to the stored value (or in a shape the rule never yields)
   LIVE_VALUE_UNKNOWN       no stored row has the values the seat sees in clear (a clear column came back different)
+  LIVE_ROW_POLICY          a returned row fails the seat's row access policy (the predicate the compiled Terraform names)
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ import hashlib
 from datetime import datetime
 
 from .findings import Finding
+from .simulate import _row_passes
 
 CLAIM = "2"
 
@@ -48,12 +50,13 @@ def consistent(rule: str, live, true, col_type: str = "STRING") -> bool:
     if live is None:
         return False
     if rule == "SHA256":
-        return live in _digests(true) or (_text(live) != _text(true) and len(_text(live)) >= 32)
+        return live in _digests(true)
     if rule == "LAST_FOUR_CHARACTERS":
         return _text(live) != _text(true) and _text(live).endswith(_text(true)[-4:])
     if rule == "EMAIL_MASK":
+        # BigQuery EMAIL_MASK is exactly XXXXX@domain (docs, 2026-10-01); any other local-part is a leak.
         s, t = _text(live), _text(true)
-        return "@" in t and s != t and s.endswith("@" + t.split("@", 1)[1]) and not s.startswith(t.split("@", 1)[0])
+        return "@" in t and s == "XXXXX@" + t.split("@", 1)[1]
     if rule == "DATE_YEAR_MASK":
         s, t = _text(live)[:10], _text(true)[:10]
         return s[:4] == t[:4] and s[4:] == "-01-01"
@@ -106,13 +109,19 @@ def judge(transcript: dict, expected: dict, stored: list[dict], types: dict[str,
         f("LIVE_ROWS", f"the row policies show this seat no rows; BigQuery returned {got}")
     elif expected["rows_visible"] > 0 and got != want:
         f("LIVE_ROWS", f"expected {want} row(s) (of {expected['rows_visible']} visible), BigQuery returned {got}")
+    pred = expected.get("row_filter") or "TRUE"
+    if pred != "TRUE":
+        leaked = [row for row in transcript["rows"] if not _row_passes(pred, row)]
+        if leaked:
+            f("LIVE_ROW_POLICY", f"{len(leaked)} returned row(s) fail the compiled row access policy {pred}")
     clear = [c for c, r in expected["access"].items() if r == "clear"]
     masked = {c: r for c, r in expected["access"].items() if r != "clear"}
+    visible = [b for b in stored if pred == "TRUE" or _row_passes(pred, b)]
     if transcript["rows"] and not clear:
         f("LIVE_VALUE_UNKNOWN", "no column is clear for this seat, so no live row can be tied to a stored row")
         return out
     for row in transcript["rows"]:
-        candidates = [b for b in stored if all(_same(row.get(c), b.get(c)) for c in clear)]
+        candidates = [b for b in visible if all(_same(row.get(c), b.get(c)) for c in clear)]
         if not candidates:
             f("LIVE_VALUE_UNKNOWN", f"no stored row has the clear values { ({c: row.get(c) for c in clear})!r}")
             continue
