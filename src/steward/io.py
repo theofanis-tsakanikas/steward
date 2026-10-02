@@ -59,6 +59,16 @@ def synthetic_rows(table: str, root: Path = SYNTHETIC) -> list[dict]:
     return [json.loads(line) for line in (root / "data" / f"{table}.jsonl").read_text().splitlines()]
 
 
+def table_sizes(root: Path = SYNTHETIC) -> dict[str, tuple[int, int]]:
+    """{'dataset.table': (rows, bytes)} of the synthetic tables - what `numRows` / `numBytes` would say. The file size
+    stands in for the logical size, which it over-states for a table of short values: the bound errs high."""
+    out: dict[str, tuple[int, int]] = {}
+    for table in harvest(root):
+        path = root / "data" / f"{table}.jsonl"
+        out[table] = (sum(1 for line in path.read_bytes().splitlines() if line), path.stat().st_size)
+    return out
+
+
 def synthetic_columns(root: Path = SYNTHETIC, limit: int | None = None) -> dict[str, list]:
     """{'dataset.table.path': [values]} for every synthetic table. `limit` samples the first N rows,
     the way a DLP inspection job is row-limited."""
