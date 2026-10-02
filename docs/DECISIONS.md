@@ -434,3 +434,12 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   access list, which is what the Terraform provider writes, conditions included; a conditional role is stored as
   `<role>_withcond_<hash>` and normalised. (7) The Dataplex judge compares only the rules the compiled scans carry;
   a rule left out on purpose (a referential check, a policy-tagged column) is reported as not scanned.
+
+- **B55 — The live IAM judge allowlists BigQuery's default dataset ACL, nothing else (review T017).** Every dataset
+  BigQuery creates carries `projectOwners` / `projectReaders` / `projectWriters`, and the deployer who applied the
+  estate is `dataOwner`; the logging sink writer is `dataEditor` on `audit`. Those are documented here and skipped by
+  `verify_iam`. Any other principal in `other_members` is `LIVE_IAM_UNKNOWN_MEMBER`, **blocking** — a warn would let a
+  `dataViewer` with no expiry through (doctrine 1, claim 6). SHA256 live values are accepted only as the digest of the
+  true value (base64 / hex / raw), not as "any 32-character string"; EMAIL_MASK only as `XXXXX@domain`; a returned row
+  that fails the compiled row-access predicate is `LIVE_ROW_POLICY`.
+

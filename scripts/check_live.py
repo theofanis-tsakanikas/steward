@@ -39,6 +39,18 @@ def judge() -> tuple[list[Finding], list[str]]:
     seen: list[str] = []
     out: list[Finding] = []
     e = None
+    held = {p.stem for p in LIVE.glob("*.json")} if LIVE.is_dir() else set()
+    if held:
+        for name in live.VERIFY:
+            if name not in held:
+                out.append(
+                    Finding(
+                        "LIVE_CAPTURE_MISSING",
+                        name,
+                        name,
+                        "VERIFY names this capture and it is not on disk",
+                    )
+                )
     for name, verify in live.VERIFY.items():
         data = _data(name)
         if data is None:

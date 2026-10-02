@@ -340,3 +340,18 @@
 - **P1:** `_generic` κόβει πλέον και `service-<digits>@` (project number του logging agent). Test στο test_dlp_capture.
 - **Απόδειξη:** `scripts/check_live.py` 0 blocking · `evals/dlp` · `evals/dataplex` · 6 μεταλλάξεις live/dlp-eval/dataplex-eval.
 - **Ανοιχτό:** destroy (T017), T030 README/hosting. Catalog aspects του Dataplex δεν γράφτηκαν (T015: deferred).
+
+## 2026-10-02 — T017 review (fresh-context, εχθρικό) — διορθώσεις πριν το merge
+
+14 ευρήματα. Κώδικας, όχι widening της πρόζας:
+
+1. Ο κριτής των transcripts δεν εφάρμοζε το row-access predicate → `LIVE_ROW_POLICY` + mutation.
+2. SHA256 δεχόταν οποιοδήποτε string ≥32 χαρακτήρες → μόνο τα encodings του digest της αληθινής τιμής· EMAIL_MASK μόνο `XXXXX@domain`.
+3. Η `closes` του T017 ονόμαζε λάθος target (`evidence-check` ≠ κρίση) — διορθώθηκε· destroy/spend μένουν ανοιχτά (μετά το merge).
+4. `other_members` ήταν warn → allowlist των default ACL του BigQuery (B55), οτιδήποτε άλλο blocking.
+5. `verify_audit` δεχόταν οποιοδήποτε μη-error → SQL + non-empty rows + ο grantee στον sink.
+8. Το eval DLP δεν είχε τον core detector → τρίτη στήλη (core 18/18, DLP 16/18).
+11. «ίδιες γραμμές» → «ίδιο πλήθος failed rows».
+12. Finding σε στήλη εκτός contract tags στο live scan → `LIVE_DLP_UNTAGGED`.
+
+Δεν άλλαξε claim. Το demo παραμένει recorded (fixtures) με τη σελίδα Live δίπλα, όπως λέει το CLAUDE.md.

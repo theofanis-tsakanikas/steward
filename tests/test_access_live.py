@@ -101,3 +101,19 @@ def test_sha256_is_accepted_in_every_encoding_bigquery_might_use():
     for live in (raw, base64.b64encode(raw).decode(), raw.hex()):
         assert al.consistent("SHA256", live, "CUST-1")
     assert not al.consistent("SHA256", "CUST-1", "CUST-1")
+    assert not al.consistent("SHA256", "A" * 32, "CUST-1")
+    other = base64.b64encode(hashlib.sha256(b"CUST-2").digest()).decode()
+    assert not al.consistent("SHA256", other, "CUST-1")
+
+
+def test_email_mask_is_exactly_the_bigquery_shape():
+    assert al.consistent("EMAIL_MASK", "XXXXX@example.org", "a.b@example.org")
+    assert not al.consistent("EMAIL_MASK", "a.person@example.org", "someone@example.org")
+
+
+def test_a_row_from_another_country_fails_the_row_policy(world):
+    am, rows, types = world
+    exp, tr = _honest(am, "analyst@GR", rows, types)
+    other = next(r for r in rows if r["country"] == "IT")
+    tr["rows"][0] = {**tr["rows"][0], "country": "IT", "created_at": other["created_at"], "segment": other["segment"]}
+    assert "LIVE_ROW_POLICY" in {f.code for f in al.judge(tr, exp, rows, types)}

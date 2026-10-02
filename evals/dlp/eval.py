@@ -19,9 +19,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from _common import REPO, load_planted
-from steward import pipeline
+from steward import io, pipeline
 from steward.core import live_assurance as la
+from steward.core.classify import detect
 from steward.core.findings import report
+from steward.pipeline import synthetic_anchor
 
 
 def evaluate() -> dict | None:
@@ -32,6 +34,8 @@ def evaluate() -> dict | None:
     e = pipeline.load()
     planted = {(p["column"], k) for p in load_planted()["pii"] for k in p["kinds"]}
     found = {(f"{r['table']}.{r['column']}", r["kind"]) for r in data["control"]["findings"] if r["kind"] is not None}
+    n = data["control"]["rows_per_table"]
+    core = {(d.column, k) for d in detect(io.synthetic_columns(limit=n), synthetic_anchor()) for k in d.kinds}
     other = sorted(
         {(f"{r['table']}.{r['column']}", r["info_type"]) for r in data["control"]["findings"] if r["kind"] is None}
         | {(c, k) for (c, k) in found - planted}
@@ -41,6 +45,8 @@ def evaluate() -> dict | None:
         "planted": len(planted),
         "found": sorted(map(list, planted & found)),
         "missed": sorted(map(list, planted - found)),
+        "core_found": sorted(map(list, planted & core)),
+        "core_missed": sorted(map(list, planted - core)),
         "beyond_planted": [list(x) for x in other],
         "live_untagged_findings": len(data["findings"]),
         "tables": len(data["tables"]),
@@ -57,7 +63,8 @@ def main() -> int:
     print(
         f"control sample ({r['control_rows_per_table']} rows/table) vs planted manifest, n={r['planted']} (column, kind) pairs"
     )
-    print(f"  found {len(r['found'])}, missed {len(r['missed'])}")
+    print(f"  DLP  found {len(r['found'])}, missed {len(r['missed'])}")
+    print(f"  core found {len(r['core_found'])}, missed {len(r['core_missed'])} (values only, no contract)")
     for c, k in r["missed"]:
         print(f"  MISSED {c} {k} — planted, the template did not report it (a limit of DLP, listed, not hidden)")
     for c, k in r["beyond_planted"]:

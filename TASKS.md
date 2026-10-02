@@ -285,8 +285,8 @@ id            T017
 title         Evidence check and destroy
 branch        t017-evidence-destroy
 depends_on    T012, T014, T015, T016
-closes        `make evidence-check` re-verifies every capture offline; demo switched to evidence/; spend recorded (≤ €50);
-              `make destroy` run and its output recorded
+closes        `scripts/check_live.py` (and evals/dlp, evals/dataplex) re-judge every live capture offline; demo Live
+              page sits beside the fixture (recorded mode stays the default); spend recorded; destroy run and recorded
 out_of_scope  —
 stop_at       author confirms the project is empty in the console
 review        yes

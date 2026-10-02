@@ -44,6 +44,11 @@ def test_personal_data_in_an_untagged_column_is_blocking_and_not_waivable_by_sha
     assert codes(la.verify_dlp(dlp([f]), TAGS, {"crm.t"})) == ["LIVE_DLP_UNTAGGED"]
 
 
+def test_a_finding_in_a_column_no_contract_names_is_blocking():
+    f = {"table": "crm.t", "column": "unknown", "info_type": "EMAIL_ADDRESS", "kind": "email", "rows_with_a_finding": 1}
+    assert codes(la.verify_dlp(dlp([f]), TAGS, {"crm.t"})) == ["LIVE_DLP_UNTAGGED"]
+
+
 def test_a_finding_in_a_tagged_column_is_expected():
     f = {"table": "crm.t", "column": "email", "info_type": "EMAIL_ADDRESS", "kind": "email", "rows_with_a_finding": 2}
     assert la.verify_dlp(dlp([f]), TAGS, {"crm.t"}) == []

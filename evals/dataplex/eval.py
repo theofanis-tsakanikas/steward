@@ -53,7 +53,7 @@ def main() -> int:
     if code:
         print("FAIL claim 5 (live)")
         return 1
-    print("ok claim 5 (live): Dataplex and the offline engine fail the same rows for every rule")
+    print("ok claim 5 (live): Dataplex and the offline engine fail the same number of rows for every comparable rule")
     return 0
 
 
