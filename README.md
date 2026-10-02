@@ -37,7 +37,7 @@ Steward makes the estate declare itself and makes that drift a failing build. Fi
 
 ## Status
 
-Applied on GCP on 2026-10-02, captured, judged offline, then destroyed. The GitHub `destroy` workflow is green (`ok sweep: 0` leftovers). The bootstrap layer (state bucket, Workload Identity, budget, guard, reaper) remains until the project is deleted — it is not $0 idle. The demo runs from committed evidence, with no account.
+Applied on GCP on 2026-10-02, captured, judged offline, then destroyed. The GitHub `destroy` workflow is green (`ok sweep: 0` leftovers). The bootstrap layer (state bucket, Workload Identity, budget, guard, reaper) remains until the project is deleted — it is not $0 idle. The repository is public. The demo runs from committed evidence, with no account. The hosted Streamlit URL is created from `app/Home.py` on `main` (DAY-ONE step 9).
 
 <p align="center">
   <img src="images/status.png" width="860" alt="Recorded demo home: seven claims and the figures the evidence files actually hold"><br>

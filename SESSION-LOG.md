@@ -387,6 +387,20 @@
   dependabot / `.env.example`.
 - **Απόδειξη:** `check_ids.py` 0 hits · `gate-proof --only ids` REFUSED · `evidence-check` 0 ·
   `make evidence-gates` 118/118 (χωρίς evidence self-check).
-- **Ανοιχτό:** history rewrite + force-push, gitleaks --all, `gh repo edit --visibility public`,
-  required reviewer στα deploy/destroy, hosted Streamlit link.
+- **Ανοιχτό τότε:** history rewrite, public, reviewer, hosted link.
+
+## 2026-10-02 — T030 κλείσιμο (public)
+
+- **Ιστορικό:** `git filter-repo --replace-text` αντικατέστησε τον μοναδικό project number με
+  ψεύτικο σε όλα τα refs· force-push σε main και τα υπόλοιπα branches· `gitleaks git --log-opts=--all`
+  καθαρό (65 commits).
+- **Public:** `gh repo edit --visibility public`. Required reviewer `theofanis-tsakanikas` στα
+  environments `deploy` και `destroy` (branches ακόμα μόνο `main`).
+- **Review #37:** το ids mutation φυτεύει canary στο CHANGELOG (όχι EXTRA_IDS)· το CI χωρίς
+  `STEWARD_*` αποτυγχάνει μόνο στο `make check` (`STEWARD_IDS_REQUIRED`), όχι στο gate-proof baseline.
+- **Hosted demo:** δεν υπάρχει Streamlit API token στο session — ο συγγραφέας πατάει Create app
+  (repo / main / `app/Home.py`).
+- **Απόδειξη:** CI #37 πράσινο · gitleaks --all · visibility public.
+- **Ανοιχτό:** click στο share.streamlit.io· INTERVIEW rehearsal με τον συγγραφέα· DAY-ONE 4/7/8·
+  T031 cut· bootstrap μέχρι διαγραφή project.
 

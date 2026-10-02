@@ -24,7 +24,9 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
 ## Resolved by the author (2026-10-01)
 - **P1 — Repository visibility: PRIVATE now, public later.** Going public is a separate step after a
   pre-publish pass (`readme-standard`, gitleaks history scan, naming rule check, no project ids / billing ids in history).
-  Public is still a later step (history rewrite, then `gh repo edit`). Identifiers stay out of the tree (`scripts/check_ids.py`, B57).
+  **Resolved 2026-10-02: public** (`https://github.com/theofanis-tsakanikas/steward`). History rewritten
+  so the one leaked project number is a fake; `gitleaks git --log-opts=--all` reported no leaks.
+  Identifiers stay out of the tree (`scripts/check_ids.py`, B57).
 - **P2 — BigQuery location: `EU` multi-region.** Policy-tag taxonomies and every dataset in `eu`.
 - **P3 — Autonomous build.** The session builds, reviews and merges its own work without waiting for the
   author, up to the point where real GCP resources would be created (see `CLAUDE.md` → Git workflow).
@@ -359,14 +361,10 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   Scheduler, Pub/Sub, Cloud Build, Cloud Storage, Logging, Workload Identity). The documentation also says access to
   products "may be limited to prevent abuse"; if the first apply meets such a limit it is recorded here and, if it
   changes a claim, reported to the author. Analytics Hub is BigQuery data sharing, not Cloud Marketplace.
-- **B50 — GitHub environments without a required reviewer.** The environments `deploy` and `destroy` exist with
-  deployment branches limited to `main`, but a private repository on the GitHub Free plan cannot require reviewers
-  (nor protect branches). The trust in `wif.tf` still pins repository, owner, `main` and the environment name; what
-  is missing is a second human at the button. Compensating, in order of strength: the sole writer is the author; the
-  deploy workflow runs the whole offline preflight before any job holding a credential; every input is validated
-  before use (B48); the project is dedicated, capped (budget, stop at EUR 45, a Free Trial ceiling) and short-lived.
-  This is accepted for a demo, not a client system. *Unlock:* a paid GitHub plan or a public repository (P1 makes the
-  repository public later: then required reviewers and branch protection are available and DAY-ONE 6b is repeated).
+- **B50 — GitHub environments: required reviewer after public.** While the repository was private, the Free plan
+  could not require reviewers. After P1 (public, 2026-10-02), `theofanis-tsakanikas` is the required reviewer on
+  `deploy` and `destroy`; deployment branches remain `main` only. The trust in `wif.tf` still pins repository,
+  owner, `main` and the environment name. Admins can still bypass (GitHub default on this plan).
 - **B51 — B36 narrowed: the deployer can no longer grant itself a role.** `projectIamAdmin` is bound with the
   documented IAM Condition `api.getAttribute('iam.googleapis.com/modifiedGrantsByRole', []).hasOnly([…])`, listing
   only `roles/bigquery.jobUser` — the single project role any layer grants. `scripts/check_deployer_grants.py`

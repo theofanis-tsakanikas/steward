@@ -7,6 +7,7 @@
 - Catalog mode remains **MOCK**. The operator is fictional; every row is synthetic.
 - `scripts/check_ids.py` refuses a tree that contains the author's GCP identifiers
   (read from git-ignored tfvars or the environment).
+- Public repository. History rewritten so no live project number remains. `gitleaks --all` clean.
 
 ## 2026-10-01
 
