@@ -37,11 +37,11 @@ Steward makes the estate declare itself and makes that drift a failing build. Fi
 
 ## Status
 
-Applied on GCP on 2026-10-02, captured, judged offline, then destroyed. The GitHub `destroy` workflow is green (`ok sweep: 0` leftovers). The bootstrap layer (state bucket, Workload Identity, budget, guard, reaper) remains until the project is deleted — it is not $0 idle. The repository is public. **Demo (recorded, no login):** [https://steward-governance.streamlit.app](https://steward-governance.streamlit.app).
+Applied on GCP on 2026-10-02, captured, judged offline, then destroyed. The GitHub `destroy` workflow is green (`ok sweep: 0` leftovers). The bootstrap layer (state bucket, Workload Identity, budget, guard, reaper) remains until the project is deleted — it is not $0 idle. The repository is public. **Demo (no login):** [https://steward-governance.streamlit.app](https://steward-governance.streamlit.app) — live captures first, fixture only where none exists.
 
 <p align="center">
-  <img src="images/status.png" width="860" alt="Recorded demo home: seven claims and the figures the evidence files actually hold"><br>
-  <sub><b>Recorded mode, seven claims.</b> — Collibra MOCK, fictional operator. 18/18 planted pairs, 3,200 seat × column decisions, second catalog sync sent 0.</sub>
+  <img src="images/status.png" width="860" alt="Hosted demo home: seven claims, each labelled fixture or live with that file's date"><br>
+  <sub><b>Seven claims, each figure labelled.</b> — Collibra MOCK, fictional operator. Live transcripts, DLP, Dataplex, IAM; fixture for catalog, retention, gates.</sub>
 </p>
 
 ## Contents
@@ -82,11 +82,15 @@ The detector reads **values only**. The contract is never an input. A column cal
 
 <sub><b>Values vs the contract.</b> — `crm.support_tickets.ref_2` is an MSISDN; the contract tags it personal. Innocent-named columns: 6 of 6 found.</sub>
 
-Live, Google DLP on the same planted set was 16/18 (two misses listed, not hidden). The core detector stayed 18/18. n = 18 (column, kind).
+Live, Google DLP on the same planted set was 16/18 (misses listed in `evals/dlp`: `crm.customers.address.street` / address, `legacy.legacy_crm_export.dt_x` / birth_date). The core detector stayed 18/18. n = 18 (column, kind). The screenshot above is the offline detector; DLP is the next block on that page.
 
 ## Same query, three answers
 
 Contracts compile to policy tags, masking (hash, nullify, last-four) and row access policies. Offline proves the compiled Terraform is what the contract implies — 3,200 seat × column decisions, 0 mismatches. Enforcement was captured live as three role transcripts (analyst / fraud / steward) and is re-checked by `scripts/check_live.py` with no account.
+
+![Same SELECT on crm.customers as analyst, steward, and fraud](images/privacy-roles.png)
+
+<sub><b>One query, three answers, from the estate.</b> — same <code>SELECT</code> on <code>crm.customers</code>. Analyst: hashed MSISDN, <code>XXXXX@example.net</code>, GR rows only. Steward: last-four MSISDN, IT and GR. Fraud: Access Denied. Live capture 2026-10-02, then destroyed.</sub>
 
 ## The catalog is generated
 
@@ -98,11 +102,11 @@ The Collibra payload (communities, domains, assets, relations, responsibilities)
 
 ## Live captures, judged offline
 
-The estate answered; the repository judges. Six live files (`access`, `dlp`, `dataplex`, `iam`, `audit`, `history`) sit beside the fixtures. The Live page never replaces recorded mode.
+The estate answered; the repository judges. Six live files (`access`, `dlp`, `dataplex`, `iam`, `audit`, `history`) sit beside the fixtures. Claim pages show a live capture first when one exists; this page re-judges every file with no GCP account.
 
 ![Live estate page: captures listed, judged offline](images/live.png)
 
-<sub><b>Live beside recorded, not instead.</b> — six capture tabs; the judgements are in CI (`check_live.py`), not only on this page.</sub>
+<sub><b>Live, re-judged offline.</b> — six capture tabs; every check passes in CI (`check_live.py`), not only on this page.</sub>
 
 ---
 

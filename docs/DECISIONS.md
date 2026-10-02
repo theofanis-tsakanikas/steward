@@ -44,7 +44,7 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
 | D5 | Dataform for transformations | unlock: never for this timebox unless asked |
 | D6 | VPC Service Controls perimeter | unlock: needs an organization node; if the project has none, documented only |
 | D7 | Hosted recorded demo on Streamlit Community Cloud (T030) | **done 2026-10-02:** [https://steward-governance.streamlit.app](https://steward-governance.streamlit.app) — public, no login |
-| D8 | Interview 3-minute script rehearsed with the author (T030) | unlock: rehearsal dated in `SESSION-LOG.md` |
+| D8 | Interview 3-minute script rehearsed with the author (T030) | dry-run against the hosted URL 2026-10-02 (session); unlock: speaking rehearsal with the author dated in `SESSION-LOG.md` |
 
 ## Decided during the build (session, 2026-10-01)
 - **B1 — The operator is "Halverra Telecom", domain `halverra.example`.** Searched 2026-10-01: no
