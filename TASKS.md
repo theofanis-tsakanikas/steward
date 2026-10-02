@@ -213,7 +213,7 @@ closes        terraform bootstrap/: GCS state bucket, Workload Identity pool + p
 out_of_scope  any data resource
 stop_at       author confirms budget alerts visible
 review        yes
-status        written + validated + reviewed (SESSION-LOG) — APPLY waits for the author's go (hard stop)
+status        closed 2026-10-02 — applied locally (PR #16–#18); 87 resources; org-policy override B53; GitHub variables set
 ```
 
 ```
@@ -226,7 +226,7 @@ closes        BigQuery datasets (EU location), partitioned + clustered tables, n
 out_of_scope  governance controls
 stop_at       row counts match the generator
 review        no
-status        written + validated; seats are service accounts (no human identity); apply and data load wait for the author's go (hard stop)
+status        closed 2026-10-02 — applied from CI via WIF (PRs #19–#21); row counts match the generator
 ```
 
 ```
@@ -238,7 +238,7 @@ closes        compiled controls applied; three role transcripts of one query cap
 out_of_scope  —
 stop_at       transcripts shown
 review        yes
-status        terraform generated + validated (compiled controls, data-transfer agent grant); apply + three role transcripts wait for the author's go (hard stop)
+status        closed 2026-10-02 — applied from CI; three role transcripts in evidence/live/access.json (masked values, B8 a)
 ```
 
 ```
@@ -251,7 +251,7 @@ closes        DLP findings on row-limited samples captured; core detector vs DLP
 out_of_scope  de-identification of full tables
 stop_at       comparison shown
 review        yes
-status        DLP inspect template generated + validated; sampled inspection and the comparison with the core detector need the live estate (hard stop)
+status        closed 2026-10-02 — live DLP vs planted vs contracts in evidence/live/dlp.json + evals/dlp (n stated, misses listed)
 ```
 
 ```
@@ -264,7 +264,7 @@ closes        BigQuery-job lineage captured from Dataplex; one DQ scan per key t
 out_of_scope  Composer / OpenLineage-from-Airflow (deferred)
 stop_at       evidence shown
 review        no
-status        Dataplex DQ scans generated + validated (contract rules on untagged columns only); lineage capture and aspects need the live estate (hard stop)
+status        closed 2026-10-02 — DQ scans + job-history lineage captured (evidence/live/dataplex.json, history.json); catalog aspects not written (deferred: owner/classification already live in Collibra payload / contracts)
 ```
 
 ```
@@ -277,7 +277,7 @@ closes        one listing; one approved request → IAM binding with Condition e
 out_of_scope  —
 stop_at       evidence shown
 review        yes
-status        terraform generated + validated (exchange, listing, expiring grants, audit sink); live capture waits for the author's go (hard stop)
+status        closed 2026-10-02 — listing + expiring IAM grant + audit sink captured (evidence/live/iam.json, audit.json)
 ```
 
 ```
@@ -290,7 +290,7 @@ closes        `make evidence-check` re-verifies every capture offline; demo swit
 out_of_scope  —
 stop_at       author confirms the project is empty in the console
 review        yes
-status        open
+status        in progress 2026-10-02 — live captures committed and re-judged offline; destroy still to run
 ```
 
 ---

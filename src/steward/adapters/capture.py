@@ -310,7 +310,9 @@ def access_to_bindings(access: list[dict]) -> list[dict]:
 
 
 def _generic(member: str, project: str) -> str:
-    return re.sub(r"[a-z0-9-]+@" + re.escape(project) + r"\.iam\.gserviceaccount\.com", "<service-account>", member)
+    """A principal that is not a seat, with the project id and its number taken out (the repo will be public)."""
+    member = re.sub(r"[a-z0-9-]+@" + re.escape(project) + r"\.iam\.gserviceaccount\.com", "<service-account>", member)
+    return re.sub(r"service-\d+@", "service-<project-number>@", member)
 
 
 # ── claim 3, 6: the audit sink and the job history ────────────────────────────────────────────────────────────────

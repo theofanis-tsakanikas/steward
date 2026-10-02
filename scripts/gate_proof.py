@@ -58,6 +58,9 @@ GATES: dict[str, list[str]] = {
     "oidc-subjects": [PY, "scripts/check_oidc_subjects.py"],
     "deployer-grants": [PY, "scripts/check_deployer_grants.py"],
     "assurance": [PY, "scripts/check_assurance.py"],
+    "live": [PY, "scripts/check_live.py"],
+    "dlp-eval": [PY, "evals/run.py", "dlp"],
+    "dataplex-eval": [PY, "evals/run.py", "dataplex"],
 }
 
 
@@ -87,6 +90,66 @@ class Mutation:
 
 
 MUTATIONS: list[Mutation] = [
+    Mutation(
+        "personal data found live in a column the contract leaves untagged",
+        "live",
+        "evidence/live/dlp.json",
+        '  "findings": [],\n  "method"',
+        '  "findings": [{"column": "segment", "findings": 3, "info_type": "PERSON_NAME", "kind": "name", "likelihoods": {"LIKELY": 3}, "rows_with_a_finding": 3, "table": "crm.customers"}],\n  "method"',
+        ("LIVE_DLP_UNTAGGED", "crm.customers.segment"),
+        "a captured finding in an untagged column is the failure claim 1 exists for, and the capture is judged again offline",
+        "1",
+    ),
+    Mutation(
+        "personal data found live in a column the contract leaves untagged",
+        "dlp-eval",
+        "evidence/live/dlp.json",
+        '  "findings": [],\n  "method"',
+        '  "findings": [{"column": "segment", "findings": 3, "info_type": "PERSON_NAME", "kind": "name", "likelihoods": {"LIKELY": 3}, "rows_with_a_finding": 3, "table": "crm.customers"}],\n  "method"',
+        ("LIVE_DLP_UNTAGGED", "crm.customers.segment"),
+        "the harness judges the same capture with the same core function and says why with its n",
+        "1",
+    ),
+    Mutation(
+        "a Dataplex count that disagrees with the offline engine",
+        "live",
+        "evidence/live/dataplex.json",
+        '"failed_rows": 2,\n      "null_rows": null,\n      "passed": false,\n      "passed_rows": 1800,\n      "rule": "q-fin-002"',
+        '"failed_rows": 0,\n      "null_rows": null,\n      "passed": true,\n      "passed_rows": 1802,\n      "rule": "q-fin-002"',
+        ("LIVE_DQ_COUNT", "q-fin-002"),
+        "two independent engines must fail the same rows; a scan that finds fewer is a rule that does not do what it says",
+        "5",
+    ),
+    Mutation(
+        "a Dataplex count that disagrees with the offline engine",
+        "dataplex-eval",
+        "evidence/live/dataplex.json",
+        '"failed_rows": 2,\n      "null_rows": null,\n      "passed": false,\n      "passed_rows": 1800,\n      "rule": "q-fin-002"',
+        '"failed_rows": 0,\n      "null_rows": null,\n      "passed": true,\n      "passed_rows": 1802,\n      "rule": "q-fin-002"',
+        ("LIVE_DQ_COUNT", "q-fin-002"),
+        "the harness prints each rule beside its offline count; a disagreement is blocking",
+        "5",
+    ),
+    Mutation(
+        "an analyst transcript that shows a clear e-mail address",
+        "live",
+        "evidence/live/access.json",
+        '"email": "XXXXX@example.net",\n      "msisdn": "U707guKL68qSDXL982nZuy0sZsu4TamrNS/+ZkDDSTc="',
+        '"email": "a.person@example.net",\n      "msisdn": "U707guKL68qSDXL982nZuy0sZsu4TamrNS/+ZkDDSTc="',
+        ("LIVE_VALUE_NOT_MASKED", "customers"),
+        "the role transcript is the proof that BigQuery masked; a clear value in it is the claim failing",
+        "2",
+    ),
+    Mutation(
+        "an approved grant whose expiry has already passed, still present in the estate",
+        "live",
+        "evidence/live/iam.json",
+        '"expression": "request.time < timestamp(\\"2026-10-06T16:00:00Z\\")",\n     "title": "steward-R-002"',
+        '"expression": "request.time < timestamp(\\"2026-09-30T16:00:00Z\\")",\n     "title": "steward-R-002"',
+        ("GRANT_EXPIRED_PRESENT", "crm:user:paolo.marino@halverra.example"),
+        "an expired grant still present in the estate turns CI red, judged at the capture's own timestamp",
+        "6",
+    ),
     Mutation(
         "capture runs as the destroyer",
         "workflows",

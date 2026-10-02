@@ -1,0 +1,272 @@
+{
+ "data": {
+  "captured_at": "2026-10-02T08:45:44Z",
+  "location": "europe-west1",
+  "scans": [
+   {
+    "message": "",
+    "passed": true,
+    "rows_scanned": 570,
+    "rules": [
+     {
+      "column": "country",
+      "dimension": "VALIDITY",
+      "evaluated": 570,
+      "failed_rows": 0,
+      "null_rows": null,
+      "passed": true,
+      "passed_rows": 570,
+      "rule": "q-ana-001",
+      "threshold": 1
+     },
+     {
+      "column": "subscribers",
+      "dimension": "VALIDITY",
+      "evaluated": 570,
+      "failed_rows": 0,
+      "null_rows": null,
+      "passed": true,
+      "passed_rows": 570,
+      "rule": "q-ana-002",
+      "threshold": 1
+     }
+    ],
+    "scan": "steward-dq-analytics-weekly-usage-by-cell",
+    "state": "SUCCEEDED"
+   },
+   {
+    "message": "",
+    "passed": true,
+    "rows_scanned": 600,
+    "rules": [
+     {
+      "column": "country",
+      "dimension": "VALIDITY",
+      "evaluated": 600,
+      "failed_rows": 0,
+      "null_rows": null,
+      "passed": true,
+      "passed_rows": 600,
+      "rule": "q-crm-004",
+      "threshold": 1
+     },
+     {
+      "column": "segment",
+      "dimension": "VALIDITY",
+      "evaluated": 600,
+      "failed_rows": 0,
+      "null_rows": null,
+      "passed": true,
+      "passed_rows": 600,
+      "rule": "q-crm-005",
+      "threshold": 1
+     }
+    ],
+    "scan": "steward-dq-crm-customers",
+    "state": "SUCCEEDED"
+   },
+   {
+    "message": "",
+    "passed": true,
+    "rows_scanned": 400,
+    "rules": [
+     {
+      "column": "ticket_id",
+      "dimension": "COMPLETENESS",
+      "evaluated": 400,
+      "failed_rows": 0,
+      "null_rows": null,
+      "passed": true,
+      "passed_rows": 400,
+      "rule": "q-crm-010",
+      "threshold": 1
+     },
+     {
+      "column": "ticket_id",
+      "dimension": "UNIQUENESS",
+      "evaluated": 400,
+      "failed_rows": 0,
+      "null_rows": null,
+      "passed": true,
+      "passed_rows": 400,
+      "rule": "q-crm-011",
+      "threshold": 1
+     },
+     {
+      "column": "status",
+      "dimension": "VALIDITY",
+      "evaluated": 400,
+      "failed_rows": 0,
+      "null_rows": null,
+      "passed": true,
+      "passed_rows": 400,
+      "rule": "q-crm-013",
+      "threshold": 1
+     }
+    ],
+    "scan": "steward-dq-crm-support-tickets",
+    "state": "SUCCEEDED"
+   },
+   {
+    "message": "",
+    "passed": null,
+    "rows_scanned": 1802,
+    "rules": [
+     {
+      "column": "invoice_id",
+      "dimension": "COMPLETENESS",
+      "evaluated": 1802,
+      "failed_rows": 0,
+      "null_rows": null,
+      "passed": true,
+      "passed_rows": 1802,
+      "rule": "q-fin-001",
+      "threshold": 1
+     },
+     {
+      "column": "invoice_id",
+      "dimension": "UNIQUENESS",
+      "evaluated": 1802,
+      "failed_rows": 2,
+      "null_rows": null,
+      "passed": false,
+      "passed_rows": 1800,
+      "rule": "q-fin-002",
+      "threshold": 1
+     },
+     {
+      "column": "amount",
+      "dimension": "VALIDITY",
+      "evaluated": 1802,
+      "failed_rows": 3,
+      "null_rows": null,
+      "passed": false,
+      "passed_rows": 1799,
+      "rule": "q-fin-004",
+      "threshold": 1
+     },
+     {
+      "column": "currency",
+      "dimension": "VALIDITY",
+      "evaluated": 1802,
+      "failed_rows": 0,
+      "null_rows": null,
+      "passed": true,
+      "passed_rows": 1802,
+      "rule": "q-fin-005",
+      "threshold": 1
+     },
+     {
+      "column": "status",
+      "dimension": "VALIDITY",
+      "evaluated": 1802,
+      "failed_rows": 0,
+      "null_rows": null,
+      "passed": true,
+      "passed_rows": 1802,
+      "rule": "q-fin-006",
+      "threshold": 1
+     }
+    ],
+    "scan": "steward-dq-finance-billing",
+    "state": "SUCCEEDED"
+   },
+   {
+    "message": "",
+    "passed": true,
+    "rows_scanned": 3000,
+    "rules": [
+     {
+      "column": "attach_id",
+      "dimension": "UNIQUENESS",
+      "evaluated": 3000,
+      "failed_rows": 0,
+      "null_rows": null,
+      "passed": true,
+      "passed_rows": 3000,
+      "rule": "q-net-010",
+      "threshold": 1
+     }
+    ],
+    "scan": "steward-dq-network-network-events",
+    "state": "SUCCEEDED"
+   },
+   {
+    "message": "",
+    "passed": null,
+    "rows_scanned": 6000,
+    "rules": [
+     {
+      "column": "event_id",
+      "dimension": "COMPLETENESS",
+      "evaluated": 6000,
+      "failed_rows": 0,
+      "null_rows": null,
+      "passed": true,
+      "passed_rows": 6000,
+      "rule": "q-net-002",
+      "threshold": 1
+     },
+     {
+      "column": "event_id",
+      "dimension": "UNIQUENESS",
+      "evaluated": 6000,
+      "failed_rows": 0,
+      "null_rows": null,
+      "passed": true,
+      "passed_rows": 6000,
+      "rule": "q-net-003",
+      "threshold": 1
+     },
+     {
+      "column": "country",
+      "dimension": "VALIDITY",
+      "evaluated": 6000,
+      "failed_rows": 0,
+      "null_rows": null,
+      "passed": true,
+      "passed_rows": 6000,
+      "rule": "q-net-005",
+      "threshold": 1
+     },
+     {
+      "column": "event_type",
+      "dimension": "VALIDITY",
+      "evaluated": 6000,
+      "failed_rows": 4,
+      "null_rows": null,
+      "passed": false,
+      "passed_rows": 5996,
+      "rule": "q-net-006",
+      "threshold": 1
+     },
+     {
+      "column": "volume_mb",
+      "dimension": "VALIDITY",
+      "evaluated": 6000,
+      "failed_rows": 0,
+      "null_rows": null,
+      "passed": true,
+      "passed_rows": 6000,
+      "rule": "q-net-007",
+      "threshold": 1
+     }
+    ],
+    "scan": "steward-dq-network-usage-events",
+    "state": "SUCCEEDED"
+   }
+  ]
+ },
+ "meta": {
+  "as_of": "2026-10-02T08:45:44Z",
+  "captured_at": "2026-10-02T08:45:44Z",
+  "claim": "5",
+  "data": "synthetic",
+  "digest": "c8b01e5a87c06b6d17d0513eb5c0ee5fa37a808e1265cbf8c7089c8f915dba15",
+  "mode": "live",
+  "name": "dataplex",
+  "operator": "fictional (Halverra Telecom)",
+  "origin": "steward capture: dataScans:run, then the job's data-quality result",
+  "schema": 1
+ }
+}
