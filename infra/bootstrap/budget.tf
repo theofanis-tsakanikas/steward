@@ -28,8 +28,11 @@ resource "google_billing_budget" "steward" {
   display_name    = "steward (${var.project_id})"
 
   budget_filter {
-    projects               = ["projects/${data.google_project.this.number}"]
-    credit_types_treatment = "INCLUDE_ALL_CREDITS"
+    projects = ["projects/${data.google_project.this.number}"]
+    # On a Free Trial the welcome credit pays every cent, so spend NET of credits is always zero and a budget that
+    # subtracts credits would never alert and the guard would never fire. The default therefore measures the gross
+    # usage cost. Set budget_counts_credits only on a paid account where net spend is the point (DECISIONS B49).
+    credit_types_treatment = var.budget_counts_credits ? "INCLUDE_ALL_CREDITS" : "EXCLUDE_ALL_CREDITS"
   }
 
   amount {
@@ -43,8 +46,8 @@ resource "google_billing_budget" "steward" {
   # the variable says they are. The guard's stop level sends an alert too.
   #
   # The period is the default, one calendar month. The estate lives days, so it is one month except across a
-  # month boundary, where the count restarts: docs/DECISIONS.md records it. costAmount includes credits
-  # (INCLUDE_ALL_CREDITS): the guard compares what would actually be billed.
+  # month boundary, where the count restarts: docs/DECISIONS.md records it. costAmount is the gross usage cost
+  # (credits not subtracted, see credit_types_treatment): the guard compares what usage would cost, whoever pays.
   dynamic "threshold_rules" {
     for_each = toset(concat(var.alert_at, [var.stop_at]))
     content {

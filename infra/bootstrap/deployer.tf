@@ -8,8 +8,10 @@
 # the deployer has the project. The guard does NOT contain that (the deployer can alter the guard). What
 # contains it: the trust condition (this repository, `main`, an environment), the required reviewer on the
 # environments, a dedicated project with a ceiling and an end date, and `make destroy`. Narrowing the roles with
-# IAM Conditions (modifiedGrantsByRole) is possible and recorded in docs/DECISIONS.md as deferred: it cannot be
-# validated without a project, and a wrong condition turns the first apply into a series of denials.
+# IAM Conditions is done where it is cheap and testable: `projectIamAdmin` is conditioned to grant or revoke
+# only `roles/bigquery.jobUser` (the one project role any layer grants; scripts/check_deployer_grants.py keeps the
+# two lists equal), so the deployer can no longer grant itself a role. What remains is impersonation
+# (`serviceAccountTokenCreator`): docs/DECISIONS.md B36.
 resource "google_service_account" "deployer" {
   account_id   = "steward-deployer"
   display_name = "Steward deployer (GitHub Actions via Workload Identity Federation)"
@@ -52,7 +54,7 @@ locals {
     "roles/iam.serviceAccountAdmin"   = "estate: one service account per seat (no human identity is needed to show three roles)"
     # governance (T012)
     "roles/bigquerydatapolicy.admin"        = "governance: masking rules (data policies)"
-    "roles/resourcemanager.projectIamAdmin" = "governance: jobUser for each seat. Powerful: it can grant itself anything (see the header)"
+    "roles/resourcemanager.projectIamAdmin" = "governance: jobUser for each seat. Conditioned: it may grant or revoke only the delegable roles (see the header)"
     "roles/iam.serviceAccountUser"          = "governance: scheduled queries run as the custodian's service account"
     "roles/iam.serviceAccountTokenCreator"  = "evidence: query as each seat's service account to capture the three role transcripts (python, not terraform)"
     # marketplace (T016)
@@ -66,9 +68,30 @@ locals {
   }
 }
 
+locals {
+  # The project roles the layers actually grant (to seats). The deployer may delegate exactly these.
+  delegable_roles = ["roles/bigquery.jobUser"]
+  role_conditions = {
+    "roles/resourcemanager.projectIamAdmin" = {
+      title       = "grants-only-${replace(join("-", [for r in local.delegable_roles : basename(r)]), ".", "-")}"
+      description = "Project IAM Admin, limited to granting and revoking the roles the layers hand out to seats."
+      expression  = "api.getAttribute('iam.googleapis.com/modifiedGrantsByRole', []).hasOnly([${join(", ", [for r in local.delegable_roles : "'${r}'"])}])"
+    }
+  }
+}
+
 resource "google_project_iam_member" "ci" {
   for_each = { for pair in setproduct(keys(local.ci_identities), keys(local.deployer_roles)) : "${pair[0]}/${pair[1]}" => { who = pair[0], role = pair[1] } }
   project  = var.project_id
   role     = each.value.role
   member   = "serviceAccount:${local.ci_identities[each.value.who]}"
+
+  dynamic "condition" {
+    for_each = contains(keys(local.role_conditions), each.value.role) ? [local.role_conditions[each.value.role]] : []
+    content {
+      title       = condition.value.title
+      description = condition.value.description
+      expression  = condition.value.expression
+    }
+  }
 }
