@@ -5,13 +5,16 @@ nothing is a destroy that has not been tested (docs/DAY-ONE.md step 10).
     python scripts/sweep.py --project my-project
 
 Allowed to remain: the bootstrap layer (it is applied from a laptop and removed by deleting the project):
-the `<project>-steward-tfstate` bucket, the deployer / destroyer / guard / reaper / build service accounts, the budget.
+the `<project>-steward-tfstate` bucket, Google-managed Cloud Functions buckets named
+`gcf-v2-(sources|uploads)-<project-number>-<region>` (guard and reaper), the deployer / destroyer /
+guard / reaper / build service accounts, the budget.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 import urllib.error
@@ -19,11 +22,13 @@ import urllib.request
 
 BOOTSTRAP_ACCOUNTS = {"steward-deployer", "steward-destroyer", "steward-guard", "steward-reaper", "steward-build"}
 SEAT_PREFIXES = ("seat-", "person-")
+# Google's name for the source/upload buckets it creates when it deploys the bootstrap functions.
+GCF_BUCKET = re.compile(r"^gcf-v2-(?:sources|uploads)-\d+-[a-z0-9-]+$")
 
 # Things with no gcloud listing command (checked against gcloud 571: `gcloud dlp inspect-templates` and
 # `gcloud bigquery analytics-hub` do not exist) are listed through their REST collection. kind -> (url, key).
 REST = {
-    "scans": ("https://dataplex.googleapis.com/v1/projects/{p}/locations/eu/dataScans", "dataScans"),
+    "scans": ("https://dataplex.googleapis.com/v1/projects/{p}/locations/europe-west1/dataScans", "dataScans"),
     "templates": (
         "https://dlp.googleapis.com/v2/projects/{p}/locations/europe-west1/inspectTemplates",
         "inspectTemplates",
@@ -48,7 +53,7 @@ def leftovers(project: str, inventory: dict) -> list[str]:
         raise ValueError(f"inventory does not list {missing}: a sweep that does not look is a sweep that passes")
     out = []
     out += [f"dataset {d}" for d in inventory["datasets"]]
-    out += [f"bucket {b}" for b in inventory["buckets"] if b != f"{project}-steward-tfstate"]
+    out += [f"bucket {b}" for b in inventory["buckets"] if not _bootstrap_bucket(project, b)]
     out += [
         f"service account {a}"
         for a in inventory["accounts"]
@@ -64,6 +69,10 @@ def leftovers(project: str, inventory: dict) -> list[str]:
     return out
 
 
+def _bootstrap_bucket(project: str, name: str) -> bool:
+    return name == f"{project}-steward-tfstate" or bool(GCF_BUCKET.fullmatch(name))
+
+
 def _run(cmd: list[str]) -> str:
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode:
@@ -72,16 +81,41 @@ def _run(cmd: list[str]) -> str:
 
 
 def _json(cmd: list[str]) -> list:
-    return json.loads(_run(cmd) or "[]")
+    """Parse a gcloud/bq `--format=json` listing. Empty stdout is empty. A notice may precede the
+    document; unparseable stdout is an exit, never an empty inventory that looks like a clean sweep."""
+    raw = (_run(cmd) or "").strip()
+    if not raw:
+        return []
+    parsed = False
+    data = None
+    try:
+        data = json.loads(raw)
+        parsed = True
+    except json.JSONDecodeError:
+        for i, ch in enumerate(raw):
+            if ch not in "[{":
+                continue
+            try:
+                data = json.loads(raw[i:])
+                parsed = True
+                break
+            except json.JSONDecodeError:
+                continue
+    if not parsed:
+        raise SystemExit(f"sweep cannot parse listing from `{' '.join(cmd)}`: {raw[:200]}")
+    if data is None:
+        return []
+    return [data] if isinstance(data, dict) else list(data)
 
 
-def _rest(url: str, key: str, token: str) -> list[dict]:
+def _rest(url: str, key: str, token: str, project: str) -> list[dict]:
     """Every item of a REST collection, following pages. An error is an exit, never an empty list."""
     items: list[dict] = []
     page = ""
     while True:
         req = urllib.request.Request(
-            url + (f"?pageToken={page}" if page else ""), headers={"Authorization": f"Bearer {token}"}
+            url + (f"?pageToken={page}" if page else ""),
+            headers={"Authorization": f"Bearer {token}", "x-goog-user-project": project},
         )
         try:
             with urllib.request.urlopen(req, timeout=60) as resp:
@@ -113,7 +147,7 @@ def inventory(project: str) -> dict:
     }
     token = _run(["gcloud", "auth", "print-access-token"]).strip()
     for kind, (url, key) in REST.items():
-        inv[kind] = [_label(kind, i) for i in _rest(url.format(p=project), key, token)]
+        inv[kind] = [_label(kind, i) for i in _rest(url.format(p=project), key, token, project)]
     return inv
 
 
