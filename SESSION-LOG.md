@@ -273,3 +273,18 @@
   ο agent χρειάζεται `serviceAccountTokenCreator`· (β) η διεύθυνση και ο ρόλος του Data Transfer agent
   (GCP-CONSTRAINTS «First-apply risks»)· (γ) οι ζωντανοί adapters (`bigquery.py`, `dlp.py`, `dataplex.py`, capture
   evidence) δεν είναι γραμμένοι — χρειάζονται το estate για να δοκιμαστούν· (δ) IAM Conditions στον deployer (B36).
+
+## 2026-10-02 — T010 προσαρμογή: organization, Free Trial, IAM Condition στον deployer
+
+- **Τι έκλεισε:** απόφαση B8 = (α) (το project ανήκει σε organization → το masking είναι εφικτό)· billing account σε
+  Free Trial (πιστωτικό ποσό σε EUR, 90 μέρες)· οι GitHub environments `deploy`/`destroy` είναι περιορισμένα σε `main`
+  και **χωρίς required reviewer** (το private repo στο Free plan δεν το επιτρέπει) — B49, B50.
+- **Budget/guard για Free Trial:** σε trial το πιστωτικό ποσό πληρώνει τα πάντα, άρα το net κόστος μένει 0 και το guard
+  δεν θα χτυπούσε ποτέ. Το budget μετράει πλέον **μεικτή χρήση** (`EXCLUDE_ALL_CREDITS`, μεταβλητή
+  `budget_counts_credits=false`). Το test `test_a_free_trial_budget_measures_gross_usage_not_net_of_credits` το κλειδώνει.
+- **B36 στένεψε:** ο deployer έχει `projectIamAdmin` μόνο με IAM Condition που επιτρέπει να δίνει/αφαιρεί *μόνο* τους
+  ρόλους που δίνουν τα layers (`delegable_roles`). Νέο gate `deployer-grants` (`scripts/check_deployer_grants.py`) κρατά
+  τη λίστα ίση με τους ρόλους των layers· 3 μεταλλάξεις στο gate-proof. Θα δοκιμαστεί και ζωντανά μετά το bootstrap.
+- **Απόδειξη:** `make preflight` · `check_deployer_grants.py` · `tests/test_guard.py`. Το gates evidence ξαναγράφτηκε.
+- **Ανοιχτό:** bootstrap apply, ζωντανή δοκιμή της IAM Condition, επιβεβαίωση alert emails. Οι ταυτότητες (org, project,
+  billing) δεν γράφτηκαν στα docs (P1): μένουν στο git-ignored `terraform.tfvars`.
