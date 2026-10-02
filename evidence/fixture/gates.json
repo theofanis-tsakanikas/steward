@@ -4,17 +4,17 @@
   "results": [
    {
     "claim": "1",
-    "detail": "ERROR ID_IN_TREE scripts/check_ids.py — a project/org/billing identifier from terraform.tfvars or the environment",
+    "detail": "ERROR ID_IN_TREE CHANGELOG.md — a project/org/billing identifier from terraform.tfvars or the environment",
     "expect": [
      "ID_IN_TREE",
-     "scripts/check_ids.py"
+     "CHANGELOG.md"
     ],
-    "file": "scripts/check_ids.py",
+    "file": "CHANGELOG.md",
     "gate": "ids",
     "n": 1,
     "name": "a live project number written into the tree",
     "status": "REFUSED",
-    "why": "the identifier is read from env/tfvars, never hard-coded; a planted value in a tracked file is a leak"
+    "why": "a planted identifier in a tracked file that is not the scanner is a leak; env/tfvars supply live ids"
    },
    {
     "claim": "1",
@@ -1665,7 +1665,7 @@
   "as_of": "2026-09-30",
   "claim": "all",
   "data": "synthetic",
-  "digest": "1d1b03efa90de4a579a4b87a6e28524ff12b695d8b397752d2abcfe0435b167e",
+  "digest": "206c1dd1cf060d8a398623a71f6a221380142a3c5402052a343f0b6290e8e55b",
   "mode": "fixture",
   "name": "gates",
   "operator": "fictional (Halverra Telecom)",

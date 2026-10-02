@@ -51,3 +51,10 @@ def test_a_planted_id_in_the_tree_is_named_without_repeating_the_id(tmp_path):
 
 def test_the_committed_gate_has_no_extra_ids():
     assert ids.EXTRA_IDS == ()
+
+
+def test_ci_without_identifiers_fails_closed(monkeypatch, capsys):
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setattr(ids, "identifiers", lambda extra=(): set())
+    assert ids.main([]) == 1
+    assert "ID_UNCONFIGURED" in capsys.readouterr().out

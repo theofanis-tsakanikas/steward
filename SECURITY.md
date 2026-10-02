@@ -25,7 +25,9 @@ Open a GitHub issue or email the address on the author's GitHub profile. There i
 ## Known limits
 
 - Workload Identity Federation is pinned to this repository, `main`, and the `deploy` / `destroy`
-  environments. A required reviewer on those environments is the second human at the button.
+  environments. A required reviewer on those environments is the intended second human at the
+  button; a private repository on the GitHub Free plan could not set one (B50). After the
+  repository is public, DAY-ONE 6b is repeated.
 - BigQuery time travel and fail-safe keep deleted data recoverable for up to about 14 days; the
   retention report says so in its first line.
 - The safe state is "treat it as sensitive and deny". A column of unknown sensitivity is masked;

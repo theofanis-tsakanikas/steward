@@ -15,7 +15,7 @@ in brackets. (The employer is private; this file names no company.)
 | Access | Row policies, masking per role, grants with expiry | 2, 6 |
 | Data Marketplace: onboarding, approvals, ownership changes, archival, report expiration | Listing → named approval → expiring grant; unused dashboards → expiry workflow | 6 |
 
-## The 3-minute demo script (T030 — recorded demo, hosted or `make demo`)
+## The 3-minute demo script (to rehearse with the author in T030)
 
 Open the home page so the MOCK badge and “fictional operator” line are on screen before you speak.
 

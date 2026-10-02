@@ -5,8 +5,8 @@
 - Live estate applied, captured (claims 1, 2, 5, 6) and destroyed. Sweep reported 0 leftovers.
   Bootstrap remains until the project is deleted.
 - Catalog mode remains **MOCK**. The operator is fictional; every row is synthetic.
-- Public repository. `scripts/check_ids.py` refuses a tree that contains the author's GCP
-  identifiers (read from git-ignored tfvars or the environment).
+- `scripts/check_ids.py` refuses a tree that contains the author's GCP identifiers
+  (read from git-ignored tfvars or the environment).
 
 ## 2026-10-01
 

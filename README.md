@@ -1,11 +1,12 @@
+> **Catalog mode: MOCK** (no Collibra instance has accepted these calls). **The operator, Halverra
+> Telecom, is fictional; every row of data is synthetic.**
+
 <p align="center">
-  <img src="images/banner.png" alt="Steward — contracts compile to controls" width="100%">
+  <img src="images/banner.png" alt="Steward — contracts compile to controls" width="100%"><br>
+  <sub><b>Contracts compile to controls.</b> — an untagged phone column is a build failure, not a catalog entry.</sub>
 </p>
 
 # Steward
-
-> **Catalog mode: MOCK** (no Collibra instance has accepted these calls). **The operator, Halverra
-> Telecom, is fictional; every row of data is synthetic.**
 
 <p align="center">
   <a href="https://github.com/theofanis-tsakanikas/steward/actions/workflows/ci.yml"><img src="https://github.com/theofanis-tsakanikas/steward/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
@@ -36,7 +37,7 @@ Steward makes the estate declare itself and makes that drift a failing build. Fi
 
 ## Status
 
-Applied on GCP on 2026-10-02, captured, judged offline, then destroyed. The GitHub `destroy` workflow is green (`ok sweep: 0` leftovers). The bootstrap layer (state bucket, Workload Identity, budget, guard, reaper) remains until the project is deleted. The demo runs from committed evidence, with no account.
+Applied on GCP on 2026-10-02, captured, judged offline, then destroyed. The GitHub `destroy` workflow is green (`ok sweep: 0` leftovers). The bootstrap layer (state bucket, Workload Identity, budget, guard, reaper) remains until the project is deleted — it is not $0 idle. The demo runs from committed evidence, with no account.
 
 <p align="center">
   <img src="images/status.png" width="860" alt="Recorded demo home: seven claims and the figures the evidence files actually hold"><br>
@@ -101,7 +102,7 @@ The estate answered; the repository judges. Six live files (`access`, `dlp`, `da
 
 ![Live estate page: captures listed, judged offline](images/live.png)
 
-<sub><b>Live beside recorded, not instead.</b> — each capture is re-checked by the same core functions CI runs.</sub>
+<sub><b>Live beside recorded, not instead.</b> — six capture tabs; the judgements are in CI (`check_live.py`), not only on this page.</sub>
 
 ---
 
@@ -161,7 +162,7 @@ CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) is offline by constr
 
 ## Cost
 
-**$0 idle** after destroy. The live window billed about 80 MiB of BigQuery (73 jobs); no €30 / €50 budget notification fired. The project budget is €50 gross usage (Free Trial credit does not hide it). Target for the whole exercise was ≤ €50. Figures: [`docs/GCP-CONSTRAINTS.md`](docs/GCP-CONSTRAINTS.md), [`docs/DAY-ONE.md`](docs/DAY-ONE.md) step 10.
+The estate is gone (no BigQuery datasets). Bootstrap stands until the project is deleted. No €30 / €50 budget notification fired during the live window. The project budget is €50 gross usage (Free Trial credit does not hide it). Target for the whole exercise was ≤ €50. Figures: [`docs/GCP-CONSTRAINTS.md`](docs/GCP-CONSTRAINTS.md), [`docs/DAY-ONE.md`](docs/DAY-ONE.md) step 10.
 
 ## Decisions
 

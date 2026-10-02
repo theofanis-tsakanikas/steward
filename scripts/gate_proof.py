@@ -97,11 +97,11 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "a live project number written into the tree",
         "ids",
-        "scripts/check_ids.py",
-        "EXTRA_IDS: tuple[str, ...] = ()",
-        f"EXTRA_IDS: tuple[str, ...] = ({_IDS_CANARY!r},)",
-        ("ID_IN_TREE", "scripts/check_ids.py"),
-        "the identifier is read from env/tfvars, never hard-coded; a planted value in a tracked file is a leak",
+        "CHANGELOG.md",
+        "# Changelog\n",
+        f"# Changelog\n\n{_IDS_CANARY}\n",
+        ("ID_IN_TREE", "CHANGELOG.md"),
+        "a planted identifier in a tracked file that is not the scanner is a leak; env/tfvars supply live ids",
         "1",
     ),
     Mutation(

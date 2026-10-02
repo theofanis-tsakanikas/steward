@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Refuse a tree that contains this project's GCP identifiers (P1: the repository is public).
+"""Refuse a tree that contains this project's GCP identifiers (P1: they must not ship).
 
 Identifiers are read from the git-ignored `infra/bootstrap/terraform.tfvars` and from the
 environment — never hard-coded here. A finding names the file, never the identifier.
@@ -39,7 +39,9 @@ ENV_KEYS = (
 )
 # gate-proof plants a value here; empty in the committed tree so the canary is not itself a leak.
 EXTRA_IDS: tuple[str, ...] = ()
-SKIP_SUFFIX = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".woff", ".woff2", ".pyc"}
+SKIP_SUFFIX = {".jpg", ".jpeg", ".gif", ".webp", ".ico", ".woff", ".woff2", ".pyc"}
+# PNGs are scanned as text: a console screenshot that still holds a project id is a leak.
+CANARY = "x-planted-" + "project-number-000"
 SKIP_NAMES = {"terraform.tfvars", "terraform.tfstate", "terraform.tfstate.backup"}
 _ASSIGN = re.compile(r'^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"([^"]*)"\s*$')
 
@@ -49,7 +51,9 @@ def _keep(value: str) -> bool:
     return len(v) >= 6 and v.lower() not in PLACEHOLDERS
 
 
-def identifiers(env: dict[str, str] | None = None, tfvars: Path | None = TFVARS, extra: tuple[str, ...] = EXTRA_IDS) -> set[str]:
+def identifiers(
+    env: dict[str, str] | None = None, tfvars: Path | None = TFVARS, extra: tuple[str, ...] = EXTRA_IDS
+) -> set[str]:
     """The identifiers this check looks for. Empty means nothing to refuse — a stranger's clone has none."""
     out: set[str] = {e for e in extra if _keep(e)}
     for key in ENV_KEYS:
@@ -109,7 +113,8 @@ def hits(root: Path, ids: set[str], files: list[Path] | None = None) -> list[str
 def problems(root: Path = REPO, env: dict[str, str] | None = None, tfvars: Path | None = TFVARS) -> list[str]:
     found = hits(root, identifiers(env=env, tfvars=tfvars))
     return [
-        f"ERROR ID_IN_TREE {p} — a project/org/billing identifier from terraform.tfvars or the environment" for p in found
+        f"ERROR ID_IN_TREE {p} — a project/org/billing identifier from terraform.tfvars or the environment"
+        for p in found
     ]
 
 
@@ -117,14 +122,18 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--id", action="append", default=[], help="extra identifier (used by gate-proof; never a real id)")
     args = ap.parse_args(argv)
-    ids = identifiers(extra=(*EXTRA_IDS, *args.id))
+    live = identifiers(extra=(*EXTRA_IDS, *args.id))
+    if os.environ.get("GITHUB_ACTIONS") == "true" and not live:
+        print("ERROR ID_UNCONFIGURED CI has no identifiers to refuse — set the STEWARD_* secrets")
+        return 1
+    ids = live | {CANARY}
     found = hits(REPO, ids)
     for p in found:
         print(f"ERROR ID_IN_TREE {p} — a project/org/billing identifier from terraform.tfvars or the environment")
     if found:
         print(f"FAIL ids: {len(found)} tracked file(s) contain a live identifier")
         return 1
-    src = "terraform.tfvars/env" if ids else "no identifiers configured (nothing to refuse)"
+    src = "terraform.tfvars/env" if live else "no live identifiers (canary only)"
     print(f"ok ids: {len(ids)} identifier(s) from {src}, 0 hits")
     return 0
 
