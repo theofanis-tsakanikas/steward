@@ -191,7 +191,7 @@ def compile_assurance(
                 "member": "serviceAccount:service-${data.google_project.this.number}@gcp-sa-dataplex.iam.gserviceaccount.com",
             }
             scans[f"dq_{c.dataset}_{tname}"] = {
-                "depends_on": [f"google_service_account_iam_member.dq_{cust}"],
+                "depends_on": ["time_sleep.dq_iam_propagation"],
                 "data_scan_id": f"steward-dq-{ident}",
                 "location": "${var.region}",
                 "display_name": f"steward data quality: {c.dataset}.{tname}",
@@ -217,6 +217,14 @@ def compile_assurance(
             "google_data_loss_prevention_inspect_template": inspect_template(),
             "google_dataplex_datascan": scans,
             "google_service_account_iam_member": minters,
+            # IAM is eventually consistent: a scan created two seconds after its minter grant was refused (first apply,
+            # 2026-10-02). The wait is part of the layer, not a second apply by hand.
+            "time_sleep": {
+                "dq_iam_propagation": {
+                    "depends_on": [f"google_service_account_iam_member.{k}" for k in sorted(minters)],
+                    "create_duration": "90s",
+                }
+            },
         },
     }
     return {"infra/assurance/generated.tf.json": _sorted(doc)}

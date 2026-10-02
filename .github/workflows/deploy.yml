@@ -18,6 +18,12 @@ on:
         required: true
         default: "v1"
         type: string
+      from_layer:
+        description: "Resume at this layer (every layer before it is skipped: a layer that failed is re-applied without redoing the ones that did not)"
+        required: true
+        default: "estate"
+        type: choice
+        options: [estate, governance, assurance, marketplace]
 
 permissions:
   contents: read
@@ -76,6 +82,7 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v2
 
       - name: estate
+        if: ${{ inputs.from_layer == 'estate' }}
         working-directory: infra/estate
         run: |
           terraform init -input=false -backend-config="bucket=$STATE_BUCKET" -backend-config="prefix=estate"
@@ -83,11 +90,13 @@ jobs:
             -var "project_id=$PROJECT" -var "expires_at=$EXPIRES_AT" -var "publish_version=$PUBLISH_VERSION"
 
       - name: load the synthetic data and prove the row counts
+        if: ${{ inputs.from_layer == 'estate' }}
         run: uv run python scripts/load_synthetic.py --project "$PROJECT"
 
       # Google creates a service agent the first time something uses it; Terraform grants to it (the Data Transfer
       # agent may mint tokens for a custodian, B45) need it to exist. The call is idempotent.
       - name: service agents
+        if: ${{ inputs.from_layer == 'estate' || inputs.from_layer == 'governance' }}
         run: |
           for service in bigquerydatatransfer dataplex dlp analyticshub; do
             curl -sf -X POST -H "Authorization: Bearer $(gcloud auth print-access-token)" \
@@ -96,6 +105,7 @@ jobs:
           done
 
       - name: governance
+        if: ${{ inputs.from_layer == 'estate' || inputs.from_layer == 'governance' }}
         working-directory: infra/governance
         run: |
           uv run python ../../scripts/tfvars.py --project "$PROJECT" --layer governance > principals.auto.tfvars.json
@@ -104,6 +114,7 @@ jobs:
             -var "project_id=$PROJECT" -var "expires_at=$EXPIRES_AT" -var "estate_version=$PUBLISH_VERSION"
 
       - name: assurance (DLP inspect template, Dataplex quality scans)
+        if: ${{ inputs.from_layer != 'marketplace' }}
         working-directory: infra/assurance
         run: |
           uv run python ../../scripts/tfvars.py --project "$PROJECT" --layer assurance > principals.auto.tfvars.json
