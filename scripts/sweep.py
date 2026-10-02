@@ -5,7 +5,8 @@ nothing is a destroy that has not been tested (docs/DAY-ONE.md step 10).
     python scripts/sweep.py --project my-project
 
 Allowed to remain: the bootstrap layer (it is applied from a laptop and removed by deleting the project):
-the `<project>-steward-tfstate` bucket, the deployer / destroyer / guard / reaper / build service accounts, the budget.
+the `<project>-steward-tfstate` bucket, Google-managed Cloud Functions source buckets (`gcf-v2-sources-*`,
+created for the guard and reaper), the deployer / destroyer / guard / reaper / build service accounts, the budget.
 """
 
 from __future__ import annotations
@@ -19,11 +20,13 @@ import urllib.request
 
 BOOTSTRAP_ACCOUNTS = {"steward-deployer", "steward-destroyer", "steward-guard", "steward-reaper", "steward-build"}
 SEAT_PREFIXES = ("seat-", "person-")
+# Google creates these when it deploys the bootstrap Cloud Run functions; they are not estate.
+GCF_BUCKET_PREFIXES = ("gcf-v2-sources-", "gcf-v2-uploads-")
 
 # Things with no gcloud listing command (checked against gcloud 571: `gcloud dlp inspect-templates` and
 # `gcloud bigquery analytics-hub` do not exist) are listed through their REST collection. kind -> (url, key).
 REST = {
-    "scans": ("https://dataplex.googleapis.com/v1/projects/{p}/locations/eu/dataScans", "dataScans"),
+    "scans": ("https://dataplex.googleapis.com/v1/projects/{p}/locations/europe-west1/dataScans", "dataScans"),
     "templates": (
         "https://dlp.googleapis.com/v2/projects/{p}/locations/europe-west1/inspectTemplates",
         "inspectTemplates",
@@ -48,7 +51,7 @@ def leftovers(project: str, inventory: dict) -> list[str]:
         raise ValueError(f"inventory does not list {missing}: a sweep that does not look is a sweep that passes")
     out = []
     out += [f"dataset {d}" for d in inventory["datasets"]]
-    out += [f"bucket {b}" for b in inventory["buckets"] if b != f"{project}-steward-tfstate"]
+    out += [f"bucket {b}" for b in inventory["buckets"] if not _bootstrap_bucket(project, b)]
     out += [
         f"service account {a}"
         for a in inventory["accounts"]
@@ -64,6 +67,10 @@ def leftovers(project: str, inventory: dict) -> list[str]:
     return out
 
 
+def _bootstrap_bucket(project: str, name: str) -> bool:
+    return name == f"{project}-steward-tfstate" or name.startswith(GCF_BUCKET_PREFIXES)
+
+
 def _run(cmd: list[str]) -> str:
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode:
@@ -72,16 +79,31 @@ def _run(cmd: list[str]) -> str:
 
 
 def _json(cmd: list[str]) -> list:
-    return json.loads(_run(cmd) or "[]")
+    """Parse a gcloud/bq `--format=json` listing. Empty output, or a notice on stdout before the JSON
+    (bq does this when there is nothing to list), is an empty list — not a crash that looks like leftovers."""
+    raw = (_run(cmd) or "").strip()
+    if not raw:
+        return []
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        start = min((i for i in (raw.find("["), raw.find("{")) if i >= 0), default=-1)
+        if start < 0:
+            return []
+        data = json.loads(raw[start:])
+    if data is None:
+        return []
+    return [data] if isinstance(data, dict) else list(data)
 
 
-def _rest(url: str, key: str, token: str) -> list[dict]:
+def _rest(url: str, key: str, token: str, project: str) -> list[dict]:
     """Every item of a REST collection, following pages. An error is an exit, never an empty list."""
     items: list[dict] = []
     page = ""
     while True:
         req = urllib.request.Request(
-            url + (f"?pageToken={page}" if page else ""), headers={"Authorization": f"Bearer {token}"}
+            url + (f"?pageToken={page}" if page else ""),
+            headers={"Authorization": f"Bearer {token}", "x-goog-user-project": project},
         )
         try:
             with urllib.request.urlopen(req, timeout=60) as resp:
@@ -113,7 +135,7 @@ def inventory(project: str) -> dict:
     }
     token = _run(["gcloud", "auth", "print-access-token"]).strip()
     for kind, (url, key) in REST.items():
-        inv[kind] = [_label(kind, i) for i in _rest(url.format(p=project), key, token)]
+        inv[kind] = [_label(kind, i) for i in _rest(url.format(p=project), key, token, project)]
     return inv
 
 

@@ -25,10 +25,21 @@ EMPTY = {k: [] for k in sweep.KINDS}
 def test_a_clean_project_sweeps_clean():
     inv = {
         **EMPTY,
-        "buckets": [f"{P}-steward-tfstate"],
+        "buckets": [
+            f"{P}-steward-tfstate",
+            "gcf-v2-sources-123-europe-west1",
+            "gcf-v2-uploads-123-europe-west1",
+        ],
         "accounts": ["steward-deployer", "steward-destroyer", "steward-guard", "steward-reaper", "steward-build"],
     }
     assert sweep.leftovers(P, inv) == []
+
+
+def test_an_estate_bucket_is_still_a_leftover():
+    inv = {**EMPTY, "buckets": [f"{P}-steward-tfstate", f"{P}-landing", "gcf-v2-sources-123-europe-west1"]}
+    left = sweep.leftovers(P, inv)
+    assert f"bucket {P}-landing" in left
+    assert not any("gcf-v2" in x or "tfstate" in x for x in left)
 
 
 def test_every_kind_of_leftover_is_named():
@@ -76,6 +87,9 @@ def test_no_listing_uses_a_gcloud_command_that_does_not_exist():
     src = (io.REPO / "scripts" / "sweep.py").read_text()
     assert '"dlp"' not in src and '"analytics-hub"' not in src  # no such gcloud groups are invoked
     assert set(sweep.REST) == {"scans", "templates", "exchanges", "taxonomies", "parameters", "transfers"}
+    assert "/locations/europe-west1/dataScans" in sweep.REST["scans"][0]
+    assert "/locations/eu/" not in sweep.REST["scans"][0]
+    assert "x-goog-user-project" in src  # user ADC 403s on DLP without a quota project (B56)
     for url, key in sweep.REST.values():
         assert url.startswith("https://") and "{p}" in url and key
 
@@ -131,3 +145,12 @@ def test_a_notice_before_the_json_does_not_hide_the_row_count():
     assert mod.rows_in('WARNING: --scopes flag may not work\n{"numRows": "600", "type": "TABLE"}\n') == 600
     assert mod.rows_in("not json") is None
     assert mod.rows_in('{"type": "TABLE"}') is None
+
+
+def test_bq_notices_on_stdout_are_an_empty_list_not_a_crash(monkeypatch):
+    monkeypatch.setattr(sweep, "_run", lambda cmd: "BigQuery OS login is now generally available.\n")
+    assert sweep._json(["bq", "ls"]) == []
+    monkeypatch.setattr(sweep, "_run", lambda cmd: "")
+    assert sweep._json(["bq", "ls"]) == []
+    monkeypatch.setattr(sweep, "_run", lambda cmd: '[{"datasetReference": {"datasetId": "crm"}}]')
+    assert sweep._json(["bq", "ls"])[0]["datasetReference"]["datasetId"] == "crm"
