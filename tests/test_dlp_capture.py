@@ -220,3 +220,27 @@ def test_a_table_with_every_column_tagged_is_not_read_at_all(e):
     )
     nothing = [t for t in data["tables"] if not t["columns_scanned"]]
     assert nothing and all(t["rows_read"] == 0 and t["requests"] == 0 for t in nothing)
+
+
+def test_a_dataset_access_list_becomes_iam_bindings_with_conditions_and_without_authorised_views():
+    access = [
+        {"role": "OWNER", "specialGroup": "projectOwners"},
+        {"role": "roles/bigquery.dataViewer", "iamMember": "serviceAccount:seat-x@p.iam.gserviceaccount.com"},
+        {
+            "role": "roles/bigquery.dataViewer",
+            "iamMember": "serviceAccount:person-y@p.iam.gserviceaccount.com",
+            "condition": {"title": "expires", "expression": "request.time < timestamp('2026-10-08T00:00:00Z')"},
+        },
+        {"role": "WRITER", "userByEmail": "dep@p.iam.gserviceaccount.com"},
+        {"view": {"projectId": "p", "datasetId": "d", "tableId": "v"}},
+    ]
+    b = capture.access_to_bindings(access)
+    assert [x["role"] for x in b] == [
+        "roles/bigquery.dataOwner",
+        "roles/bigquery.dataViewer",
+        "roles/bigquery.dataViewer",
+        "roles/bigquery.dataEditor",
+    ]
+    assert b[0]["members"] == ["specialGroup:projectOwners"]
+    assert b[2]["condition"]["expression"].startswith("request.time <")
+    assert b[3]["members"] == ["serviceAccount:dep@p.iam.gserviceaccount.com"]
