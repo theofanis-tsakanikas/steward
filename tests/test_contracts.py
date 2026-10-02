@@ -324,3 +324,16 @@ def test_changed_contract_must_bump_version():
 
 def test_non_integer_version_is_a_finding_not_a_crash():
     assert [f.code for f in compare("crm", {"version": 1}, {"version": "2"})] == ["VERSION_INVALID"]
+
+
+def test_a_masked_column_cannot_be_a_clustering_or_partitioning_field(base):
+    """BigQuery refuses every masked read of such a table (first live capture, 2026-10-02)."""
+    docs, roles, waivers, harvest = base
+    harvest["network.usage_events"]["cluster"] = ["msisdn", "country"]
+    assert blocking(run(docs, roles, waivers, harvest)) == {("MASKED_COLUMN_CLUSTERED", "network.usage_events.msisdn")}
+
+
+def test_clustering_by_untagged_columns_is_fine(base):
+    docs, roles, waivers, harvest = base
+    harvest["network.usage_events"]["cluster"] = ["country", "event_type"]
+    assert blocking(run(docs, roles, waivers, harvest)) == set()

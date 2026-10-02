@@ -316,7 +316,8 @@
   },
   "network.network_events": {
     "cluster": [
-      "cell_id"
+      "country",
+      "rat"
     ],
     "fields": [
       {
@@ -365,8 +366,8 @@
   },
   "network.usage_events": {
     "cluster": [
-      "msisdn",
-      "cell_id"
+      "country",
+      "event_type"
     ],
     "fields": [
       {

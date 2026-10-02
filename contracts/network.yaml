@@ -1,7 +1,7 @@
 # BigQuery dataset `network`: traffic and location data. ePrivacy Directive Art. 6 and 9 make this
 # stricter than ordinary personal data, so identifiers here are `sensitive-network`.
 dataset: network
-version: 2
+version: 3
 description: Usage (traffic) events and device attach events of Halverra Telecom (fictional).
 owner: group:network-owners@halverra.example
 steward: group:network-stewards@halverra.example
@@ -21,10 +21,11 @@ marketplace:
 changelog:
   - {version: 1, date: "2026-10-01", change: "first contract"}
   - {version: 2, date: "2026-10-01", change: "declare standing readers; marketplace grants only roles that are not readers"}
+  - {version: 3, date: "2026-10-02", change: "usage_events and network_events are no longer clustered by a masked column (msisdn, cell_id): BigQuery refuses every masked read of a table whose masked column is a clustering field (found by the first live capture)"}
 
 tables:
   usage_events:
-    description: One row per voice, SMS or data event. Partitioned by event_date, clustered by msisdn and cell_id.
+    description: One row per voice, SMS or data event. Partitioned by event_date, clustered by country and event_type (never by a masked column, since BigQuery cannot mask a clustering field).
     primary_key: [event_id]
     retention: {mode: partition, column: event_date}
     row_access: {column: country}
