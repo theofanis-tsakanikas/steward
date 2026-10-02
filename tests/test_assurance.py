@@ -123,12 +123,12 @@ def test_an_unknown_partition_column_type_stops_the_build_instead_of_guessing():
             "google_bigquery_table": {"d__t": {"require_partition_filter": True, "time_partitioning": {"field": "ts"}}}
         }
     }
-    assert ca._partition_filter(estate, "d", "t", {"ts": "TIMESTAMP"}) == "ts >= TIMESTAMP '1970-01-01'"
-    assert ca._partition_filter(estate, "d", "t", {"ts": "DATE"}) == "ts >= DATE '1970-01-01'"
+    assert ca.partition_filter(estate, "d", "t", {"ts": "TIMESTAMP"}) == "ts >= TIMESTAMP '1970-01-01'"
+    assert ca.partition_filter(estate, "d", "t", {"ts": "DATE"}) == "ts >= DATE '1970-01-01'"
     with pytest.raises(ValueError, match="partition column"):
-        ca._partition_filter(estate, "d", "t", {})
+        ca.partition_filter(estate, "d", "t", {})
     with pytest.raises(ValueError, match="partition column"):
-        ca._partition_filter(estate, "d", "t", {"ts": "STRING"})
+        ca.partition_filter(estate, "d", "t", {"ts": "STRING"})
 
 
 def test_every_scan_runs_as_its_datasets_custodian(e, doc):

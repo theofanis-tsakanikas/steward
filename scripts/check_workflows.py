@@ -12,6 +12,7 @@ WORKFLOW_INJECTION      no `${{ inputs.* }}` / event data inside a `run:` script
                         deployer); inputs reach a shell through `env`
 WORKFLOW_LAYER_STEP     for every layer with a remote state, a step that uses its state prefix must also run the verb
                         (`terraform apply` in deploy, `terraform destroy` in destroy): the prefix alone is not a step
+WORKFLOW_CAPTURE_APPLIES capture.yml runs terraform apply or destroy (it reads the estate; it never changes it)
 WORKFLOW_NO_CONFIRM     destroy.yml's job runs only when the confirmation phrase was typed
 WORKFLOW_STRANDS        in destroy.yml every layer step and the sweep run `if: always()` (one failure must not strand
                         the rest of the estate)
@@ -31,7 +32,14 @@ import yaml
 
 REPO = Path(__file__).resolve().parent.parent
 GATED = {"deploy.yml": "deploy", "destroy.yml": "destroy"}
-IDENTITY = {"deploy.yml": "GCP_DEPLOYER_SERVICE_ACCOUNT", "destroy.yml": "GCP_DESTROYER_SERVICE_ACCOUNT"}
+# capture.yml reads the live estate (queries as the seats, scans) and applies nothing: it runs as the deployer in
+# the `deploy` environment, dispatch-only, and may never run terraform.
+CAPTURE = {"capture.yml": "deploy"}
+IDENTITY = {
+    "deploy.yml": "GCP_DEPLOYER_SERVICE_ACCOUNT",
+    "destroy.yml": "GCP_DESTROYER_SERVICE_ACCOUNT",
+    "capture.yml": "GCP_DEPLOYER_SERVICE_ACCOUNT",
+}
 
 
 def _on(doc: dict) -> dict:
@@ -49,7 +57,7 @@ INJECTION = re.compile(r"\$\{\{\s*(inputs\.|github\.event\.|github\.head_ref)")
 def problems(root: Path = REPO) -> list[str]:
     out: list[str] = []
     wf = root / ".github" / "workflows"
-    for name, env in GATED.items():
+    for name, env in {**GATED, **CAPTURE}.items():
         path = wf / name
         rel = path.relative_to(root)
         if not path.exists():
@@ -61,6 +69,10 @@ def problems(root: Path = REPO) -> list[str]:
         if set(triggers) != {"workflow_dispatch"}:
             out.append(
                 f"ERROR WORKFLOW_TRIGGER {rel} — triggers are {sorted(triggers)}; only workflow_dispatch may apply"
+            )
+        if name in CAPTURE and re.search(r"terraform\s+(apply|destroy)", text):
+            out.append(
+                f"ERROR WORKFLOW_CAPTURE_APPLIES {rel} — a capture reads the estate; it never applies or destroys"
             )
         if re.search(r"cancel-in-progress:\s*true", text):
             out.append(f"ERROR WORKFLOW_CANCELS_APPLY {rel} — cancel-in-progress must be false")
