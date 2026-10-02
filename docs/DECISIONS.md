@@ -412,3 +412,8 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   hand out, and `check_deployer_grants` keeps that list equal to the roles the layers grant. The topic depends on the
   override, and the budget on the topic, so nothing is created out of order. Applying it needs
   `roles/orgpolicy.policyAdmin` on the applying identity and the `orgpolicy.googleapis.com` API.
+  **Applied 2026-10-02.** The budget was refused once more immediately after the override was created and accepted
+  on the next apply a few minutes later: an organization-policy change takes minutes to reach Cloud Billing, so a
+  `FAILED_PRECONDITION` right after it is a wait, not a second fault. All 87 bootstrap resources exist and
+  `terraform plan` reports no difference. The budget measures gross usage (B49); the guard was exercised live with a
+  below-threshold notification published to the topic and logged `cost 1.0 stop at 45.0`, taking no action.
