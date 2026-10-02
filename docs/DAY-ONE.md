@@ -15,7 +15,7 @@ Nothing here is done silently by a session. Each line gets a date and who did it
 | 7 | **Request a Collibra trial** (collibra.com → Explore / Request a demo); record date and outcome | sales process, no API | |
 | 8 | Check for a **Looker trial** on Google Cloud; record outcome | licence | |
 | 9 | Create a **Streamlit Community Cloud** account linked to GitHub (for the hosted recorded demo) | third-party sign-up | 2026-10-02, author: account `theofanis-tsakanikas`, linked to GitHub. |
-| 9b | Deploy the recorded demo: Create app → repo `theofanis-tsakanikas/steward`, branch `main`, main file `app/Home.py` | Community Cloud has no token in this session | |
+| 9b | Deploy the recorded demo: Create app → repo `theofanis-tsakanikas/steward`, branch `main`, main file `app/Home.py` | Community Cloud has no token in this session | 2026-10-02, author: [https://steward-governance.streamlit.app](https://steward-governance.streamlit.app) — public, no login |
 | 10 | After T017: confirm in the console that the project is empty; record final spend | the destroy must be seen | 2026-10-02, session: four Terraform layers destroyed; sweep 0 leftovers. Bootstrap remains until the project is deleted. No €30/€50 budget notification. **2026-10-02, author: confirmed in the console that the estate is gone.** |
 
 ## Free Trial billing account (recorded 2026-10-02)

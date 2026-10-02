@@ -33,7 +33,8 @@ def test_page_opens_from_evidence_and_states_its_mode(page):
     # the Catalog page shows a simulated sync failure on purpose; what must never appear is a missing/refused file
     assert not [e.value for e in at.error if e.value.startswith(("No evidence", "Evidence refused"))]
     banner = " ".join(i.value for i in at.info)
-    assert "RECORDED mode" in banner and "evidence `fixture`" in banner
+    assert "labelled" in banner.lower()
+    assert "data as of" not in banner
     assert "Collibra mode: MOCK" in banner and "no Collibra instance was called" in banner
     assert "Fictional operator" in banner
 
@@ -50,7 +51,7 @@ def test_tampered_evidence_is_refused_not_shown(tmp_path, monkeypatch):
     monkeypatch.setattr(evidence, "ROOT", Path(copy))
     at = run("pages/4_Quality.py")
     assert any("Evidence refused" in e.value for e in at.error)
-    assert not at.dataframe  # nothing was drawn from the tampered file
+    assert not at.dataframe  # fixture refused before any table was drawn
 
 
 def test_every_figure_on_the_home_page_is_in_the_evidence():
@@ -58,6 +59,9 @@ def test_every_figure_on_the_home_page_is_in_the_evidence():
     shown = {m.value for m in at.metric}
     estate = evidence.load("fixture", "estate")["data"]
     assert str(len(estate["datasets"])) in shown
+    captions = " ".join(c.value for c in at.caption)
+    assert "Claim all seven" not in captions
+    assert "Seven claims" in captions
 
 
 def test_the_live_page_judges_a_capture_again_and_refuses_a_tampered_one(tmp_path, monkeypatch):
@@ -76,7 +80,7 @@ def test_the_live_page_judges_a_capture_again_and_refuses_a_tampered_one(tmp_pat
     at = run("pages/9_Live.py")
     assert not at.exception, [x.value for x in at.exception]
     assert any("Re-judged offline" in s.value for s in at.success)
-    assert "Live captures held: access" in " ".join(i.value for i in at.info)
+    assert "access" in " ".join(i.value for i in at.info)
 
     p = copy / "live" / "access.json"
     doc = json.loads(p.read_text())

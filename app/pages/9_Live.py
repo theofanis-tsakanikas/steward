@@ -11,11 +11,10 @@ from steward import live as live_checks
 
 _lib.page(
     "Live estate",
-    "1, 2, 5 and 6",
-    "Everything above this page is computed offline. This page shows what the **deployed** estate answered: three "
-    "roles running one query, Sensitive Data Protection over the data, Dataplex quality scans, the IAM policy and the "
-    "audit trail. Each capture was written by `steward capture`; here it is **judged again by code, with no account**, "
-    "against what the contracts and the compiled Terraform say it must be.",
+    "Live captures re-judged offline",
+    "What the **deployed** estate answered, then destroyed. Other pages show these captures first when they "
+    "exist. Here each file is **judged again by code, with no account**, against the contracts and the compiled "
+    "Terraform.",
 )
 
 NAMES = ("access", "dlp", "dataplex", "iam", "audit", "history")
@@ -39,6 +38,7 @@ def verdict(name: str, d: dict):
     blocking = [f for f in found if f.blocking]
     meta = d["meta"]
     st.caption(f"captured {meta['captured_at']} · {meta['origin']} · digest `{meta['digest'][:12]}`")
+    _lib.mark("live", d)
     if blocking:
         st.error(f"{len(blocking)} blocking finding(s) when this capture is re-judged offline")
     else:
@@ -58,19 +58,7 @@ for tab, name in zip(tabs, [n for n in NAMES if held[n]], strict=True):
                 "**masked by BigQuery** (hash, nullified, last four, default value); a table the seat may not read is "
                 "refused. `LIVE_VALUE_NOT_MASKED` fires if a masked column ever equals the stored value."
             )
-            for qid in dict.fromkeys(t["query"] for t in data["transcripts"]):
-                group = [t for t in data["transcripts"] if t["query"] == qid]
-                st.code(group[0]["sql"], language="sql")
-                sub = st.tabs([t["seat"] for t in group])
-                for st_tab, t in zip(sub, group, strict=True):
-                    with st_tab:
-                        if t["outcome"] == "error":
-                            st.error(f"Refused by BigQuery: {t.get('error', '')}")
-                        else:
-                            st.write(f"{len(t['rows'])} row(s) returned · job `{t['job_id']}`")
-                            _lib.table(t["rows"])
-                        if t.get("note"):
-                            st.caption(t["note"])
+            _lib.access_transcripts(data)
         elif name == "dlp":
             st.markdown(
                 f"Sensitive Data Protection inspected {len(data['tables'])} tables with template "
@@ -103,39 +91,20 @@ for tab, name in zip(tabs, [n for n in NAMES if held[n]], strict=True):
                 "On-demand data-quality scans compiled from the contracts, each run as the dataset's custodian seat. "
                 "Failed rows per rule are compared with the rows the offline engine quarantined."
             )
-            _lib.table(
-                [
-                    {
-                        "scan": s["scan"],
-                        "state": s["state"],
-                        "rows scanned": s["rows_scanned"],
-                        "rule": r["rule"],
-                        "failed rows": r["failed_rows"],
-                        "passed": r["passed"],
-                    }
-                    for s in data["scans"]
-                    for r in s["rules"]
-                ]
-            )
+            _lib.dataplex_scans(data)
         elif name == "iam":
             st.markdown(
                 "The dataset IAM policies as BigQuery holds them (policy version 3, so IAM Conditions are present). "
                 "A grant that carries an expiry is a binding with a condition."
             )
-            _lib.table([{**b, "condition": (b["condition"] or {}).get("expression", "—")} for b in data["bindings"]])
-            if data["other_members"]:
-                st.markdown("Principals that are neither a seat nor a requester:")
-                _lib.table(data["other_members"])
+            _lib.iam_bindings(data)
         elif name == "history":
             st.markdown(
                 "BigQuery's own job history for the estate's datasets, read as the deployer: which job wrote which "
                 "table, as whom, reading what. Dashboard queries are not captured here: no Looker instance exists to "
                 "run them, so dashboard lineage stays the offline cross-check (Lineage page)."
             )
-            if data["outcome"] == "error":
-                st.error(data.get("error", ""))
-            else:
-                _lib.table(data["jobs"])
+            _lib.job_history(data)
         elif name == "audit":
             st.markdown(
                 "The access review: who ran queries lately, read from the audit sink as the audit dataset's steward."

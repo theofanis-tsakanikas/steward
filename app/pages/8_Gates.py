@@ -10,7 +10,7 @@ import _lib
 
 _lib.page(
     "Gates",
-    "all",
+    "Every gate is broken on purpose",
     "Each gate is broken on purpose, and the **named** gate must refuse it, for the right reason. Three rules: "
     "green first; a non-zero exit is not evidence (the finding line must carry the expected code and target); a "
     "mutation whose target has moved is STALE, not passed.",
@@ -33,6 +33,7 @@ st.caption(
     "The recorded run leaves out the gate that checks the record itself (`evidence`); CI runs its mutations on "
     "every push."
 )
+_lib.mark("fixture", doc)
 gates = sorted({r["gate"] for r in res})
 pick = st.multiselect("Gate", gates, default=gates)
 _lib.table(

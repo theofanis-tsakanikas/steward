@@ -17,7 +17,7 @@ from steward import evidence
 
 
 def source() -> str:
-    """The offline fixture: every page's figures. Live captures are shown beside it (`live()`), never instead of it."""
+    """The offline fixture directory name. Live captures are a separate tree (`live()`)."""
     return evidence.FIXTURE
 
 
@@ -45,6 +45,18 @@ def data(name: str) -> dict:
     return doc(name)["data"]
 
 
+def when(document: dict) -> str:
+    """That file's own date: a live capture's timestamp, else the fixture as-of day."""
+    meta = document.get("meta") or {}
+    return meta.get("captured_at") or meta.get("as_of") or "unknown"
+
+
+def mark(origin: str, document: dict) -> None:
+    """Visible under every figure: fixture or live, and that file's date — never a shared banner date."""
+    label = "live capture · GCP estate" if origin == "live" else "offline fixture"
+    st.caption(f"{label} · {when(document)}")
+
+
 def collibra_mode() -> str:
     try:
         return doc("catalog")["data"]["mode"]
@@ -53,11 +65,6 @@ def collibra_mode() -> str:
 
 
 def banner() -> None:
-    src = source()
-    try:
-        as_of = doc("estate")["meta"]["as_of"]
-    except Exception:
-        as_of = "unknown"
     mode = collibra_mode()
     what = (
         "a validating mock: no Collibra instance was called"
@@ -66,26 +73,36 @@ def banner() -> None:
         if mode == "REAL"
         else "unknown"
     )
-    captured = evidence.live_names()
+    held = evidence.live_names()
+    parts = []
+    for name in held:
+        try:
+            d = evidence.load_live(name)
+        except ValueError as ex:
+            st.error(f"Live evidence refused: {ex}. Run `make evidence-check`.")
+            st.stop()
+        if d:
+            parts.append(f"{name} {when(d)}")
     live_line = (
-        f"**Live captures held: {', '.join(captured)}** — see the Live estate page  \n"
-        if captured
-        else "No live capture is held: everything shown is the offline fixture  \n"
+        f"**Live captures (GCP estate, then destroyed):** {'; '.join(parts)}  \n"
+        if parts
+        else "No live capture is held: pages show the offline fixture only.  \n"
     )
     st.info(
-        f"**RECORDED mode** · evidence `{src}` (offline fixture, computed from the repository) · data as of {as_of}  \n"
+        "**Every figure is labelled** fixture (computed from this repository) or live (what the GCP estate answered).  \n"
         + live_line
         + f"**Collibra mode: {mode}** — {what}  \n"
         "Fictional operator (Halverra Telecom), synthetic data."
     )
 
 
-def page(title: str, claim: str, lead: str) -> None:
+def page(title: str, about: str, lead: str) -> None:
     st.set_page_config(page_title=f"Steward · {title}", layout="wide")
     banner()
     st.title(title)
-    st.caption(f"Claim {claim}")
-    st.markdown(lead)
+    st.caption(about)
+    if lead:
+        st.markdown(lead)
 
 
 def table(rows, columns: list[str] | None = None, **kw) -> None:
@@ -100,3 +117,52 @@ def findings(rows) -> None:
         st.success("No findings.")
         return
     table(rows, ["severity", "code", "target", "message"])
+
+
+def access_transcripts(payload: dict) -> None:
+    """One query, three roles, as BigQuery answered them."""
+    rows = payload.get("transcripts") or []
+    for qid in dict.fromkeys(t["query"] for t in rows):
+        group = [t for t in rows if t["query"] == qid]
+        st.code(group[0]["sql"], language="sql")
+        sub = st.tabs([t["seat"] for t in group])
+        for tab, t in zip(sub, group, strict=True):
+            with tab:
+                if t["outcome"] == "error":
+                    st.error(f"Refused by BigQuery: {t.get('error', '')}")
+                else:
+                    st.write(f"{len(t['rows'])} row(s) returned · job `{t['job_id']}`")
+                    table(t["rows"])
+                if t.get("note"):
+                    st.caption(t["note"])
+
+
+def dataplex_scans(payload: dict) -> None:
+    table(
+        [
+            {
+                "scan": s["scan"],
+                "state": s["state"],
+                "rows scanned": s["rows_scanned"],
+                "rule": r["rule"],
+                "failed rows": r["failed_rows"],
+                "passed": r["passed"],
+            }
+            for s in payload["scans"]
+            for r in s["rules"]
+        ]
+    )
+
+
+def iam_bindings(payload: dict) -> None:
+    table([{**b, "condition": (b["condition"] or {}).get("expression", "—")} for b in payload["bindings"]])
+    if payload.get("other_members"):
+        st.markdown("Principals that are neither a seat nor a requester:")
+        table(payload["other_members"])
+
+
+def job_history(payload: dict) -> None:
+    if payload.get("outcome") == "error":
+        st.error(payload.get("error", ""))
+        return
+    table(payload["jobs"])
