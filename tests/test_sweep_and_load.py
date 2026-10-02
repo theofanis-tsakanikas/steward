@@ -101,3 +101,20 @@ def test_the_row_count_is_read_from_metadata_and_unreadable_is_none():
     assert load.rows_in('{"numRows": "42"}') == 42
     for bad in ("", "not json", "{}", '{"numRows": "many"}', "[]"):
         assert load.rows_in(bad) is None
+
+
+def test_a_row_count_that_appears_late_is_waited_for_and_a_wrong_one_is_not_forgiven():
+    import importlib.util
+
+    from steward import io
+
+    spec = importlib.util.spec_from_file_location("load_synthetic", io.REPO / "scripts" / "load_synthetic.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    seen = iter([None, None, 600])
+    waits: list[float] = []
+    assert mod.settled(lambda: next(seen), 600, attempts=5, pause=1, sleep=waits.append) == 600
+    assert waits == [1, 1]
+    # a table that really holds a different count is reported as that count, after the attempts run out
+    assert mod.settled(lambda: 599, 600, attempts=3, pause=1, sleep=lambda _: None) == 599
+    assert mod.settled(lambda: None, 600, attempts=3, pause=1, sleep=lambda _: None) is None
