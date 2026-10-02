@@ -227,7 +227,7 @@ def principal_names(project: str) -> dict[str, str]:
 def capture_iam(project: str, datasets: list[str], get_policy: Callable[[str], dict]) -> dict:
     """A snapshot in the shape `pipeline.iam_snapshot` produces and `steward marketplace --snapshot` reads.
 
-    `get_policy(dataset)` -> the dataset's IAM policy (requested at version 3, so conditions are present).
+    `get_policy(dataset)` -> the dataset's bindings (`access_to_bindings` of its access list; conditions are present).
     A member that is not one of the demo's seats or requesters is not hidden: it is listed under `other_members`."""
     names = principal_names(project)
     bindings, other = [], []
@@ -254,7 +254,7 @@ def capture_iam(project: str, datasets: list[str], get_policy: Callable[[str], d
     key = lambda b: (b["dataset"], b["member"], b["role"])  # noqa: E731
     return {
         "captured_at": now(),
-        "source": "live: datasets.getIamPolicy (requested policy version 3)",
+        "source": "live: datasets.get, the access list read as IAM bindings (conditions included)",
         "bindings": sorted(bindings, key=key),
         "other_members": sorted(other, key=lambda b: (b["dataset"], b["member"], b["role"])),
     }
@@ -290,6 +290,8 @@ def access_to_bindings(access: list[dict]) -> list[dict]:
             member = "domain:" + a["domain"]
         else:
             continue
+        # a role bound with an IAM Condition is stored under `<role>_withcond_<hash>`; the condition travels beside it
+        role = re.sub(r"_withcond_[0-9a-f]+$", "", role)
         b = {"role": LEGACY_ROLES.get(role, role), "members": [member]}
         if a.get("condition"):
             b["condition"] = a["condition"]
