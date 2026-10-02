@@ -24,6 +24,8 @@ BOOTSTRAP_ACCOUNTS = {"steward-deployer", "steward-destroyer", "steward-guard", 
 SEAT_PREFIXES = ("seat-", "person-")
 # Google's name for the source/upload buckets it creates when it deploys the bootstrap functions.
 GCF_BUCKET = re.compile(r"^gcf-v2-(?:sources|uploads)-\d+-[a-z0-9-]+$")
+# bq (and some gcloud commands) print this on stdout under Workload Identity; it is not a listing.
+_SCOPES_NOTICE = re.compile(r"^WARNING:.*`--scopes` flag may not work")
 
 # Things with no gcloud listing command (checked against gcloud 571: `gcloud dlp inspect-templates` and
 # `gcloud bigquery analytics-hub` do not exist) are listed through their REST collection. kind -> (url, key).
@@ -83,7 +85,7 @@ def _run(cmd: list[str]) -> str:
 def _json(cmd: list[str]) -> list:
     """Parse a gcloud/bq `--format=json` listing. Empty stdout is empty. A notice may precede the
     document; unparseable stdout is an exit, never an empty inventory that looks like a clean sweep."""
-    raw = (_run(cmd) or "").strip()
+    raw = _strip_notices(_run(cmd) or "")
     if not raw:
         return []
     parsed = False
@@ -106,6 +108,11 @@ def _json(cmd: list[str]) -> list:
     if data is None:
         return []
     return [data] if isinstance(data, dict) else list(data)
+
+
+def _strip_notices(raw: str) -> str:
+    kept = [ln for ln in raw.splitlines() if not _SCOPES_NOTICE.match(ln.strip())]
+    return "\n".join(kept).strip()
 
 
 def _rest(url: str, key: str, token: str, project: str) -> list[dict]:
