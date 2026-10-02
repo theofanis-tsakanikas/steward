@@ -27,19 +27,21 @@ line, and the live-capture timestamps are on screen before you speak. Do not wai
    actually answered, then destroyed it. Each figure on this page says fixture or live, with that
    file's own date — not one banner date."
 2. **Privacy (40 s).** Click Privacy. First the offline detector: a column called `ref_2` held
-   phone numbers; values only, the contract is never an input; 18 of 18 planted pairs. Scroll to
-   **One query, three roles** — that block is a live capture. Same `SELECT` on `crm.customers`:
-   the analyst gets hashed MSISDN, email as `XXXXX@domain`, GR rows only; the steward sees last-four
-   MSISDN and every country; fraud is denied that table. The fraud seat's own query on
-   `network.usage_events` comes back in the clear — IMSI and MSISDN — because that is what the
-   contract grants. Offline we also prove 3,200 compiled seat × column decisions; the rows on
-   screen are what BigQuery returned.
+   phone numbers; values only, the contract is never an input — the recall numbers are on the
+   page, read from the fixture. Scroll to **One query, three roles** — that block is a live
+   capture. Same `SELECT` on `crm.customers`: the analyst gets hashed MSISDN, email
+   `XXXXX@example.net`, GR rows only; the steward sees last-four MSISDN (`XXXXX6536` and the
+   rest) and every country; fraud is denied that table (Access Denied). Optionally, the next
+   query on that page is `network.usage_events`, which fraud *may* read in the clear — that is a
+   second statement, not a substitute for the deny. Offline, the compiled seat × column check
+   is the caption under the transcripts.
 3. **Lineage (40 s).** Source → table → LookML view → dashboard. A field that resolves nowhere and
    a sensitive column that reached a dashboard unmasked are both red. Job-history edges and LookML
    edges are cross-checked, not merged. The job list at the top is live; the graph under it is the
    fixture.
-4. **Catalog (30 s).** Say **MOCK** first. Generated payload; first sync sent 100, second sent 0;
-   91 assets. The yellow banner is the point: no Collibra instance was called.
+4. **Catalog (30 s).** Say **MOCK** first. Generated payload; first sync sent changes, second
+   sent none; the asset counts are the metrics on the page. The yellow banner is the point: no
+   Collibra instance was called.
 5. **Marketplace (20 s).** Live IAM bindings first (the estate's actual policy, then destroyed).
    A request becomes a grant only after a named human who is not the requester; every grant has
    an expiry; an expired grant still present turns CI red.

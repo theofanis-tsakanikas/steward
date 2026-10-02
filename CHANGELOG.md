@@ -5,7 +5,8 @@
 - Live estate applied, captured (claims 1, 2, 5, 6) and destroyed. Sweep reported 0 leftovers.
   Bootstrap remains until the project is deleted.
 - Hosted demo: https://steward-governance.streamlit.app (public, no login). README screenshots
-  recaptured from that URL (live-first banner, claim 2 three-role transcripts).
+  recaptured from that URL (live-first banner). Claim 2 figure is one `crm.customers` SELECT as
+  analyst / steward / fraud.
 - Catalog mode remains **MOCK**. The operator is fictional; every row is synthetic.
 - `scripts/check_ids.py` refuses a tree that contains the author's GCP identifiers
   (read from git-ignored tfvars or the environment).

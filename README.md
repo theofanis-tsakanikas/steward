@@ -82,15 +82,15 @@ The detector reads **values only**. The contract is never an input. A column cal
 
 <sub><b>Values vs the contract.</b> — `crm.support_tickets.ref_2` is an MSISDN; the contract tags it personal. Innocent-named columns: 6 of 6 found.</sub>
 
-Live, Google DLP on the same planted set was 16/18 (two misses listed, not hidden). The core detector stayed 18/18. n = 18 (column, kind).
+Live, Google DLP on the same planted set was 16/18 (misses listed in `evals/dlp`: `crm.customers.address.street` / address, `legacy.legacy_crm_export.dt_x` / birth_date). The core detector stayed 18/18. n = 18 (column, kind). The screenshot above is the offline detector; DLP is the next block on that page.
 
 ## Same query, three answers
 
 Contracts compile to policy tags, masking (hash, nullify, last-four) and row access policies. Offline proves the compiled Terraform is what the contract implies — 3,200 seat × column decisions, 0 mismatches. Enforcement was captured live as three role transcripts (analyst / fraud / steward) and is re-checked by `scripts/check_live.py` with no account.
 
-![Privacy: live BigQuery transcripts — analyst hashed, fraud sees usage events in the clear](images/privacy-roles.png)
+![Same SELECT on crm.customers as analyst, steward, and fraud](images/privacy-roles.png)
 
-<sub><b>Same query, different answer, from the estate.</b> — analyst on <code>crm.customers</code>: hashed MSISDN, email <code>XXXXX@domain</code>, GR rows only. Fraud on <code>network.usage_events</code>: IMSI and MSISDN in the clear. Live capture 2026-10-02, then destroyed.</sub>
+<sub><b>One query, three answers, from the estate.</b> — same <code>SELECT</code> on <code>crm.customers</code>. Analyst: hashed MSISDN, <code>XXXXX@example.net</code>, GR rows only. Steward: last-four MSISDN, IT and GR. Fraud: Access Denied. Live capture 2026-10-02, then destroyed.</sub>
 
 ## The catalog is generated
 

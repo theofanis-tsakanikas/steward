@@ -427,10 +427,16 @@
 
 - **Τι έγινε:** περπάτημα του 3λεπτου script στο https://steward-governance.streamlit.app (χωρίς login).
   Το `docs/INTERVIEW.md` λέει ακριβώς τι δείχνει κάθε σελίδα τώρα (live-first, MOCK, timestamps).
-- **Screenshots:** `images/status.png`, `privacy.png`, `privacy-roles.png` (claim 2), `catalog.png`,
-  `live.png` ξανατραβηγμένα από το δημόσιο URL. `check_ids.py` 0 hits.
+- **Screenshots:** `images/status.png`, `privacy.png`, `privacy-roles.png` (ένα `SELECT` στο
+  `crm.customers` ως analyst / steward / fraud), `catalog.png`, `live.png` από το δημόσιο URL.
+  `check_ids.py` 0 hits.
 - **README:** το Status δεν λέει πια «recorded mode»· το claim 2 έχει το live τριών ρόλων δίπλα στον
   ισχυρισμό. PLAN phases 1–3 κλειστά στο κείμενο· AGENTS.md ενημερωμένο.
 - **Απόδειξη:** τα PNG στο `images/`· το script στο INTERVIEW.md.
+- **Review (level-2):** το πρώτο `privacy-roles.png` έδειχνε δύο SELECT (customers + usage_events),
+  όχι ένα query τριών ρόλων· η λεζάντα έλεγε «same query» ενώ ονομαζε δύο πίνακες· το INTERVIEW είχε
+  ακέραιους χωρίς πύλη· το 16/18 καθόταν δίπλα σε screenshot χωρίς DLP· `XXXXX@domain` δεν είναι η
+  τιμή στην οθόνη· το T022 stop_at έκλεισε με session walk. Διορθώθηκαν: νέο PNG (analyst / steward /
+  fraud στο ίδιο `crm.customers`), λεζάντες, INTERVIEW χωρίς 18/18·3200·100/0, T022 stop_at πίσω.
 - **Ανοιχτό:** D8 speaking rehearsal με τον συγγραφέα· T024 trial· DAY-ONE 4/7/8· T031 cut.
 
