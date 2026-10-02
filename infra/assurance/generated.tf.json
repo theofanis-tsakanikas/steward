@@ -92,7 +92,7 @@
           ],
           "sampling_percent": 100.0
         },
-        "data_scan_id": "steward-dq-group_data_platform_halverra_example",
+        "data_scan_id": "steward-dq-analytics-weekly-usage-by-cell",
         "depends_on": [
           "google_service_account_iam_member.dq_group_data_platform_halverra_example"
         ],
@@ -153,7 +153,7 @@
           ],
           "sampling_percent": 100.0
         },
-        "data_scan_id": "steward-dq-group_data_platform_halverra_example",
+        "data_scan_id": "steward-dq-crm-customers",
         "depends_on": [
           "google_service_account_iam_member.dq_group_data_platform_halverra_example"
         ],
@@ -217,7 +217,7 @@
           ],
           "sampling_percent": 100.0
         },
-        "data_scan_id": "steward-dq-group_data_platform_halverra_example",
+        "data_scan_id": "steward-dq-crm-support-tickets",
         "depends_on": [
           "google_service_account_iam_member.dq_group_data_platform_halverra_example"
         ],
@@ -307,7 +307,7 @@
           ],
           "sampling_percent": 100.0
         },
-        "data_scan_id": "steward-dq-group_data_platform_halverra_example",
+        "data_scan_id": "steward-dq-finance-billing",
         "depends_on": [
           "google_service_account_iam_member.dq_group_data_platform_halverra_example"
         ],
@@ -348,7 +348,7 @@
           ],
           "sampling_percent": 100.0
         },
-        "data_scan_id": "steward-dq-group_data_platform_halverra_example",
+        "data_scan_id": "steward-dq-network-network-events",
         "depends_on": [
           "google_service_account_iam_member.dq_group_data_platform_halverra_example"
         ],
@@ -440,7 +440,7 @@
           ],
           "sampling_percent": 100.0
         },
-        "data_scan_id": "steward-dq-group_data_platform_halverra_example",
+        "data_scan_id": "steward-dq-network-usage-events",
         "depends_on": [
           "google_service_account_iam_member.dq_group_data_platform_halverra_example"
         ],
