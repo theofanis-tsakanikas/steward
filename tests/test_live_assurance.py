@@ -102,3 +102,29 @@ def test_a_sampled_scan_is_not_compared_but_it_does_not_hide_a_rule_that_was_qua
 def test_scan_ids_map_back_to_tables():
     assert la.scan_table("steward-dq-crm-customers", ["crm.customers"]) == "crm.customers"
     assert la.scan_table("steward-dq-nope", ["crm.customers"]) is None
+
+
+def hist(jobs, outcome="rows"):
+    return {"outcome": outcome, "window_days": 7, "jobs": jobs}
+
+
+def job(dest, kind="LOAD", stmt=None, refs=()):
+    return {"job_type": kind, "statement_type": stmt, "destination": dest, "referenced_tables": list(refs)}
+
+
+def test_history_agrees_when_every_table_was_loaded_and_nothing_else_appears():
+    assert la.verify_history(hist([job("crm.a"), job("crm.b")]), {"crm.a", "crm.b"}) == []
+
+
+def test_a_table_no_job_wrote_and_a_table_nobody_catalogued():
+    out = la.verify_history(hist([job("crm.a"), job("crm.x", "QUERY", "SELECT", ["crm.y"])]), {"crm.a", "crm.b"})
+    assert sorted((f.code, f.target) for f in out) == [
+        ("LIVE_HISTORY_NOT_LOADED", "crm.b"),
+        ("LIVE_HISTORY_UNKNOWN_TABLE", "crm.x"),
+        ("LIVE_HISTORY_UNKNOWN_TABLE", "crm.y"),
+    ]
+
+
+def test_an_unreadable_history_is_a_finding():
+    out = la.verify_history({"outcome": "error", "error": "denied"}, {"crm.a"})
+    assert [f.code for f in out] == ["LIVE_HISTORY_ERROR"]

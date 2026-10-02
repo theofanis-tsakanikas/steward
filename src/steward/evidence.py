@@ -229,9 +229,15 @@ def load(source: str, name: str) -> dict:
     return doc
 
 
-def available_source() -> str:
-    """live if a live capture exists, else the offline fixture."""
-    return "live" if (ROOT / "live").is_dir() and any((ROOT / "live").glob("*.json")) else FIXTURE
+def live_names() -> list[str]:
+    """The live captures committed under evidence/live/ (a subset of what the capture can write)."""
+    d = ROOT / "live"
+    return sorted(p.stem for p in d.glob("*.json")) if d.is_dir() else []
+
+
+def load_live(name: str) -> dict | None:
+    """One live capture, digest re-verified; None when it was never captured."""
+    return load("live", name) if name in live_names() else None
 
 
 # ── the gate ──────────────────────────────────────────────────────────────────────────────────────

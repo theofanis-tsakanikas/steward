@@ -9,8 +9,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from steward import io, pipeline
-from steward.core import access_live
+from steward.core import access_live, live_assurance
 from steward.core.findings import Finding
+from steward.core.marketplace import decide, gate, load_ledger
 from steward.core.simulate import answer, model
 
 LIMIT = 5
@@ -90,3 +91,59 @@ def verify_access(data: dict, e=None) -> list[Finding]:
             if (q.id, resolve(e, q, s)) not in seen:
                 out.append(Finding("LIVE_TRANSCRIPT_MISSING", "access", f"{q.table} as {s}", "no transcript captured"))
     return out
+
+
+def verify_iam(data: dict, e=None) -> list[Finding]:
+    """Judge a captured dataset-IAM snapshot against the marketplace ledger (claim 6), at the capture time."""
+    e = e or pipeline.load()
+    ledger, lf = load_ledger(e.ledger)
+    if ledger is None:
+        return lf
+    out = gate(data, decide(ledger, e.contracts, e.roles), e.contracts, e.roles)
+    # a member the demo does not know is not silently ignored: it is listed in the evidence, and reported here
+    out += [
+        Finding(
+            "LIVE_IAM_UNKNOWN_MEMBER",
+            "iam",
+            f"{m['dataset']} {m['member']}",
+            f"{m['role']} held by a principal that is neither a seat nor a requester",
+            severity="warn",
+        )
+        for m in data.get("other_members", [])
+    ]
+    return out
+
+
+def verify_audit(data: dict, e=None) -> list[Finding]:
+    if data.get("outcome") == "error":
+        return [Finding("LIVE_AUDIT_ERROR", "audit", "access review", str(data.get("error", "no message"))[:200])]
+    return []
+
+
+def verify_dlp(data: dict, e=None) -> list[Finding]:
+    e = e or pipeline.load()
+    return live_assurance.verify_dlp(data, e.compiled_tags, set(e.harvest))
+
+
+def verify_dataplex(data: dict, e=None) -> list[Finding]:
+    """Dataplex's per-rule failed rows vs the offline quality engine's quarantine (the committed fixture result)."""
+    import json
+
+    quality = json.loads((io.REPO / "evidence" / "fixture" / "quality.json").read_text())["data"]
+    counts = {t: c["source"] for t, c in quality["counts"].items()}
+    return live_assurance.verify_dataplex(data, counts, quality["by_rule"])
+
+
+def verify_history(data: dict, e=None) -> list[Finding]:
+    e = e or pipeline.load()
+    return live_assurance.verify_history(data, set(e.harvest))
+
+
+VERIFY = {
+    "access": verify_access,
+    "iam": verify_iam,
+    "dlp": verify_dlp,
+    "dataplex": verify_dataplex,
+    "audit": verify_audit,
+    "history": verify_history,
+}
