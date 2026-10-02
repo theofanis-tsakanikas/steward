@@ -9,13 +9,16 @@ against the contracts and the compiled access controls - not against the generat
   ASSURANCE_ROWS         a scanned table's row access policies leave its custodian out of every unfiltered policy
   ASSURANCE_KIND         the DLP template does not ask for a kind the value detector can find
   ASSURANCE_QUOTE        the DLP template repeats the value it found (include_quote)
+  ASSURANCE_UNBOUNDED    a scan of a table a thousand times larger would read more than the ceiling below (or a scan
+                         has no valid sampling_percent): a limit that only holds for today's tiny tables is no limit
 """
 
 from __future__ import annotations
 
 import sys
 
-from steward import pipeline
+from steward import io, pipeline
+from steward.core.compile_assurance import compile_assurance
 from steward.core.contract import DETECTABLE_KINDS
 
 # Written out here on purpose: the generator's own table (DLP_MAP) is the thing under test.
@@ -28,6 +31,9 @@ EXPECTED_INFOTYPE = {
     "birth_date": "DATE_OF_BIRTH",
     "address": "STREET_ADDRESS",
 }
+# Written out here on purpose, like EXPECTED_INFOTYPE: the ceiling a scan of any table may never exceed.
+CEILING_ROWS = 10_000
+CEILING_BYTES = 32 * 1024 * 1024
 ASSURANCE = "infra/assurance/generated.tf.json"
 GOVERNANCE = "infra/governance/generated.tf.json"
 
@@ -56,6 +62,7 @@ def problems() -> list[str]:
             ref = f'${{var.principals["{c.custodian}"]}}'
             if mine and not any(n["filter_predicate"] == "TRUE" and ref in n["grantees"] for n in mine):
                 out.append(f"ERROR ASSURANCE_ROWS {at} — the custodian is in no unfiltered row access policy")
+    out += _unbounded(e)
     cfg = doc["resource"]["google_data_loss_prevention_inspect_template"]["steward"]["inspect_config"]
     asked = {t["name"] for t in cfg.get("info_types", [])} | {
         t["info_type"]["name"] for t in cfg.get("custom_info_types", [])
@@ -65,6 +72,31 @@ def problems() -> list[str]:
             out.append(f"ERROR ASSURANCE_KIND {ASSURANCE} — the template does not ask for {kind}")
     if cfg.get("include_quote") is not False:
         out.append(f"ERROR ASSURANCE_QUOTE {ASSURANCE} — include_quote must be false")
+    return out
+
+
+def _unbounded(e) -> list[str]:
+    """Compile the same contracts against tables 1000x larger and read each scan's percentage back."""
+    out: list[str] = []
+    sizes = io.table_sizes()
+    for factor in (1, 1000):
+        big = {t: (rows * factor, nbytes * factor) for t, (rows, nbytes) in sizes.items()}
+        built = compile_assurance(
+            e.contracts, e.compiled["infra/estate/generated.tf.json"], e.compiled[GOVERNANCE], big
+        )[ASSURANCE]
+        for key, scan in built["resource"]["google_dataplex_datascan"].items():
+            ds, tbl = scan["labels"]["dataset"], key.removeprefix(f"dq_{scan['labels']['dataset']}_")
+            rows, nbytes = big[f"{ds}.{tbl}"]
+            pct = scan["data_quality_spec"].get("sampling_percent")
+            if not isinstance(pct, int | float) or not 0 < pct <= 100:
+                out.append(
+                    f"ERROR ASSURANCE_UNBOUNDED {ASSURANCE} {ds}.{tbl} — sampling_percent {pct!r} is not in (0, 100]"
+                )
+            elif rows * pct / 100 > CEILING_ROWS or nbytes * pct / 100 > CEILING_BYTES:
+                out.append(
+                    f"ERROR ASSURANCE_UNBOUNDED {ASSURANCE} {ds}.{tbl} — at {rows} rows a scan reads "
+                    f"{rows * pct / 100:.0f} rows, over the ceiling of {CEILING_ROWS} rows / {CEILING_BYTES} bytes"
+                )
     return out
 
 

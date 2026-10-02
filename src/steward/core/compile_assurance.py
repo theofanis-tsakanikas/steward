@@ -21,6 +21,7 @@ from __future__ import annotations
 import re
 
 from .contract import DETECTABLE_KINDS, Contract, QualityRule
+from .sampling import MAX_INSPECT_BYTES, MAX_INSPECT_ROWS, dataplex_sampling_percent, plan_sample
 
 # kind -> (built-in DLP infoType, None) or (custom infoType name, regex)
 DLP_MAP: dict[str, tuple[str, str | None]] = {
@@ -65,7 +66,7 @@ def inspect_template() -> dict:
             "display_name": "steward-inspect",
             "description": "Kinds of personal data the contracts can declare and a value scan can find: "
             + ", ".join(DETECTABLE_KINDS)
-            + ". A template cannot limit rows: the sample size belongs to the code that runs an inspection.",
+            + ". A template cannot limit rows: the sample size belongs to the inspection job (core/sampling.py).",
             "inspect_config": {
                 "info_types": [{"name": n} for n in builtin],
                 "custom_info_types": custom,
@@ -137,7 +138,14 @@ def _custodian_sees_every_row(governance_doc: dict, dataset: str, table: str, cu
     return not policies or any(n["filter_predicate"] == "TRUE" and ref in n["grantees"] for n in policies)
 
 
-def compile_assurance(contracts: list[Contract], estate_doc: dict, governance_doc: dict) -> dict[str, dict]:
+def compile_assurance(
+    contracts: list[Contract],
+    estate_doc: dict,
+    governance_doc: dict,
+    sizes: dict[str, tuple[int, int]],
+) -> dict[str, dict]:
+    """`sizes` maps "dataset.table" to (rows, bytes). A scanned table with no size stops the build: how much a scan
+    may read is decided from the table's size (core/sampling.py), never assumed (doctrine 3)."""
     scans: dict = {}
     for c in sorted(contracts, key=lambda c: c.dataset):
         for tname, tbl in sorted(c.tables.items()):
@@ -161,7 +169,13 @@ def compile_assurance(contracts: list[Contract], estate_doc: dict, governance_do
                     f"{c.dataset}.{tname}: its row access policies leave the custodian {c.custodian} out; a scan "
                     f"as the custodian would read no rows and pass"
                 )
-            spec: dict = {"sampling_percent": 100, "rules": sorted(rules, key=lambda x: x["name"])}
+            if f"{c.dataset}.{tname}" not in sizes:
+                raise ValueError(f"{c.dataset}.{tname}: no row count and size, so no bound on what its scan may read")
+            sample = plan_sample(f"{c.dataset}.{tname}", *sizes[f"{c.dataset}.{tname}"])
+            spec: dict = {
+                "sampling_percent": dataplex_sampling_percent(sample),
+                "rules": sorted(rules, key=lambda x: x["name"]),
+            }
             flt = _partition_filter(estate_doc, c.dataset, tname, {p: col.type for p, col in tbl.columns.items()})
             if flt:
                 spec["row_filter"] = flt
@@ -171,7 +185,8 @@ def compile_assurance(contracts: list[Contract], estate_doc: dict, governance_do
                 "location": "${lower(var.location)}",
                 "display_name": f"steward data quality: {c.dataset}.{tname}",
                 "description": (
-                    f"Rules from the {c.dataset} contract (version {c.version}). On demand; small tables only."
+                    f"Rules from the {c.dataset} contract (version {c.version}). On demand; reads at most "
+                    f"{MAX_INSPECT_ROWS} rows or {MAX_INSPECT_BYTES // 2**20} MiB of the table."
                     + (f" Not scanned here: {'; '.join(sorted(left_out))}." if left_out else "")
                 ),
                 "labels": {"dataset": c.dataset, "table": re.sub(r"[^a-z0-9_-]", "-", tname.lower())},
