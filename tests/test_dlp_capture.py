@@ -172,3 +172,27 @@ def test_control_sample_is_inspected_with_the_same_template_and_records_no_groun
     assert all(t["rows"] <= capture.CONTROL_ROWS for t in doc["tables"])
     # nothing about what was planted where is written down
     assert "planted" not in str(doc)
+
+
+def test_history_is_captured_with_principals_named_and_the_sql_listing_only_estate_datasets():
+    from steward.adapters import capture
+
+    rows = [
+        {
+            "job_type": "LOAD",
+            "statement_type": None,
+            "creation_time": "2026-10-02T06:00:00Z",
+            "principal": "deployer@steward-x.iam.gserviceaccount.com",
+            "destination": "crm.customers",
+            "referenced_tables": [],
+        }
+    ]
+    seen = []
+
+    def run(email, sql):
+        seen.append((email, sql))
+        return {"outcome": "rows", "rows": rows}
+
+    doc = capture.capture_history("steward-x", run, capture.redactor("steward-x"), ["crm", "audit"])
+    assert seen[0][0] is None and "'audit', 'crm'" in seen[0][1] and "INFORMATION_SCHEMA.JOBS_BY_PROJECT" in seen[0][1]
+    assert doc["jobs"][0]["destination"] == "crm.customers" and "steward-x" not in str(doc["jobs"])

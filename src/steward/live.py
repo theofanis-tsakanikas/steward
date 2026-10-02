@@ -134,10 +134,16 @@ def verify_dataplex(data: dict, e=None) -> list[Finding]:
     return live_assurance.verify_dataplex(data, counts, quality["by_rule"])
 
 
+def verify_history(data: dict, e=None) -> list[Finding]:
+    e = e or pipeline.load()
+    return live_assurance.verify_history(data, set(e.harvest))
+
+
 VERIFY = {
     "access": verify_access,
     "iam": verify_iam,
     "dlp": verify_dlp,
     "dataplex": verify_dataplex,
     "audit": verify_audit,
+    "history": verify_history,
 }

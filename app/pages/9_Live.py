@@ -18,7 +18,7 @@ _lib.page(
     "against what the contracts and the compiled Terraform say it must be.",
 )
 
-NAMES = ("access", "dlp", "dataplex", "iam", "audit")
+NAMES = ("access", "dlp", "dataplex", "iam", "audit", "history")
 held = {n: _lib.live(n) for n in NAMES}
 if not any(held.values()):
     st.warning(
@@ -126,6 +126,16 @@ for tab, name in zip(tabs, [n for n in NAMES if held[n]], strict=True):
             if data["other_members"]:
                 st.markdown("Principals that are neither a seat nor a requester:")
                 _lib.table(data["other_members"])
+        elif name == "history":
+            st.markdown(
+                "BigQuery's own job history for the estate's datasets, read as the deployer: which job wrote which "
+                "table, as whom, reading what. Dashboard queries are not captured here: no Looker instance exists to "
+                "run them, so dashboard lineage stays the offline cross-check (Lineage page)."
+            )
+            if data["outcome"] == "error":
+                st.error(data.get("error", ""))
+            else:
+                _lib.table(data["jobs"])
         elif name == "audit":
             st.markdown(
                 "The access review: who ran queries lately, read from the audit sink as the audit dataset's steward."

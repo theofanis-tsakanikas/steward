@@ -11,9 +11,9 @@ on:
   workflow_dispatch:
     inputs:
       what:
-        description: "Captures to run, space separated: access iam dlp dataplex audit"
+        description: "Captures to run, space separated: access iam dlp dataplex audit history"
         required: true
-        default: "access iam dlp dataplex audit"
+        default: "access iam dlp dataplex audit history"
         type: string
 
 permissions:
@@ -40,7 +40,7 @@ jobs:
       # Inputs reach a shell only through env, and only after they are checked: the identity below is strong.
       - name: check the inputs
         run: |
-          [[ "$WHAT" =~ ^(access|iam|dlp|dataplex|audit)( (access|iam|dlp|dataplex|audit))*$ ]] || { echo "what: unknown capture"; exit 1; }
+          [[ "$WHAT" =~ ^(access|iam|dlp|dataplex|audit|history)( (access|iam|dlp|dataplex|audit|history))*$ ]] || { echo "what: unknown capture"; exit 1; }
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --group dev --extra gcp
