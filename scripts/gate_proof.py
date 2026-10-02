@@ -135,7 +135,7 @@ MUTATIONS: list[Mutation] = [
         "live",
         "evidence/live/access.json",
         '"email": "XXXXX@example.net",\n      "msisdn": "U707guKL68qSDXL982nZuy0sZsu4TamrNS/+ZkDDSTc="',
-        '"email": "a.person@example.net",\n      "msisdn": "U707guKL68qSDXL982nZuy0sZsu4TamrNS/+ZkDDSTc="',
+        '"email": "CLEAR",\n      "msisdn": "U707guKL68qSDXL982nZuy0sZsu4TamrNS/+ZkDDSTc="',
         ("LIVE_VALUE_NOT_MASKED", "customers"),
         "the role transcript is the proof that BigQuery masked; a clear value in it is the claim failing",
         "2",
