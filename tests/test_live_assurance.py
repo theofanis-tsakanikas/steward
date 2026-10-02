@@ -128,3 +128,11 @@ def test_a_table_no_job_wrote_and_a_table_nobody_catalogued():
 def test_an_unreadable_history_is_a_finding():
     out = la.verify_history({"outcome": "error", "error": "denied"}, {"crm.a"})
     assert [f.code for f in out] == ["LIVE_HISTORY_ERROR"]
+
+
+def test_a_rule_the_scans_leave_out_on_purpose_is_reported_not_blocking():
+    out = la.verify_dataplex({"scans": [scan()]}, COUNTS, {"Q-FIN-002": 2, "Q-FIN-003": 2}, {"q-fin-002"})
+    assert [(f.code, f.blocking) for f in out] == [("LIVE_DQ_NOT_SCANNED", False)]
+    # ...but a rule that WAS compiled into a scan and is missing from the answer still blocks
+    out = la.verify_dataplex({"scans": [scan()]}, COUNTS, {"Q-FIN-002": 2, "Q-FIN-003": 2}, {"q-fin-002", "q-fin-003"})
+    assert [f.code for f in out if f.blocking] == ["LIVE_DQ_RULE_MISSING"]

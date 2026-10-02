@@ -131,7 +131,10 @@ def verify_dataplex(data: dict, e=None) -> list[Finding]:
 
     quality = json.loads((io.REPO / "evidence" / "fixture" / "quality.json").read_text())["data"]
     counts = {t: c["source"] for t, c in quality["counts"].items()}
-    return live_assurance.verify_dataplex(data, counts, quality["by_rule"])
+    e = e or pipeline.load()
+    scans = e.compiled["infra/assurance/generated.tf.json"]["resource"]["google_dataplex_datascan"]
+    compiled = {r["name"] for s in scans.values() for r in s["data_quality_spec"]["rules"]}
+    return live_assurance.verify_dataplex(data, counts, quality["by_rule"], compiled)
 
 
 def verify_history(data: dict, e=None) -> list[Finding]:
