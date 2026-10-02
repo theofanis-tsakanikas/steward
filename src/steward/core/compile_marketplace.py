@@ -54,7 +54,9 @@ def compile_marketplace(contracts: list[Contract], active: list[Outcome]) -> dic
             "listing_id": f"steward_{c.dataset}",
             "display_name": c.dataset,
             "description": f"{c.description} Grantable to {', '.join(c.marketplace.grantable_roles)} for at most {c.marketplace.max_grant_days} days; approved by {c.marketplace.approvers}.",
-            "request_access": c.marketplace.approvers.split(":", 1)[1],  # a bare address: `mailto:` is refused (first apply, 2026-10-02)
+            "request_access": c.marketplace.approvers.split(":", 1)[
+                1
+            ],  # a bare address: `mailto:` is refused (first apply, 2026-10-02)
             "bigquery_dataset": {"dataset": f"projects/${{var.project_id}}/datasets/{c.dataset}"},
         }
     if listings:
