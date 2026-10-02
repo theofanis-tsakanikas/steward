@@ -192,6 +192,9 @@ def compile_assurance(
             }
             scans[f"dq_{c.dataset}_{tname}"] = {
                 "depends_on": ["time_sleep.dq_iam_propagation"],
+                # creating a scan is a long-running operation: five of six took 3 minutes and the sixth more than 5
+                # (first apply, 2026-10-02), over the provider's default of 5
+                "timeouts": {"create": "30m", "update": "30m", "delete": "30m"},
                 "data_scan_id": f"steward-dq-{ident}",
                 "location": "${var.region}",
                 "display_name": f"steward data quality: {c.dataset}.{tname}",
