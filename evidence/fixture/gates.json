@@ -1347,6 +1347,48 @@
     "why": "a finding names the column and the kind, never the value"
    },
    {
+    "claim": "6",
+    "detail": "ERROR DEPLOYER_UNDELEGABLE infra/governance/generated.tf.json — grants roles/bigquery.dataViewer, which the deployer may not delegate",
+    "expect": [
+     "DEPLOYER_UNDELEGABLE",
+     "infra/governance/generated.tf.json"
+    ],
+    "file": "infra/governance/generated.tf.json",
+    "gate": "deployer-grants",
+    "n": 97,
+    "name": "a layer grants a project role the deployer may not delegate",
+    "status": "REFUSED",
+    "why": "the first apply would be refused on a denial, or the condition widened to hide it"
+   },
+   {
+    "claim": "6",
+    "detail": "ERROR DEPLOYER_DELEGATES_UNUSED infra/bootstrap/deployer.tf — roles/owner is delegable but no layer grants it",
+    "expect": [
+     "DEPLOYER_DELEGATES_UNUSED",
+     "infra/bootstrap/deployer.tf"
+    ],
+    "file": "infra/bootstrap/deployer.tf",
+    "gate": "deployer-grants",
+    "n": 98,
+    "name": "the deployer allowed to delegate a role nothing grants",
+    "status": "REFUSED",
+    "why": "a power nothing needs is a power someone else can use"
+   },
+   {
+    "claim": "6",
+    "detail": "ERROR DEPLOYER_CONDITION_MISSING infra/bootstrap/deployer.tf — projectIamAdmin is not bound with its condition",
+    "expect": [
+     "DEPLOYER_CONDITION_MISSING",
+     "infra/bootstrap/deployer.tf"
+    ],
+    "file": "infra/bootstrap/deployer.tf",
+    "gate": "deployer-grants",
+    "n": 99,
+    "name": "projectIamAdmin bound without its condition",
+    "status": "REFUSED",
+    "why": "unconditioned, the deployer can grant itself any role"
+   },
+   {
     "claim": "2",
     "detail": "GENERATED_STALE infra/estate/generated.tf.json",
     "expect": [
@@ -1355,7 +1397,7 @@
     ],
     "file": "infra/estate/generated.tf.json",
     "gate": "generated",
-    "n": 97,
+    "n": 100,
     "name": "generated Terraform edited by hand",
     "status": "REFUSED",
     "why": "every control is generated; a hand edit is drift"
@@ -1369,7 +1411,7 @@
     ],
     "file": "src/steward/core/compile.py",
     "gate": "core-purity",
-    "n": 98,
+    "n": 101,
     "name": "a cloud SDK in the core",
     "status": "REFUSED",
     "why": "the core is pure; claims are provable offline"
@@ -1385,7 +1427,7 @@
   "as_of": "2026-09-30",
   "claim": "all",
   "data": "synthetic",
-  "digest": "f9c49fba5c23efa77e2753bef1f056f02ed8b414a88e61fc1bff9cf679b6bdfc",
+  "digest": "e2f083bd52b34519a2051da7c9e0561bd693514868fea13a5574d9e330e04092",
   "mode": "fixture",
   "name": "gates",
   "operator": "fictional (Halverra Telecom)",
