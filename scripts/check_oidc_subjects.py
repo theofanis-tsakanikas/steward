@@ -110,7 +110,8 @@ def problems(root: Path = REPO) -> list[str]:
 
     providers = 0
     for tf in sorted(infra.rglob("*.tf*")):
-        if ".terraform" in tf.parts:
+        # configuration only: state, plans and tfvars (git-ignored, written by a local apply) are not code
+        if ".terraform" in tf.parts or not tf.name.endswith((".tf", ".tf.json")):
             continue
         text = tf.read_text()
         code = _code(text) if tf.suffix == ".tf" else text
