@@ -182,7 +182,7 @@ def compile_assurance(
             ident = re.sub(r"[^a-z0-9]+", "-", f"{c.dataset}-{tname}".lower())
             scans[f"dq_{c.dataset}_{tname}"] = {
                 "data_scan_id": f"steward-dq-{ident}",
-                "location": "${lower(var.location)}",
+                "location": "${var.region}",
                 "display_name": f"steward data quality: {c.dataset}.{tname}",
                 "description": (
                     f"Rules from the {c.dataset} contract (version {c.version}). On demand; reads at most "
