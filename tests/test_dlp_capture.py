@@ -227,7 +227,7 @@ def test_a_dataset_access_list_becomes_iam_bindings_with_conditions_and_without_
         {"role": "OWNER", "specialGroup": "projectOwners"},
         {"role": "roles/bigquery.dataViewer", "iamMember": "serviceAccount:seat-x@p.iam.gserviceaccount.com"},
         {
-            "role": "roles/bigquery.dataViewer",
+            "role": "roles/bigquery.dataViewer_withcond_a22a22967ac7103c91fb",
             "iamMember": "serviceAccount:person-y@p.iam.gserviceaccount.com",
             "condition": {"title": "expires", "expression": "request.time < timestamp('2026-10-08T00:00:00Z')"},
         },

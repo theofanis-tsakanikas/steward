@@ -19,7 +19,8 @@ rows the offline quality engine quarantined for that rule. Two engines that disa
 
   LIVE_DQ_NOT_RUN         a scan ended in a state other than SUCCEEDED
   LIVE_DQ_COUNT           failed rows for a rule differ from the offline engine's
-  LIVE_DQ_RULE_MISSING    a rule the offline engine quarantined for is in no scan (or the reverse)
+  LIVE_DQ_RULE_MISSING    a rule the offline engine quarantined for, that the compiled scans carry, is in no comparable scan
+  LIVE_DQ_NOT_SCANNED     (info) a rule the compiled scans leave out on purpose (referential, policy-tagged column)
   LIVE_DQ_PARTIAL         (warn) a scan read a sample of the table, so its counts cannot be compared
 """
 
@@ -133,9 +134,16 @@ def scan_table(scan_id: str, tables: list[str]) -> str | None:
     return None
 
 
-def verify_dataplex(data: dict, source_counts: dict[str, int], quarantined_by_rule: dict[str, int]) -> list[Finding]:
+def verify_dataplex(
+    data: dict,
+    source_counts: dict[str, int],
+    quarantined_by_rule: dict[str, int],
+    compiled_rules: set[str] | None = None,
+) -> list[Finding]:
     """`source_counts`: table -> rows in the source (counted before the rules ran); `quarantined_by_rule`: rule id -> rows
-    the offline engine quarantined for it (from `evals/quality`'s own result)."""
+    the offline engine quarantined for it (from `evals/quality`'s own result); `compiled_rules`: the rule names the
+    compiled scans carry (a rule left out on purpose - a referential check, a policy-tagged column - is not Dataplex's
+    to answer, and is reported as not scanned; None = every rule is expected to be scanned)."""
     out: list[Finding] = []
     expected = {k.lower(): v for k, v in quarantined_by_rule.items()}
     compared: set[str] = set()
@@ -174,13 +182,26 @@ def verify_dataplex(data: dict, source_counts: dict[str, int], quarantined_by_ru
                     )
                 )
     for rid in sorted(set(expected) - compared):
-        if expected[rid]:
+        if not expected[rid]:
+            continue
+        if compiled_rules is not None and rid not in compiled_rules:
             out.append(
                 Finding(
-                    "LIVE_DQ_RULE_MISSING",
+                    "LIVE_DQ_NOT_SCANNED",
                     "dataplex",
                     rid,
-                    f"the offline engine quarantined {expected[rid]} row(s) for this rule; no comparable scan carries it",
+                    f"the offline engine quarantined {expected[rid]} row(s); the compiled scans leave this rule out "
+                    "(see the scan description), so Dataplex says nothing about it",
+                    severity="info",
                 )
             )
+            continue
+        out.append(
+            Finding(
+                "LIVE_DQ_RULE_MISSING",
+                "dataplex",
+                rid,
+                f"the offline engine quarantined {expected[rid]} row(s) for this rule; no comparable scan carries it",
+            )
+        )
     return out
