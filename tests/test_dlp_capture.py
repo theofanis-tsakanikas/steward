@@ -127,11 +127,17 @@ def test_tagged_and_repeated_columns_are_never_selected(e):
     assert "customer_id" not in sql and "msisdn" not in sql.split("crm.customers")[1].split("FROM")[0]
 
 
-def test_a_contracted_dataset_is_read_as_its_custodian_and_the_undeclared_one_as_the_deployer(e):
-    _, reads = _capture(e)
+def test_a_contracted_dataset_is_read_as_its_custodian_and_the_undeclared_one_is_held_at_the_safe_state_unread(e):
+    data, reads = _capture(e)
     who = {sql.split("FROM `")[1].split("`")[0]: w for w, sql in reads}
-    assert who["legacy.legacy_crm_export"] is None
     assert who["crm.customers"].startswith("seat-data-platform@")
+    # an uncontracted dataset has every column held at the safe state (policy-tagged, denied to all): nobody may read
+    # it, DLP included, and the evidence says so instead of reading it with an identity that happens to be strong
+    assert "legacy.legacy_crm_export" not in who
+    legacy = next(t for t in data["tables"] if t["table"] == "legacy.legacy_crm_export")
+    assert legacy["rows_read"] == 0 and all(
+        c["reason"].startswith("policy-tagged") for c in legacy["columns_not_scanned"]
+    )
 
 
 def test_every_read_is_limited_and_a_partitioned_table_carries_its_predicate(e):
@@ -196,3 +202,21 @@ def test_history_is_captured_with_principals_named_and_the_sql_listing_only_esta
     doc = capture.capture_history("steward-x", run, capture.redactor("steward-x"), ["crm", "audit"])
     assert seen[0][0] is None and "'audit', 'crm'" in seen[0][1] and "INFORMATION_SCHEMA.JOBS_BY_PROJECT" in seen[0][1]
     assert doc["jobs"][0]["destination"] == "crm.customers" and "steward-x" not in str(doc["jobs"])
+
+
+def test_a_table_with_every_column_tagged_is_not_read_at_all(e):
+    """BigQuery refuses `SELECT  FROM t` (first capture, 2026-10-02): such a table is recorded as having nothing to read."""
+
+    def read_rows(who, sql):
+        assert not sql.startswith("SELECT  FROM"), sql
+        return [{"x": "1"}]
+
+    data = capture.capture_dlp(
+        PROJECT,
+        table_meta=lambda t: {"numRows": "3", "numBytes": "300"},
+        read_rows=read_rows,
+        inspect=lambda item: {"result": {}},
+        e=e,
+    )
+    nothing = [t for t in data["tables"] if not t["columns_scanned"]]
+    assert nothing and all(t["rows_read"] == 0 and t["requests"] == 0 for t in nothing)
