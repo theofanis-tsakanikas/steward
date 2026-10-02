@@ -365,7 +365,9 @@ def live_main(project: str, what: list[str], out: Path | None = None) -> int:
             data = {
                 "captured_at": now(),
                 "location": DLP_REGION,
-                "scans": [{**s, "message": redact(s["message"])} for s in dataplex.run_scans(rest, project, DLP_REGION, ids)],
+                "scans": [
+                    {**s, "message": redact(s["message"])} for s in dataplex.run_scans(rest, project, DLP_REGION, ids)
+                ],
             }
             claim, origin = "5", "steward capture: dataScans:run, then the job's data-quality result"
         elif name == "audit":
