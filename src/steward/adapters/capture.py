@@ -260,6 +260,43 @@ def capture_iam(project: str, datasets: list[str], get_policy: Callable[[str], d
     }
 
 
+LEGACY_ROLES = {
+    "READER": "roles/bigquery.dataViewer",
+    "WRITER": "roles/bigquery.dataEditor",
+    "OWNER": "roles/bigquery.dataOwner",
+}
+
+
+def access_to_bindings(access: list[dict]) -> list[dict]:
+    """A dataset's `access` list as IAM bindings: `[{role, members: [...], condition?}]`.
+
+    An entry without a role is an authorised view, routine or dataset: it grants no principal anything and is left out.
+    The legacy role names are the ones BigQuery itself keeps for READER, WRITER and OWNER."""
+    out = []
+    for a in access:
+        role = a.get("role")
+        if not role:
+            continue
+        if "iamMember" in a:
+            member = a["iamMember"]
+        elif "userByEmail" in a:
+            email = a["userByEmail"]
+            member = ("serviceAccount:" if email.endswith(".gserviceaccount.com") else "user:") + email
+        elif "groupByEmail" in a:
+            member = "group:" + a["groupByEmail"]
+        elif "specialGroup" in a:
+            member = "specialGroup:" + a["specialGroup"]
+        elif "domain" in a:
+            member = "domain:" + a["domain"]
+        else:
+            continue
+        b = {"role": LEGACY_ROLES.get(role, role), "members": [member]}
+        if a.get("condition"):
+            b["condition"] = a["condition"]
+        out.append(b)
+    return out
+
+
 def _generic(member: str, project: str) -> str:
     return re.sub(r"[a-z0-9-]+@" + re.escape(project) + r"\.iam\.gserviceaccount\.com", "<service-account>", member)
 
@@ -346,6 +383,12 @@ def capture_history(
 ALL = ("access", "iam", "dlp", "dataplex", "audit", "history")
 
 
+def _ok(r) -> None:
+    """Like `raise_for_status`, but the error carries what the service said (a bare 400 says nothing)."""
+    if not r.ok:
+        raise RuntimeError(f"{r.request.method} {r.url.split('?')[0]} -> {r.status_code}: {r.text[:600]}")
+
+
 def live_main(project: str, what: list[str], out: Path | None = None) -> int:
     """Run the named captures against the live estate and write each as `evidence/live/<name>.json`.
 
@@ -381,35 +424,40 @@ def live_main(project: str, what: list[str], out: Path | None = None) -> int:
     def table_meta(table):
         ds, name = table.split(".", 1)
         r = sess.get(f"https://bigquery.googleapis.com/bigquery/v2/projects/{project}/datasets/{ds}/tables/{name}")
-        r.raise_for_status()
+        _ok(r)
         return r.json()
 
     def inspect(item):
         parent = f"projects/{project}/locations/{DLP_REGION}"
         body = {"item": item, "inspectTemplateName": f"{parent}/inspectTemplates/{DLP_TEMPLATE}"}
         r = sess.post(f"https://dlp.googleapis.com/v2/{parent}/content:inspect", json=body)
-        r.raise_for_status()
+        _ok(r)
         return r.json()
 
     def get_policy(dataset):
-        url = f"https://bigquery.googleapis.com/bigquery/v2/projects/{project}/datasets/{dataset}:getIamPolicy"
-        r = sess.post(url, json={"options": {"requestedPolicyVersion": 3}})
-        r.raise_for_status()
-        return r.json()
+        # datasets.getIamPolicy is not open to this project ("This feature requires allowlisting", first capture):
+        # the dataset's own access list is what the Terraform provider writes, conditions included
+        url = f"https://bigquery.googleapis.com/bigquery/v2/projects/{project}/datasets/{dataset}"
+        r = sess.get(url)
+        _ok(r)
+        return {"bindings": access_to_bindings(r.json().get("access", []))}
 
     def rest(method, url, body):
         r = sess.request(method, url, json=body)
-        r.raise_for_status()
+        _ok(r)
         return r.json()
 
-    for name in what:
+    def _one(name):
         if name == "access":
             data = capture_access(project, run_as, e, redact)
             claim, origin = "2", "steward capture: one query per seat, impersonating each seat's service account"
         elif name == "iam":
             datasets = sorted({t.split(".")[0] for t in e.harvest} | {c.dataset for c in e.contracts})
             data = capture_iam(project, datasets, get_policy)
-            claim, origin = "2,6", "steward capture: datasets.getIamPolicy"
+            claim, origin = (
+                "2,6",
+                "steward capture: datasets.get, the access list (conditions included) read as IAM bindings",
+            )
         elif name == "dlp":
             data = capture_dlp(project, table_meta=table_meta, read_rows=read_rows, inspect=inspect, e=e, redact=redact)
             claim, origin = "1", "steward capture: content.inspect over a bounded SELECT"
@@ -432,6 +480,20 @@ def live_main(project: str, what: list[str], out: Path | None = None) -> int:
             claim, origin = "3", "steward capture: INFORMATION_SCHEMA.JOBS_BY_PROJECT, read as the deployer"
         else:
             raise SystemExit(f"unknown capture {name!r}; choose from {', '.join(ALL)}")
-        path = write(name, data, claim, origin, data["captured_at"], out)
-        print(f"captured {name}: {path}")
+        return data, claim, origin
+
+    failed = []
+    for name in what:
+        try:
+            data, claim, origin = _one(name)
+            path = write(name, data, claim, origin, data["captured_at"], out)
+            print(f"captured {name}: {path}")
+        except SystemExit:
+            raise
+        except Exception as ex:  # one capture failing must not cost the others: every error is printed, the exit is 1
+            failed.append(name)
+            print(f"FAILED {name}: {type(ex).__name__}: {redact(str(ex))}")
+    if failed:
+        print(f"FAIL capture: {', '.join(failed)}")
+        return 1
     return 0

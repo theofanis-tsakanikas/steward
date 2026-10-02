@@ -52,8 +52,10 @@ jobs:
         run: |
           read -ra captures <<< "$WHAT"
           uv run steward capture --project "$PROJECT" --what "${captures[@]}" --out out/live
+      # also after a failed capture: the ones that succeeded are kept, and the run is red until all do
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: evidence-live
           path: out/live/*.json
-          if-no-files-found: error
+          if-no-files-found: warn
