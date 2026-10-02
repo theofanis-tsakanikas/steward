@@ -1,7 +1,8 @@
 # Contributing
 
 This is a pinned reference implementation, not a library under maintenance. Issues that show a
-gate does not bite are welcome; drive-by dependency bumps are not.
+gate does not bite are welcome; drive-by dependency bumps are not. Pull requests from forks fail
+`make check` without the ids-gate secrets; that is intended.
 
 ## Local setup
 
