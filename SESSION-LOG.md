@@ -404,3 +404,14 @@
 - **Ανοιχτό:** click στο share.streamlit.io· INTERVIEW rehearsal με τον συγγραφέα· DAY-ONE 4/7/8·
   T031 cut· bootstrap μέχρι διαγραφή project.
 
+## 2026-10-02 — T030 oversight (level-2)
+
+- **Findings που διορθώθηκαν:** T030 μένει ανοιχτό (unlocks: hosted URL + rehearsal)·
+  `check_contract_versions` πέφτει σε HEAD~1 όταν το `github.event.before` είναι ghost SHA
+  μετά από rewrite· ids mutation διαβάζει canary από env, όχι hard-wired· tracked tfvars
+  σκανάρεται· `ID_UNCONFIGURED` χωρίς mock tfvars· README Cost / gitleaks-claim / INTERVIEW
+  path / `runtime.txt` 3.12· DAY-ONE 9b.
+- **Deferred:** screenshot claim 2 (τρεις ρόλοι)· pin `requirements.txt` στα uv.lock versions·
+  badge tests count gate· Actions logs εκτός git-tree (γραμμένο στο P1).
+- **Reviewer:** [T030 hostile](c45b661b-872f-4175-9a7e-e04ad763b50f).
+

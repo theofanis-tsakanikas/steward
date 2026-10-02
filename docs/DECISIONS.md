@@ -25,8 +25,10 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
 - **P1 — Repository visibility: PRIVATE now, public later.** Going public is a separate step after a
   pre-publish pass (`readme-standard`, gitleaks history scan, naming rule check, no project ids / billing ids in history).
   **Resolved 2026-10-02: public** (`https://github.com/theofanis-tsakanikas/steward`). History rewritten
-  so the one leaked project number is a fake; `gitleaks git --log-opts=--all` reported no leaks.
-  Identifiers stay out of the tree (`scripts/check_ids.py`, B57).
+  so the one leaked project number is a fake. What that proves: `git log --all` no longer contains
+  the token; `gitleaks` is clean against its own rules (it does not hunt GCP ids); `check_ids.py`
+  refuses the current tree against tfvars/env. Public Actions logs that printed repository *variables*
+  are outside the git-tree claim (B57).
 - **P2 — BigQuery location: `EU` multi-region.** Policy-tag taxonomies and every dataset in `eu`.
 - **P3 — Autonomous build.** The session builds, reviews and merges its own work without waiting for the
   author, up to the point where real GCP resources would be created (see `CLAUDE.md` → Git workflow).

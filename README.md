@@ -19,7 +19,7 @@
   <img src="https://img.shields.io/badge/Collibra-MOCK-6B7280" alt="Collibra MOCK">
   <img src="https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white" alt="Streamlit">
   <br>
-  <img src="https://img.shields.io/badge/tests-353%20passing-2ea44f" alt="353 tests passing">
+  <img src="https://img.shields.io/badge/tests-358%20passing-2ea44f" alt="358 tests passing">
   <img src="https://img.shields.io/badge/gate--proof-122%2F122-2ea44f" alt="122 gate-proof mutations refused">
   <img src="https://img.shields.io/badge/value%20detector-18%2F18-2ea44f" alt="value detector 18 of 18 planted pairs">
 </p>
@@ -125,7 +125,7 @@ Open http://localhost:8501. Every figure is read from `evidence/fixture/` and re
 
 ## Testing
 
-**353 tests** — contracts, compilers, lineage, catalog mock, quality, marketplace, retention, live judges, the sweep, the ids gate. They do not call GCP. Live captures are re-judged from committed JSON.
+**358 tests** — contracts, compilers, lineage, catalog mock, quality, marketplace, retention, live judges, the sweep, the ids gate. They do not call GCP. Live captures are re-judged from committed JSON.
 
 ```bash
 make test         # pytest
@@ -162,7 +162,7 @@ CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) is offline by constr
 
 ## Cost
 
-The estate is gone (no BigQuery datasets). Bootstrap stands until the project is deleted. No €30 / €50 budget notification fired during the live window. The project budget is €50 gross usage (Free Trial credit does not hide it). Target for the whole exercise was ≤ €50. Figures: [`docs/GCP-CONSTRAINTS.md`](docs/GCP-CONSTRAINTS.md), [`docs/DAY-ONE.md`](docs/DAY-ONE.md) step 10.
+The estate is gone (no BigQuery datasets). Bootstrap stands until the project is deleted — not $0 idle. Expected live spend was about €1–3 with a guard at €45 (`docs/GCP-CONSTRAINTS.md`). DAY-ONE step 4 (budget emails arrived) is still open, so silence at €30/€50 is not evidence the alarm works. Target for the whole exercise was ≤ €50.
 
 ## Decisions
 

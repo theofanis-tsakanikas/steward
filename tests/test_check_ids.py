@@ -60,9 +60,28 @@ def test_ci_without_identifiers_fails_closed(monkeypatch, capsys):
     assert "ID_UNCONFIGURED" in capsys.readouterr().out
 
 
+def test_ci_unconfigured_is_unmocked(monkeypatch, tmp_path, capsys):
+    monkeypatch.setenv("STEWARD_IDS_REQUIRED", "1")
+    for key in ids.ENV_KEYS:
+        monkeypatch.delenv(key, raising=False)
+    real = ids.identifiers
+    monkeypatch.setattr(
+        ids, "identifiers", lambda extra=(): real(env={}, tfvars=tmp_path / "missing.tfvars", extra=extra)
+    )
+    assert ids.main([]) == 1
+    assert "ID_UNCONFIGURED" in capsys.readouterr().out
+
+
 def test_unconfigured_is_not_a_baseline_failure(monkeypatch, capsys):
     monkeypatch.delenv("STEWARD_IDS_REQUIRED", raising=False)
     monkeypatch.setattr(ids, "identifiers", lambda extra=(): set())
     monkeypatch.setattr(ids, "hits", lambda *a, **k: [])
     assert ids.main([]) == 0
     assert "ID_UNCONFIGURED" not in capsys.readouterr().out
+
+
+def test_tracked_tfvars_is_a_hit(tmp_path):
+    leak = tmp_path / "terraform.tfvars"
+    leak.write_text('project_id = "steward-demo-000000"\n')
+    found = ids.hits(tmp_path, {"steward-demo-000000"}, files=[leak])
+    assert found == ["terraform.tfvars"]

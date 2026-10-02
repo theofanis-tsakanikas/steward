@@ -41,7 +41,6 @@ ENV_KEYS = (
 EXTRA_IDS: tuple[str, ...] = ()
 SKIP_SUFFIX = {".jpg", ".jpeg", ".gif", ".webp", ".ico", ".woff", ".woff2", ".pyc"}
 # PNGs are scanned as text: a console screenshot that still holds a project id is a leak.
-CANARY = "x-planted-" + "project-number-000"
 SKIP_NAMES = {"terraform.tfvars", "terraform.tfstate", "terraform.tfstate.backup"}
 _ASSIGN = re.compile(r'^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"([^"]*)"\s*$')
 
@@ -98,8 +97,18 @@ def hits(root: Path, ids: set[str], files: list[Path] | None = None) -> list[str
     if not ids:
         return []
     out = []
-    for path in files if files is not None else _scan_list(root):
-        if path.name in SKIP_NAMES or path.suffix.lower() in SKIP_SUFFIX or not path.is_file():
+    listed = files if files is not None else _scan_list(root)
+    tracked = set()
+    if files is None:
+        try:
+            tracked = set(tracked_files(root))
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            tracked = set()
+    for path in listed:
+        if path.suffix.lower() in SKIP_SUFFIX or not path.is_file():
+            continue
+        # Skip local ignored copies; a *tracked* tfvars or tfstate is the leak this gate exists for.
+        if path.name in SKIP_NAMES and path not in tracked and files is None:
             continue
         try:
             text = path.read_text(errors="replace")
@@ -128,15 +137,16 @@ def main(argv: list[str] | None = None) -> int:
     if os.environ.get("STEWARD_IDS_REQUIRED") == "1" and not live:
         print("ERROR ID_UNCONFIGURED CI has no identifiers to refuse — set the STEWARD_* secrets")
         return 1
-    ids = live | {CANARY}
-    found = hits(REPO, ids)
+    # No always-on canary: the ids mutation supplies the plant through the environment
+    # (same path as CI secrets / tfvars). A hard-wired canary would refuse itself.
+    found = hits(REPO, live)
     for p in found:
         print(f"ERROR ID_IN_TREE {p} — a project/org/billing identifier from terraform.tfvars or the environment")
     if found:
         print(f"FAIL ids: {len(found)} tracked file(s) contain a live identifier")
         return 1
-    src = "terraform.tfvars/env" if live else "no live identifiers (canary only)"
-    print(f"ok ids: {len(ids)} identifier(s) from {src}, 0 hits")
+    src = "terraform.tfvars/env" if live else "no identifiers configured"
+    print(f"ok ids: {len(live)} identifier(s) from {src}, 0 hits")
     return 0
 
 
