@@ -61,3 +61,5 @@ that is covered by the trial credit and nothing is charged to a card; the trial 
 whichever is first (DECISIONS B49). What would change this: a scan with no bound (now impossible: the
 `assurance` gate compiles every scan against tables 1000× larger), Composer (not used), or leaving the estate
 standing past `expires_at` (the reaper and the destroy workflow exist for that).
+
+**First-apply facts, 2026-10-02 (Dataplex scans):** a scan location is a region (`europe-west1`), not `eu`; the Dataplex service agent needs `iam.serviceAccounts.getAccessToken` on each custodian seat before a scan can be created, and the grant needs about a minute to be effective (`time_sleep`); creating a scan is a long-running operation: five took ~3 minutes, the one over `network.usage_events` (partitioned, `require_partition_filter`, row filter) about 12 — Terraform's 5-minute default timed out and left the resource tainted, so the scans carry `timeouts` of 30 minutes.

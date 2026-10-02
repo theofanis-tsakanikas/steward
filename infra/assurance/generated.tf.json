@@ -112,7 +112,12 @@
           "dataset": "analytics",
           "table": "weekly_usage_by_cell"
         },
-        "location": "${var.region}"
+        "location": "${var.region}",
+        "timeouts": {
+          "create": "30m",
+          "delete": "30m",
+          "update": "30m"
+        }
       },
       "dq_crm_customers": {
         "data": {
@@ -173,7 +178,12 @@
           "dataset": "crm",
           "table": "customers"
         },
-        "location": "${var.region}"
+        "location": "${var.region}",
+        "timeouts": {
+          "create": "30m",
+          "delete": "30m",
+          "update": "30m"
+        }
       },
       "dq_crm_support_tickets": {
         "data": {
@@ -237,7 +247,12 @@
           "dataset": "crm",
           "table": "support_tickets"
         },
-        "location": "${var.region}"
+        "location": "${var.region}",
+        "timeouts": {
+          "create": "30m",
+          "delete": "30m",
+          "update": "30m"
+        }
       },
       "dq_finance_billing": {
         "data": {
@@ -327,7 +342,12 @@
           "dataset": "finance",
           "table": "billing"
         },
-        "location": "${var.region}"
+        "location": "${var.region}",
+        "timeouts": {
+          "create": "30m",
+          "delete": "30m",
+          "update": "30m"
+        }
       },
       "dq_network_network_events": {
         "data": {
@@ -368,7 +388,12 @@
           "dataset": "network",
           "table": "network_events"
         },
-        "location": "${var.region}"
+        "location": "${var.region}",
+        "timeouts": {
+          "create": "30m",
+          "delete": "30m",
+          "update": "30m"
+        }
       },
       "dq_network_usage_events": {
         "data": {
@@ -460,7 +485,12 @@
           "dataset": "network",
           "table": "usage_events"
         },
-        "location": "${var.region}"
+        "location": "${var.region}",
+        "timeouts": {
+          "create": "30m",
+          "delete": "30m",
+          "update": "30m"
+        }
       }
     },
     "google_service_account_iam_member": {
