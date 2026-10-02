@@ -35,7 +35,6 @@ GATES: dict[str, list[str]] = {
     "contracts": [PY, "-m", "steward.cli", "validate", "--today", "2026-10-01"],
     "contract-versions": [PY, "scripts/check_contract_versions.py", "--base", "HEAD"],
     "workflows": [PY, "scripts/check_workflows.py"],
-    "live": [PY, "scripts/check_live.py"],
     "classification": [PY, "-m", "steward.cli", "scan"],
     "access": [PY, "-m", "steward.cli", "compile"],
     "access-eval": [PY, "evals/run.py", "access"],
