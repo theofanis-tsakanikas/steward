@@ -21,6 +21,7 @@ import argparse
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -66,6 +67,19 @@ def _rows(project: str, dataset: str, table: str) -> int | None:
     return rows_in(r.stdout) if r.returncode == 0 else None
 
 
+def settled(fetch, want: int, attempts: int = 24, pause: float = 5.0, sleep=time.sleep) -> int | None:
+    """numRows after a load job is updated a little after the job reports DONE: right after the load it is absent
+    (read as None), then it appears. Poll until it equals `want`; after `attempts` return what was last seen, so
+    a real mismatch is still reported as one (never a count that was only waited into agreement)."""
+    seen = fetch()
+    for _ in range(attempts):
+        if seen == want:
+            return seen
+        sleep(pause)
+        seen = fetch()
+    return seen
+
+
 def expected(path: Path) -> int:
     return sum(1 for _ in path.open("rb"))
 
@@ -89,7 +103,7 @@ def main(argv: list[str] | None = None) -> int:
     for d, t, p in tables():
         if _rows(args.project, d, t) != want[f"{d}.{t}"]:
             subprocess.run(load_command(args.project, d, t, p), check=True)
-        counts[f"{d}.{t}"] = _rows(args.project, d, t)
+        counts[f"{d}.{t}"] = settled(lambda d=d, t=t: _rows(args.project, d, t), want[f"{d}.{t}"])
         print(f"{d}.{t}: {counts[f'{d}.{t}']} rows")
     bad = mismatches(counts, want)
     print("\n".join(f"MISMATCH {m}" for m in bad))
