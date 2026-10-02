@@ -3,7 +3,7 @@
   "resource": {
     "google_data_loss_prevention_inspect_template": {
       "steward": {
-        "description": "Kinds of personal data the contracts can declare and a value scan can find: msisdn, imsi, imei, email, iban, birth_date, address. A template cannot limit rows: the sample size belongs to the code that runs an inspection.",
+        "description": "Kinds of personal data the contracts can declare and a value scan can find: msisdn, imsi, imei, email, iban, birth_date, address. A template cannot limit rows: the sample size belongs to the inspection job (core/sampling.py).",
         "display_name": "steward-inspect",
         "inspect_config": {
           "custom_info_types": [
@@ -83,10 +83,10 @@
               "threshold": 1
             }
           ],
-          "sampling_percent": 100
+          "sampling_percent": 100.0
         },
         "data_scan_id": "steward-dq-analytics-weekly-usage-by-cell",
-        "description": "Rules from the analytics contract (version 2). On demand; small tables only.",
+        "description": "Rules from the analytics contract (version 2). On demand; reads at most 10000 rows or 32 MiB of the table.",
         "display_name": "steward data quality: analytics.weekly_usage_by_cell",
         "execution_identity": {
           "service_account": {
@@ -141,10 +141,10 @@
               "threshold": 1
             }
           ],
-          "sampling_percent": 100
+          "sampling_percent": 100.0
         },
         "data_scan_id": "steward-dq-crm-customers",
-        "description": "Rules from the crm contract (version 2). On demand; small tables only. Not scanned here: Q-CRM-001: customer_id is policy-tagged; Q-CRM-002: customer_id is policy-tagged; Q-CRM-003: msisdn is policy-tagged; Q-CRM-006: nested column contracts.status.",
+        "description": "Rules from the crm contract (version 2). On demand; reads at most 10000 rows or 32 MiB of the table. Not scanned here: Q-CRM-001: customer_id is policy-tagged; Q-CRM-002: customer_id is policy-tagged; Q-CRM-003: msisdn is policy-tagged; Q-CRM-006: nested column contracts.status.",
         "display_name": "steward data quality: crm.customers",
         "execution_identity": {
           "service_account": {
@@ -202,10 +202,10 @@
               "threshold": 1
             }
           ],
-          "sampling_percent": 100
+          "sampling_percent": 100.0
         },
         "data_scan_id": "steward-dq-crm-support-tickets",
-        "description": "Rules from the crm contract (version 2). On demand; small tables only. Not scanned here: Q-CRM-012: customer_id is policy-tagged.",
+        "description": "Rules from the crm contract (version 2). On demand; reads at most 10000 rows or 32 MiB of the table. Not scanned here: Q-CRM-012: customer_id is policy-tagged.",
         "display_name": "steward data quality: crm.support_tickets",
         "execution_identity": {
           "service_account": {
@@ -289,10 +289,10 @@
               "threshold": 1
             }
           ],
-          "sampling_percent": 100
+          "sampling_percent": 100.0
         },
         "data_scan_id": "steward-dq-finance-billing",
-        "description": "Rules from the finance contract (version 3). On demand; small tables only. Not scanned here: Q-FIN-003: customer_id is policy-tagged.",
+        "description": "Rules from the finance contract (version 3). On demand; reads at most 10000 rows or 32 MiB of the table. Not scanned here: Q-FIN-003: customer_id is policy-tagged.",
         "display_name": "steward data quality: finance.billing",
         "execution_identity": {
           "service_account": {
@@ -327,10 +327,10 @@
               "uniqueness_expectation": {}
             }
           ],
-          "sampling_percent": 100
+          "sampling_percent": 100.0
         },
         "data_scan_id": "steward-dq-network-network-events",
-        "description": "Rules from the network contract (version 2). On demand; small tables only.",
+        "description": "Rules from the network contract (version 2). On demand; reads at most 10000 rows or 32 MiB of the table.",
         "display_name": "steward data quality: network.network_events",
         "execution_identity": {
           "service_account": {
@@ -416,10 +416,10 @@
               "threshold": 1
             }
           ],
-          "sampling_percent": 100
+          "sampling_percent": 100.0
         },
         "data_scan_id": "steward-dq-network-usage-events",
-        "description": "Rules from the network contract (version 2). On demand; small tables only. Not scanned here: Q-NET-001: freshness is judged offline (needs a shared clock); Q-NET-004: msisdn is policy-tagged.",
+        "description": "Rules from the network contract (version 2). On demand; reads at most 10000 rows or 32 MiB of the table. Not scanned here: Q-NET-001: freshness is judged offline (needs a shared clock); Q-NET-004: msisdn is policy-tagged.",
         "display_name": "steward data quality: network.usage_events",
         "execution_identity": {
           "service_account": {

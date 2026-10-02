@@ -28,3 +28,4 @@ local/
 # run outputs (evidence/ is committed on purpose; scratch is not)
 out/
 .DS_Store
+*tfplan

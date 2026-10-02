@@ -31,6 +31,8 @@ def layer_roles(root: Path) -> tuple[dict[str, str], list[str]]:
         if not layer.is_dir() or layer.name == "bootstrap":
             continue
         for f in sorted(layer.glob("*.tf*")):
+            if not f.name.endswith((".tf", ".tf.json")):  # not state, plans or tfvars
+                continue
             text = f.read_text()
             rel = f.relative_to(root)
             for t in BULK:

@@ -288,3 +288,27 @@
 - **Απόδειξη:** `make preflight` · `check_deployer_grants.py` · `tests/test_guard.py`. Το gates evidence ξαναγράφτηκε.
 - **Ανοιχτό:** bootstrap apply, ζωντανή δοκιμή της IAM Condition, επιβεβαίωση alert emails. Οι ταυτότητες (org, project,
   billing) δεν γράφτηκαν στα docs (P1): μένουν στο git-ignored `terraform.tfvars`.
+
+## 2026-10-02 — Bootstrap apply (μερικό), όριο δείγματος DLP/Dataplex, νέα εκτίμηση κόστους
+
+- **Bootstrap apply:** το `terraform apply` στο `infra/bootstrap` δημιούργησε 80 από τους 86 πόρους (APIs, state bucket,
+  WIF pool/provider, deployer/destroyer, ρόλοι, notification channels, Pub/Sub topic). **Σταμάτησε στο budget**:
+  `FAILED_PRECONDITION`. Αιτία (ανακαλύφθηκε με bisect μέσω `gcloud billing budgets create`): το organization policy
+  `iam.allowedPolicyMemberDomains` δεν αφήνει το Cloud Billing (`billing-budget-alert@system.gserviceaccount.com`) να
+  πάρει publish στο topic. Budget χωρίς topic δημιουργείται κανονικά. Τίποτα που κοστίζει δεν υπάρχει ακόμη (το guard, το
+  reaper και ο scheduler έχουν `depends_on` στο budget, σκόπιμα). Επιλογές και σύσταση στο DECISIONS **B53**.
+- **GitHub repository variables:** τέθηκαν με `gh` από τα outputs (`GCP_PROJECT_ID`, `GCP_WORKLOAD_IDENTITY_PROVIDER`,
+  `GCP_DEPLOYER_SERVICE_ACCOUNT`, `GCP_DESTROYER_SERVICE_ACCOUNT`).
+- **IAM Condition του deployer (B51):** δεν δοκιμάστηκε ζωντανά ακόμη: ο λογαριασμός του συγγραφέα δεν έχει
+  `serviceAccountTokenCreator` στον deployer και δεν του έδωσα δικαίωμα εκτός Terraform. Δοκιμάζεται στο πρώτο `deploy`
+  workflow run.
+- **Όριο δείγματος (B52):** νέο `core/sampling.py` — μία οροφή (10.000 γραμμές, 32 MiB ανά πίνακα) για DLP `rows_limit`
+  (το `0` σημαίνει απεριόριστο στο DLP, άρα απορρίπτεται) και Dataplex `sampling_percent` (στρογγυλοποίηση προς τα κάτω).
+  Άγνωστο/κενό μέγεθος πίνακα σταματά το build. Το gate `assurance` ξανακομπιλάρει με πίνακες 1000× μεγαλύτερους
+  (`ASSURANCE_UNBOUNDED`, 2 μεταλλάξεις). Όλο το estate είναι ~3 MB, άρα όλα 100% και το Terraform δεν άλλαξε.
+- **Νέα εκτίμηση κόστους** (τιμές διαβασμένες σήμερα): DLP δωρεάν έως 1 GiB/μήνα, Dataplex DQ με custom execution
+  identity χρεώνεται ως BigQuery. **Αναμενόμενο σύνολο ~1–3 €, οροφή guard 45 €**, καλυμμένο από το trial credit.
+- **Gate fix:** `check_oidc_subjects.py` και `check_deployer_grants.py` διάβαζαν `*.tf*` (άρα και `terraform.tfstate`,
+  που υπάρχει πλέον τοπικά) → τώρα μόνο `.tf` / `.tf.json`.
+- **Απόδειξη:** `make preflight` · `tests/test_sampling.py` · `scripts/check_assurance.py`. Το gates evidence ξαναγράφτηκε.
+- **Ανοιχτό:** απόφαση B53 → ολοκλήρωση του bootstrap apply → ένα «go» για τα υπόλοιπα layers.

@@ -147,4 +147,28 @@ def test_a_table_whose_row_policies_leave_the_custodian_out_gets_no_scan(e):
             n["grantees"] = [g for g in n["grantees"] if "data-platform" not in g]
     estate = e.compiled["infra/estate/generated.tf.json"]
     with pytest.raises(ValueError, match="custodian"):
-        ca.compile_assurance(e.contracts, estate, gov)
+        ca.compile_assurance(e.contracts, estate, gov, io.table_sizes())
+
+
+def test_a_scanned_table_with_no_size_stops_the_build(e):
+    sizes = io.table_sizes()
+    sizes.pop("crm.customers")
+    with pytest.raises(ValueError, match="no bound"):
+        ca.compile_assurance(
+            e.contracts,
+            e.compiled["infra/estate/generated.tf.json"],
+            e.compiled["infra/governance/generated.tf.json"],
+            sizes,
+        )
+
+
+def test_a_table_that_outgrows_the_ceiling_is_scanned_by_percentage(e):
+    sizes = {t: (rows * 1000, nbytes * 1000) for t, (rows, nbytes) in io.table_sizes().items()}
+    built = ca.compile_assurance(
+        e.contracts,
+        e.compiled["infra/estate/generated.tf.json"],
+        e.compiled["infra/governance/generated.tf.json"],
+        sizes,
+    )["infra/assurance/generated.tf.json"]
+    scan = built["resource"]["google_dataplex_datascan"]["dq_crm_customers"]
+    assert scan["data_quality_spec"]["sampling_percent"] < 100

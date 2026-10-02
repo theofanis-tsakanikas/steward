@@ -65,7 +65,10 @@ def load(
     e.compiled |= compile_marketplace(contracts, active)
     e.compiled |= compile_seats(contracts, roles, active)
     e.compiled |= compile_assurance(
-        contracts, e.compiled["infra/estate/generated.tf.json"], e.compiled["infra/governance/generated.tf.json"]
+        contracts,
+        e.compiled["infra/estate/generated.tf.json"],
+        e.compiled["infra/governance/generated.tf.json"],
+        io.table_sizes(),
     )
     return e
 

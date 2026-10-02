@@ -12,10 +12,10 @@ Terraform registry, then `ok <date>` or `changed: <what>`.
 | 5 | Data masking Terraform | `google_bigquery_datapolicy` | ok 2026-10-01: `google_bigquery_datapolicy_data_policy` (+ `_iam_member`), predefined SHA256 / ALWAYS_NULL / DEFAULT_MASKING_VALUE / LAST_FOUR_CHARACTERS / FIRST_FOUR_CHARACTERS / EMAIL_MASK / DATE_YEAR_MASK; types per rule in `core/compile.py` RULE_TYPES |
 | 6 | Taxonomy / policy tags Terraform | `google_data_catalog_taxonomy`, `google_data_catalog_policy_tag` | ok 2026-10-01 (google 7.46.1); one tag per column, ≤5 levels, ≤1,000 tags per table; a user without Fine-Grained Reader who selects a tagged column gets an error listing the columns |
 | 7 | Dataplex data scans Terraform | `google_dataplex_datascan` (DQ + profiling) | `google_dataplex_datascan` read from the 7.46.1 schema 2026-10-01 (`terraform providers schema`): rules take `dimension`, `column`, `threshold` (the fraction of rows that must pass), `ignore_null` and one expectation block; `row_filter` and `sampling_percent` are spec-level; `execution_identity.service_account` sets who the scan runs as. Each scan runs **as its dataset's custodian seat**: the custodian is in every unfiltered row access policy and holds no Fine-Grained Reader, so rules on policy-tagged columns are not generated (`core/compile_assurance.py` refuses a table whose row policies leave the custodian out). **Verify at first apply:** that the service account is accepted as the execution identity (the deployer holds `serviceAccountUser`; whether the Dataplex service agent also needs `serviceAccountTokenCreator` on it is not read); that a `row_filter` on the partition column satisfies `require_partition_filter`; that `eu` is accepted as the scan location. |
-| 8 | Data Lineage API | automatic for BigQuery jobs; pricing; how to read it | verify |
-| 9 | DLP inspection | per-GB pricing; free tier; row-limit sampling options | template schema read 2026-10-01 (`google_data_loss_prevention_inspect_template`); regional parent `projects/<p>/locations/europe-west1`; built-in infoTypes PHONE_NUMBER, EMAIL_ADDRESS, IBAN_CODE, IMEI_HARDWARE_ID, DATE_OF_BIRTH, STREET_ADDRESS plus one custom regex for IMSI. **Not read:** pricing, and whether a template can bound the rows inspected (it cannot: the sample size belongs to the inspection code, which is not written yet). **Verify:** that europe-west1 accepts all of these infoTypes. |
+| 8 | Data Lineage API | automatic for BigQuery jobs; pricing; how to read it | pricing read 2026-10-02: automatic BigQuery lineage is billed in DCU-hours (about 0.0056 DCU-h per entity per job at $0.089 per DCU-h, premium processing, no free tier) plus metadata storage ($2/GiB-month, first MiB free) — cents for this estate; reading and deleting lineage is free; custom (`CUSTOM`) lineage is free. How to read it: verify at T015 |
+| 9 | DLP inspection | per-GB pricing; free tier; row-limit sampling options | template schema read 2026-10-01 (`google_data_loss_prevention_inspect_template`); regional parent `projects/<p>/locations/europe-west1`; built-in infoTypes PHONE_NUMBER, EMAIL_ADDRESS, IBAN_CODE, IMEI_HARDWARE_ID, DATE_OF_BIRTH, STREET_ADDRESS plus one custom regex for IMSI. **Pricing read 2026-10-02:** storage inspection jobs and content methods are free for the first 1 GiB inspected per month per account, then $1.00/GiB (jobs) or $3.00/GiB (content methods); 1 KB minimum per content request. **The bound is written** (`core/sampling.py`, DECISIONS B52): a job's `rows_limit` is always set (DLP reads `0` as unlimited), at most 10,000 rows and 32 MiB per table; the whole synthetic estate is about 3 MB. **Verify:** that europe-west1 accepts all of these infoTypes, and whether `max_findings_per_item` counts per table or per row for a BigQuery job (if per table, the cap would truncate the findings; the evidence records a `truncated` flag).
 | 10 | Analytics Hub Terraform | data exchange + listing resources; pricing | resources present in google 7.46.1 (exchange, listing, subscription); pricing not yet read (T016) |
-| 11 | Budget Terraform | `google_billing_budget`; needs billing-account permissions on the author's account | written (`infra/bootstrap/budget.tf`), `terraform validate` ok; **verify at first apply:** Billing Account Administrator on the author's account; the budget currency must equal the billing account's; the period is one calendar month (DECISIONS B38) |
+| 11 | Budget Terraform | `google_billing_budget`; needs billing-account permissions on the author's account | **blocked at first apply 2026-10-02:** a budget notifying a Pub/Sub topic is refused (`FAILED_PRECONDITION`) because the organization policy `iam.allowedPolicyMemberDomains` stops Cloud Billing from being granted publish on the topic (DECISIONS B53). The budget alone, with no topic, is accepted. Written (`infra/bootstrap/budget.tf`), `terraform validate` ok; **verify at first apply:** Billing Account Administrator on the author's account; the budget currency must equal the billing account's; the period is one calendar month (DECISIONS B38) |
 | 12 | Workload Identity Federation | pool + provider for GitHub OIDC; attribute condition on repo | written (`infra/bootstrap/wif.tf`), `terraform validate` ok; claims used: `repository_owner_id`, `repository_id`, `repository`, `ref`, `environment` (all GitHub OIDC claims). **Verify at first deploy run:** that a job in the `deploy` environment started from `main` is accepted and one started from another branch is refused. |
 | 13 | Data Access audit logs | enabled by default for BigQuery; sink to BigQuery | verify |
 | 14 | Time travel / fail-safe | time travel up to 7 days (configurable), fail-safe 7 more | verify |
@@ -44,10 +44,20 @@ Also present in google 7.46.1 and used for cross-layer publishing (no remote-sta
 
 ## Estimated cost of one deploy → capture → destroy cycle (an estimate, not a quote)
 
-Prices were not re-read for this estimate. Order of magnitude, for a week with the estate standing a few days and
-synthetic data in the low single-digit GB: BigQuery storage and on-demand queries (every query capped by
-`maximum_bytes_billed`) well under €1; DLP on samples (the sampling code is not written yet) and Dataplex on-demand scans on small tables a few
-euros at most; Cloud Run functions, Scheduler (3 free jobs), Pub/Sub, Cloud Build, Cloud Storage, Parameter Manager,
-Analytics Hub: cents, inside free tiers. **Expected total: under €10; ceiling €50** (alerts at €30 and €50, the guard
-stops at €45). The one item that could change this is DLP or Dataplex run against more data than the samples; the bound must
-be in the code that runs them (to be written, T014), not only in this estimate.
+Re-estimated 2026-10-02 after reading the DLP, Dataplex and Free Trial pages and after the sampling bound was
+written. All prices USD; the account bills in EUR, the difference is not material at these sizes.
+
+| Item | Basis | Estimate |
+|---|---|---|
+| DLP inspection | at most ~3 MB inspected per run (the bound allows 32 MiB per table); free up to 1 GiB per month | **0** |
+| Dataplex data quality | 7 on-demand scans of tables of at most 6,000 rows; with a custom execution identity the compute is billed to BigQuery, not as DCU | **under 0.50** (even as DCU: 7 scans × 1 minimum minute × a few DCU × $0.089/h ≈ 0.05) |
+| Dataplex lineage | ~50 BigQuery jobs × ~4 entities × 0.0056 DCU-h × $0.089 ≈ 0.10; metadata storage under 1 MiB | **about 0.10** |
+| BigQuery | storage of ~3 MB; queries capped by `maximum_bytes_billed`; first TiB per month free | **under 0.50** |
+| Cloud Run functions, Scheduler (3 free jobs), Pub/Sub, Cloud Build, Cloud Storage, Parameter Manager, Analytics Hub, Secret/State bucket | free tiers or cents | **under 1** |
+| Logging (audit sink to BigQuery) | Data Access logs of a small estate | **under 0.50** |
+
+**Expected total: about 1–3; ceiling set by the budget guard at 45 (alerts at 30 and 50).** On the Free Trial
+that is covered by the trial credit and nothing is charged to a card; the trial ends at the credit or at 90 days,
+whichever is first (DECISIONS B49). What would change this: a scan with no bound (now impossible: the
+`assurance` gate compiles every scan against tables 1000× larger), Composer (not used), or leaving the estate
+standing past `expires_at` (the reaper and the destroy workflow exist for that).
