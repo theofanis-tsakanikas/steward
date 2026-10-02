@@ -6,10 +6,30 @@ data "google_project" "this" {
   depends_on = [google_project_service.api]
 }
 
+# A new organization enforces secure-by-default policies, among them domain-restricted sharing
+# (iam.allowedPolicyMemberDomains): only principals of the organization's own customer may appear in an IAM policy.
+# Cloud Billing publishes budget notifications as billing-budget-alert@system.gserviceaccount.com, which is not of
+# the organization, so a budget that notifies a topic is refused (FAILED_PRECONDITION). This lifts the restriction
+# for THIS PROJECT ONLY; the organization keeps it, and the override is deleted with the project (DECISIONS B53).
+# Needs roles/orgpolicy.policyAdmin on the applying identity (a local apply: the bootstrap layer is never run in CI).
+resource "google_org_policy_policy" "budget_publisher" {
+  name   = "projects/${var.project_id}/policies/iam.allowedPolicyMemberDomains"
+  parent = "projects/${var.project_id}"
+
+  spec {
+    rules {
+      allow_all = "TRUE"
+    }
+  }
+
+  depends_on = [google_project_service.api]
+}
+
 resource "google_pubsub_topic" "budget" {
   name = "steward-budget"
 
-  depends_on = [google_project_service.api]
+  # the budget grants Cloud Billing publish on this topic, which the organization policy refuses without the override
+  depends_on = [google_project_service.api, google_org_policy_policy.budget_publisher]
 }
 
 resource "google_monitoring_notification_channel" "email" {

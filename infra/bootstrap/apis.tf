@@ -19,6 +19,7 @@ locals {
     "eventarc.googleapis.com"             = "bootstrap: Pub/Sub trigger of the guard"
     "cloudscheduler.googleapis.com"       = "bootstrap: daily reaper"
     "monitoring.googleapis.com"           = "bootstrap: email notification channels for the budget"
+    "orgpolicy.googleapis.com"            = "bootstrap: the one project-level organization policy override (B53)"
     # estate
     "bigquery.googleapis.com"         = "estate"
     "datacatalog.googleapis.com"      = "estate: policy-tag taxonomy"

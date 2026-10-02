@@ -402,3 +402,18 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   themselves) so the budget keeps its kill switch; the override dies with the project; **(b)** no topic: budget
   e-mails only, `enable_guard = false`, no automatic stop (the reaper does not need the topic). Recommended: (a).
   Decided by the author.
+  **Resolved 2026-10-02: (a).** The restriction is not something this project did: a new organization enforces
+  secure-by-default policies, among them domain-restricted sharing, and the author's organization is new. The
+  bootstrap layer carries one `google_org_policy_policy` (`budget.tf`) that sets `allow_all` for
+  `iam.allowedPolicyMemberDomains` **on this project only**; the organization keeps the restriction, and the override
+  is deleted with the project. It is the only organization-policy resource in the repository. What it widens: an IAM
+  policy in this project may name a principal outside the organization. What bounds that: no layer grants to an
+  external principal, the deployer's `projectIamAdmin` is limited by the IAM Condition (B51) to the roles the layers
+  hand out, and `check_deployer_grants` keeps that list equal to the roles the layers grant. The topic depends on the
+  override, and the budget on the topic, so nothing is created out of order. Applying it needs
+  `roles/orgpolicy.policyAdmin` on the applying identity and the `orgpolicy.googleapis.com` API.
+  **Applied 2026-10-02.** The budget was refused once more immediately after the override was created and accepted
+  on the next apply a few minutes later: an organization-policy change takes minutes to reach Cloud Billing, so a
+  `FAILED_PRECONDITION` right after it is a wait, not a second fault. All 87 bootstrap resources exist and
+  `terraform plan` reports no difference. The budget measures gross usage (B49); the guard was exercised live with a
+  below-threshold notification published to the topic and logged `cost 1.0 stop at 45.0`, taking no action.

@@ -312,3 +312,14 @@
   που υπάρχει πλέον τοπικά) → τώρα μόνο `.tf` / `.tf.json`.
 - **Απόδειξη:** `make preflight` · `tests/test_sampling.py` · `scripts/check_assurance.py`. Το gates evidence ξαναγράφτηκε.
 - **Ανοιχτό:** απόφαση B53 → ολοκλήρωση του bootstrap apply → ένα «go» για τα υπόλοιπα layers.
+
+## 2026-10-02 — Bootstrap ολοκληρώθηκε (B53 α)
+
+- **Τι έκλεισε:** override του `iam.allowedPolicyMemberDomains` μόνο στο project (`google_org_policy_policy`, B53 α).
+  Το budget απορρίφθηκε μία ακόμη φορά αμέσως μετά (propagation του policy) και δέχτηκε στο επόμενο apply. **Και οι
+  87 πόροι του bootstrap υπάρχουν, το `terraform plan` δεν δείχνει διαφορές.** Budget 50 EUR σε μεικτή χρήση, guard και
+  reaper ACTIVE, scheduler ENABLED.
+- **Ζωντανός έλεγχος του guard:** δημοσίευσα στο topic ειδοποίηση κάτω από το όριο· το log έγραψε
+  `budget notification: cost 1.0 stop at 45.0` και δεν έγινε καμία ενέργεια.
+- **Απόδειξη:** `terraform validate`, `terraform plan` (καμία διαφορά), live έλεγχος guard.
+- **Ανοιχτό:** η IAM Condition του deployer δοκιμάζεται στο πρώτο `deploy` workflow· ακολουθούν T012–T017.
