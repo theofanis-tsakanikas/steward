@@ -102,7 +102,7 @@
         "delete_contents_on_destroy": true,
         "description": "Usage (traffic) events and device attach events of Halverra Telecom (fictional). Owner group:network-owners@halverra.example; steward group:network-stewards@halverra.example; custodian group:data-platform@halverra.example. Lawful basis: ePrivacy Directive 2002/58/EC Art. 6(2) — traffic data for billing and interconnection. Retention: 180 days — ePrivacy Art. 6(1): erase or anonymise when no longer needed; 180 days for billing disputes (illustrative).",
         "labels": {
-          "contract-version": "2",
+          "contract-version": "3",
           "managed-by": "steward",
           "owner": "network-owners",
           "project": "steward",
@@ -238,13 +238,14 @@
       },
       "network__network_events": {
         "clustering": [
-          "cell_id"
+          "country",
+          "rat"
         ],
         "dataset_id": "${google_bigquery_dataset.network.dataset_id}",
         "deletion_protection": false,
         "description": "One row per device attach to the network. Partitioned by event_date.",
         "labels": {
-          "contract-version": "2",
+          "contract-version": "3",
           "managed-by": "steward",
           "project": "steward"
         },
@@ -271,14 +272,14 @@
       },
       "network__usage_events": {
         "clustering": [
-          "msisdn",
-          "cell_id"
+          "country",
+          "event_type"
         ],
         "dataset_id": "${google_bigquery_dataset.network.dataset_id}",
         "deletion_protection": false,
-        "description": "One row per voice, SMS or data event. Partitioned by event_date, clustered by msisdn and cell_id.",
+        "description": "One row per voice, SMS or data event. Partitioned by event_date, clustered by country and event_type (never by a masked column, since BigQuery cannot mask a clustering field).",
         "labels": {
-          "contract-version": "2",
+          "contract-version": "3",
           "managed-by": "steward",
           "project": "steward"
         },

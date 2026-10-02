@@ -265,6 +265,22 @@ def against_estate(contracts: list[Contract], harvest: dict, broken: frozenset[s
                 )
             )
         partition = harvest[table].get("partition")
+        # BigQuery refuses EVERY read of a table through a data policy (a masked read) when the masked column is a
+        # partitioning or clustering field: "Data masking cannot be applied ... as the field is used for partitioning
+        # or clustering" (first live capture, 2026-10-02). The table would be unreadable to every masked seat: the safe
+        # state (deny) reached by accident, and a dashboard that never loads.
+        for path in sorted({partition, *harvest[table].get("cluster", [])} - {None}):
+            col = tbl.columns.get(path)
+            if col is not None and col.classification.tagged:
+                f.append(
+                    Finding(
+                        "MASKED_COLUMN_CLUSTERED",
+                        GATE,
+                        f"{table}.{path}",
+                        f"{col.classification} column used for partitioning or clustering: BigQuery cannot mask it, so "
+                        "every masked read of the table is refused — cluster by an untagged column",
+                    )
+                )
         if tbl.retention.mode == "partition" and tbl.retention.column != partition:
             f.append(
                 Finding(

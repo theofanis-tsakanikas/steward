@@ -372,7 +372,7 @@
         "depends_on": [
           "time_sleep.dq_iam_propagation"
         ],
-        "description": "Rules from the network contract (version 2). On demand; reads at most 10000 rows or 32 MiB of the table.",
+        "description": "Rules from the network contract (version 3). On demand; reads at most 10000 rows or 32 MiB of the table.",
         "display_name": "steward data quality: network.network_events",
         "execution_identity": {
           "service_account": {
@@ -469,7 +469,7 @@
         "depends_on": [
           "time_sleep.dq_iam_propagation"
         ],
-        "description": "Rules from the network contract (version 2). On demand; reads at most 10000 rows or 32 MiB of the table. Not scanned here: Q-NET-001: freshness is judged offline (needs a shared clock); Q-NET-004: msisdn is policy-tagged.",
+        "description": "Rules from the network contract (version 3). On demand; reads at most 10000 rows or 32 MiB of the table. Not scanned here: Q-NET-001: freshness is judged offline (needs a shared clock); Q-NET-004: msisdn is policy-tagged.",
         "display_name": "steward data quality: network.usage_events",
         "execution_identity": {
           "service_account": {
