@@ -111,7 +111,7 @@ def _rule(r: QualityRule, column: str, col_type: str) -> dict:
     return {**base, "dimension": "VALIDITY", "range_expectation": rng}
 
 
-def _partition_filter(estate_doc: dict, dataset: str, table: str, col_type: dict[str, str]) -> str | None:
+def partition_filter(estate_doc: dict, dataset: str, table: str, col_type: dict[str, str]) -> str | None:
     """BigQuery refuses a query over a require_partition_filter table without a predicate on the partition
     column; the scan's row_filter is that predicate (a constant lower bound: it keeps every row)."""
     node = estate_doc["resource"]["google_bigquery_table"].get(f"{dataset}__{table}")
@@ -176,7 +176,7 @@ def compile_assurance(
                 "sampling_percent": dataplex_sampling_percent(sample),
                 "rules": sorted(rules, key=lambda x: x["name"]),
             }
-            flt = _partition_filter(estate_doc, c.dataset, tname, {p: col.type for p, col in tbl.columns.items()})
+            flt = partition_filter(estate_doc, c.dataset, tname, {p: col.type for p, col in tbl.columns.items()})
             if flt:
                 spec["row_filter"] = flt
             ident = re.sub(r"[^a-z0-9]+", "-", f"{c.dataset}-{tname}".lower())

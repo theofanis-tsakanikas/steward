@@ -1,0 +1,59 @@
+name: capture
+
+# Captures evidence from the live estate, from CI, with no key: GitHub's OIDC token is exchanged for the deployer
+# service account (Workload Identity Federation), which may impersonate the demo's seats. Nothing is written to the
+# estate (queries are capped, scans are the on-demand ones Terraform declared). The captured files are uploaded as an
+# artifact: a human or the build session downloads them and commits them under evidence/live/, where
+# `make evidence-check` re-judges them offline.
+#
+# workflow_dispatch is the ONLY trigger; the `deploy` environment is what the federation trust names.
+on:
+  workflow_dispatch:
+    inputs:
+      what:
+        description: "Captures to run, space separated: access iam dlp dataplex audit"
+        required: true
+        default: "access iam dlp dataplex audit"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: steward-capture
+  cancel-in-progress: false
+
+env:
+  UV_PYTHON: "3.12"
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    environment: deploy
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PROJECT: ${{ vars.GCP_PROJECT_ID }}
+      WHAT: ${{ inputs.what }}
+    steps:
+      # Inputs reach a shell only through env, and only after they are checked: the identity below is strong.
+      - name: check the inputs
+        run: |
+          [[ "$WHAT" =~ ^(access|iam|dlp|dataplex|audit)( (access|iam|dlp|dataplex|audit))*$ ]] || { echo "what: unknown capture"; exit 1; }
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --group dev --extra gcp
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      - name: capture
+        run: |
+          read -ra captures <<< "$WHAT"
+          uv run steward capture --project "$PROJECT" --what "${captures[@]}" --out out/live
+      - uses: actions/upload-artifact@v4
+        with:
+          name: evidence-live
+          path: out/live/*.json
+          if-no-files-found: error
