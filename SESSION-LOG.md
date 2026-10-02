@@ -415,3 +415,11 @@
   badge tests count gate· Actions logs εκτός git-tree (γραμμένο στο P1).
 - **Reviewer:** [T030 hostile](c45b661b-872f-4175-9a7e-e04ad763b50f).
 
+## 2026-10-02 — Demo hosted + live-first
+
+- URL: https://steward-governance.streamlit.app (public, no login). DAY-ONE 9b, README Status, D7 done.
+- Banner: κάθε αριθμός fixture/live + δική του ημερομηνία· όχι ένα «data as of» από το estate fixture.
+- Όπου υπάρχει live capture, η σελίδα το δείχνει πρώτα (Privacy transcripts, DLP, Dataplex, IAM, job history).
+- Υπότιτλος Home: «Seven claims · each figure is labelled fixture or live».
+- Ανοιχτό: INTERVIEW rehearsal (D8).
+

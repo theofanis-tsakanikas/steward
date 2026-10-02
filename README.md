@@ -37,7 +37,7 @@ Steward makes the estate declare itself and makes that drift a failing build. Fi
 
 ## Status
 
-Applied on GCP on 2026-10-02, captured, judged offline, then destroyed. The GitHub `destroy` workflow is green (`ok sweep: 0` leftovers). The bootstrap layer (state bucket, Workload Identity, budget, guard, reaper) remains until the project is deleted — it is not $0 idle. The repository is public. The demo runs from committed evidence, with no account. The hosted Streamlit URL is created from `app/Home.py` on `main` (DAY-ONE step 9).
+Applied on GCP on 2026-10-02, captured, judged offline, then destroyed. The GitHub `destroy` workflow is green (`ok sweep: 0` leftovers). The bootstrap layer (state bucket, Workload Identity, budget, guard, reaper) remains until the project is deleted — it is not $0 idle. The repository is public. **Demo (recorded, no login):** [https://steward-governance.streamlit.app](https://steward-governance.streamlit.app).
 
 <p align="center">
   <img src="images/status.png" width="860" alt="Recorded demo home: seven claims and the figures the evidence files actually hold"><br>
@@ -121,7 +121,7 @@ make preflight
 uv run --extra demo streamlit run app/Home.py
 ```
 
-Open http://localhost:8501. Every figure is read from `evidence/fixture/` and re-checked by digest when the page opens.
+Open http://localhost:8501, or the hosted app: [https://steward-governance.streamlit.app](https://steward-governance.streamlit.app). Every figure is read from `evidence/fixture/` or `evidence/live/` and re-checked by digest when the page opens.
 
 ## Testing
 

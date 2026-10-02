@@ -8,8 +8,9 @@ import streamlit as st
 
 import _lib
 
-_lib.page("Retention", "7", "")
-r = _lib.data("retention")
+_lib.page("Retention", "Claim 7", "")
+r_doc = _lib.doc("retention")
+r = r_doc["data"]
 st.warning(r["report"]["caveat"])
 rows = r["report"]["rows"]
 _lib.table(
@@ -28,4 +29,5 @@ _lib.table(
 )
 st.write(f"{len(rows)} tables reported; {len(r['findings'])} findings.")
 st.caption("A dataset with no retention period fails the build; there is no default period.")
+_lib.mark("fixture", r_doc)
 _lib.findings(r["findings"])

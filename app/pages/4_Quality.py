@@ -11,12 +11,24 @@ import _lib
 
 _lib.page(
     "Data quality",
-    "5",
+    "Claim 5",
     "Rules live in the contract. A failing row goes to a quarantine table with its rule id, row key and run id "
     "and is routed to the dataset's owner — it is never dropped. The source count is taken **before** the rules "
-    "run, so the reconciliation cannot be trivially true.",
+    "run, so the reconciliation cannot be trivially true. Dataplex scans from the estate are shown first when captured.",
 )
-q = _lib.data("quality")
+dp = _lib.live("dataplex")
+q_doc = _lib.doc("quality")
+q = q_doc["data"]
+if dp:
+    st.subheader("Dataplex scans on the estate")
+    st.markdown(
+        "On-demand data-quality scans compiled from the contracts, each run as the dataset's custodian seat. "
+        "Failed rows per rule are compared with the rows the offline engine quarantined."
+    )
+    _lib.dataplex_scans(dp["data"])
+    _lib.mark("live", dp)
+
+st.subheader("Offline engine")
 rows = []
 for t, c in q["counts"].items():
     rows.append(
@@ -58,3 +70,4 @@ _lib.table(
     ]
 )
 _lib.findings(q["findings"])
+_lib.mark("fixture", q_doc)

@@ -11,11 +11,12 @@ import _lib
 
 _lib.page(
     "Estate & contracts",
-    "1, 4, 7",
+    "Claims 1, 4 and 7",
     "One YAML contract per dataset is the source of truth: owner, steward, custodian, retention with its legal "
     "basis, and a classification for every column. Everything else on these pages is generated from them.",
 )
-estate = _lib.data("estate")
+estate_doc = _lib.doc("estate")
+estate = estate_doc["data"]
 ds = estate["datasets"]
 
 _lib.table(
@@ -33,6 +34,7 @@ _lib.table(
         for d in ds
     ]
 )
+_lib.mark("fixture", estate_doc)
 
 st.subheader("Classification coverage")
 cols = pd.DataFrame([c | {"dataset": c["column"].split(".")[0]} for d in ds for c in d["columns"]])

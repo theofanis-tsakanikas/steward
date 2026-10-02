@@ -11,12 +11,13 @@ import _lib
 
 _lib.page(
     "Catalog sync (Collibra)",
-    "4",
+    "Claim 4",
     "The catalog is generated from the contracts and the harvested estate, never typed. The mock the payload is "
     "sent to **validates every request against the documented Collibra shapes** and refuses what does not fit, "
     'so "it was accepted" means something.',
 )
-cat = _lib.data("catalog")
+cat_doc = _lib.doc("catalog")
+cat = cat_doc["data"]
 sc = cat["scenarios"]
 mode = cat["mode"]
 (st.success if mode == "REAL" else st.warning)(
@@ -35,6 +36,7 @@ b.metric(
     "Second sync: changes sent", A["second"]["changes_sent"], help="idempotent: an unchanged estate changes nothing"
 )
 c.metric("Assets in the catalog", sum(A["assets_by_type"].values()))
+_lib.mark("fixture", cat_doc)
 st.bar_chart(pd.Series(A["assets_by_type"], name="assets"))
 
 st.subheader("Reconciliation: GCP against the catalog")

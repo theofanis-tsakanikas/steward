@@ -10,12 +10,23 @@ import _lib
 
 _lib.page(
     "Lineage",
-    "3",
+    "Claim 3",
     "Edges come from BigQuery job metadata and from parsed LookML, and are cross-checked against each other. A "
     "dashboard field that resolves to no catalogued column, or a tagged column that reaches a dashboard unmasked "
     "for the connection's role, is a failing build.",
 )
-lin = _lib.data("lineage")
+hist = _lib.live("history")
+if hist:
+    st.subheader("Job history from the estate")
+    st.markdown(
+        "BigQuery's own jobs for the estate's datasets, read as the deployer: which job wrote which table, as whom, "
+        "reading what. Dashboard queries are not here: no Looker instance ran them."
+    )
+    _lib.job_history(hist["data"])
+    _lib.mark("live", hist)
+
+lin_doc = _lib.doc("lineage")
+lin = lin_doc["data"]
 cnt = lin["counts"]
 a, b, c, d, e = st.columns(5)
 a.metric("Views", cnt["views"])
@@ -23,6 +34,7 @@ b.metric("Explores", cnt["explores"])
 c.metric("Dashboards", cnt["dashboards"])
 d.metric("Graph nodes", cnt["nodes"])
 e.metric("Graph edges", cnt["edges"])
+_lib.mark("fixture", lin_doc)
 st.caption(
     f"LookML: {lin['lookml_mode']} from files. Connections: "
     + ", ".join(f"{m} runs as {r}" for m, r in lin["connections"].items())
@@ -86,3 +98,4 @@ st.subheader("Planted defects: each must be caught")
 st.markdown(f"Expected {len(lin['drift_expected'])}, caught {len(lin['drift_got'])} — exactly the same set.")
 _lib.findings(lin["drift_findings"])
 st.warning(lin["history_mode"])
+_lib.mark("fixture", lin_doc)

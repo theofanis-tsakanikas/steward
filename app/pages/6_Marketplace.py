@@ -10,11 +10,23 @@ import _lib
 
 _lib.page(
     "Data Marketplace",
-    "6",
+    "Claim 6",
     "A request becomes an IAM grant only after a decision by a named human who is not the requester and not a "
-    "service account. Every grant carries an expiry (an IAM Condition). An expired grant still present turns CI red.",
+    "service account. Every grant carries an expiry (an IAM Condition). An expired grant still present turns CI red. "
+    "The estate's IAM is shown first when a live capture exists.",
 )
-m = _lib.data("marketplace")
+iam = _lib.live("iam")
+if iam:
+    st.subheader("The estate's IAM, as BigQuery held it")
+    st.markdown(
+        "Dataset IAM policies (policy version 3, so IAM Conditions are present). "
+        "A grant that carries an expiry is a binding with a condition."
+    )
+    _lib.iam_bindings(iam["data"])
+    _lib.mark("live", iam)
+
+m_doc = _lib.doc("marketplace")
+m = m_doc["data"]
 st.subheader("Requests and their outcomes")
 _lib.table(
     [
@@ -36,7 +48,7 @@ for o in m["outcomes"]:
     for r in o["reasons"]:
         st.caption(f"{o['request']['id']} · {r['code']}: {r['message']}")
 
-st.subheader("The estate's IAM, judged at the capture time")
+st.subheader("Fixture: planted IAM drift against a snapshot")
 st.write(f"Snapshot captured {m['captured_at']} — {m['clean_snapshot']['source']}")
 st.write(f"Bindings: {len(m['clean_snapshot']['bindings'])}; findings on the clean estate: {len(m['clean_findings'])}.")
 st.markdown("**Planted: each must be caught by the gate**")
@@ -57,6 +69,7 @@ st.caption(
     f'"Now" is the evidence capture time, not the checker\'s clock: judged at {m["now_from_evidence"]["early_capture"]} '
     f"the same snapshot flags an expired grant: {m['now_from_evidence']['expired_flagged_early']}."
 )
+_lib.mark("fixture", m_doc)
 
 st.subheader("Unused dashboards: the expiry workflow")
 life = m["lifecycle"]
