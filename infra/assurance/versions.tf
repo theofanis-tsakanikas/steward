@@ -5,6 +5,10 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 7.46"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.13"
+    }
   }
   # Partial configuration: bucket and prefix come from `-backend-config` at init (written by the
   # bootstrap layer's outputs). Validation runs with -backend=false and needs neither.
