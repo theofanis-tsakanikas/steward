@@ -376,3 +376,29 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   dedicated project, not by a condition. The condition is tested against the live project after the bootstrap
   apply (a forbidden grant must be denied, a jobUser grant allowed) before any layer relies on it.
 
+- **B52 — One ceiling on what a live scan may read (`core/sampling.py`).** DLP and Dataplex have no ceiling of
+  their own, and DLP reads `rows_limit = 0` as *unlimited*, so the unset value is the dangerous one. Every scan is
+  planned from the table's rows and bytes: at most 10,000 rows and 32 MiB per table, whichever binds first; a table
+  with no known size, no rows or a negative size stops the build (doctrine 3); a DLP job config is never built with
+  a limit outside 1..10,000. A complete sample reads from the top (reproducible); a partial one starts at a random
+  row. The Dataplex `sampling_percent` is derived (rounded **down** to one decimal, so a scan never reads more
+  than planned) and is 100 for every table of the current estate (the whole of it is about 3 MB), so the
+  generated Terraform is unchanged. The `assurance` gate compiles the contracts again against tables 1000× larger
+  and rejects any scan that would read more than the ceiling (`ASSURANCE_UNBOUNDED`; the ceiling is written out in
+  the gate as well, so moving one copy is seen, and two mutations prove it). The coverage of each scan
+  (`Sample.as_record()`) is written next to its findings in the evidence. *Confirmed at the same time (B44):*
+  `threshold = 1`, `min_likelihood = POSSIBLE`, `include_quote = false`, findings limits 100 per item and 1000 per
+  request stand. *To verify live:* whether `max_findings_per_item` counts per table or per row for a BigQuery job;
+  if per table it would truncate the findings, so the capture records `truncated` and claim 1's live comparison
+  refuses a truncated result instead of calling it clean.
+- **B53 — The organization policy `iam.allowedPolicyMemberDomains` is enforced on the project, and it blocks the
+  budget's Pub/Sub topic (found at the first bootstrap apply, 2026-10-02).** A budget that notifies a topic makes
+  Cloud Billing grant itself publish on it; the policy refuses a member outside the organization
+  (`billing-budget-alert@system.gserviceaccount.com`), so the budget is rejected with `FAILED_PRECONDITION`. The
+  budget with no topic is accepted. Nothing that costs money exists before the budget (the guard, reaper and
+  scheduler `depend_on` it, by design), so the apply stopped there with 80 of 86 bootstrap resources in place. The
+  options: **(a)** override the policy on this one project (`google_org_policy_policy` in the bootstrap layer, which
+  needs `roles/orgpolicy.policyAdmin` on the author's identity, a role an Organization Administrator can grant
+  themselves) so the budget keeps its kill switch; the override dies with the project; **(b)** no topic: budget
+  e-mails only, `enable_guard = false`, no automatic stop (the reaper does not need the topic). Recommended: (a).
+  Decided by the author.
