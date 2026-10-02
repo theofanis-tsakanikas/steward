@@ -24,6 +24,7 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
 ## Resolved by the author (2026-10-01)
 - **P1 — Repository visibility: PRIVATE now, public later.** Going public is a separate step after a
   pre-publish pass (`readme-standard`, gitleaks history scan, naming rule check, no project ids / billing ids in history).
+  **Resolved 2026-10-02: public.** Identifiers stay out of the tree (`scripts/check_ids.py`, B57).
 - **P2 — BigQuery location: `EU` multi-region.** Policy-tag taxonomies and every dataset in `eu`.
 - **P3 — Autonomous build.** The session builds, reviews and merges its own work without waiting for the
   author, up to the point where real GCP resources would be created (see `CLAUDE.md` → Git workflow).
@@ -454,4 +455,11 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
   (4) Cloud Functions leaves buckets named `gcf-v2-(sources|uploads)-<project-number>-<region>` for the
   bootstrap guard and reaper; those names, and the state bucket, are allowed. A prefix match is not: a bucket
   named `gcf-v2-sources-landing` is a leftover, as is the estate landing bucket.
+
+- **B57 — Live GCP identifiers are not in the tree (P1, public).** `scripts/check_ids.py` reads the
+  project id, project number, organization id and billing account id from the git-ignored
+  `terraform.tfvars` and from `STEWARD_*` / `GCP_*` environment variables — never from a constant
+  in the repository. A hit names the file and not the identifier. CI receives the values as
+  repository secrets. A clone with neither file nor env has nothing to refuse and the gate
+  passes. One gate-proof mutation plants a canary constructed so this file does not contain it.
 

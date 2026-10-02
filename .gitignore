@@ -23,6 +23,7 @@ linkedin/
 LinkedIn/
 .env
 .env.*
+!.env.example
 local/
 .streamlit/secrets.toml
 # run outputs (evidence/ is committed on purpose; scratch is not)

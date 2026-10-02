@@ -61,6 +61,7 @@ GATES: dict[str, list[str]] = {
     "live": [PY, "scripts/check_live.py"],
     "dlp-eval": [PY, "evals/run.py", "dlp"],
     "dataplex-eval": [PY, "evals/run.py", "dataplex"],
+    "ids": [PY, "scripts/check_ids.py"],
 }
 
 
@@ -89,7 +90,20 @@ class Mutation:
     count: int = 1  # the find text must occur EXACTLY this many times, else STALE
 
 
+# Built at import so this file does not contain the contiguous canary the ids gate searches for.
+_IDS_CANARY = "x-planted-" + "project-number-000"
+
 MUTATIONS: list[Mutation] = [
+    Mutation(
+        "a live project number written into the tree",
+        "ids",
+        "scripts/check_ids.py",
+        "EXTRA_IDS: tuple[str, ...] = ()",
+        f"EXTRA_IDS: tuple[str, ...] = ({_IDS_CANARY!r},)",
+        ("ID_IN_TREE", "scripts/check_ids.py"),
+        "the identifier is read from env/tfvars, never hard-coded; a planted value in a tracked file is a leak",
+        "1",
+    ),
     Mutation(
         "personal data found live in a column the contract leaves untagged",
         "live",

@@ -290,7 +290,7 @@ closes        `scripts/check_live.py` (and evals/dlp, evals/dataplex) re-judge e
 out_of_scope  —
 stop_at       author confirms the project is empty in the console
 review        yes
-status        closed 2026-10-02 — live captures re-judged offline; destroy workflow green (`ok sweep: 0`); spend recorded; author console confirm still pending (stop_at / DAY-ONE 10)
+status        closed 2026-10-02 — live captures re-judged offline; destroy workflow green (`ok sweep: 0`); spend recorded; author confirmed the estate empty in the console (DAY-ONE 10)
 ```
 
 ---
@@ -306,7 +306,7 @@ closes        public Streamlit link works with no login; README to readme-standa
 out_of_scope  phase-4 model proposals unless time remains
 stop_at       link sent to the author
 review        yes
-status        open
+status        in progress 2026-10-02 — README, ids gate, DAY-ONE 9/10; public + hosted link still to land
 ```
 
 ```

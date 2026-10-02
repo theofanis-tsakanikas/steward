@@ -371,6 +371,22 @@
   από το όριο των €10. Το net στο Free Trial είναι 0 (B49)· το budget μετράει μεικτή χρήση.
 - **Απόδειξη:** `make preflight` · `tests/test_sweep_and_load.py` · destroy workflow πράσινο ·
   `scripts/check_live.py` 0 blocking (evidence/live παραμένει, κρίση offline).
-- **stop_at:** ο συγγραφέας επιβεβαιώνει στην κονσόλα ότι το estate είναι άδειο (DAY-ONE βήμα 10).
-  Ανοιχτό: T030 README / hosted demo (DAY-ONE βήμα 9: Streamlit Community Cloud signup).
+- **stop_at:** ο συγγραφέας επιβεβαίωσε στην κονσόλα ότι το estate είναι άδειο (DAY-ONE βήμα 10).
+  Ανοιχτό: T030 README / hosted demo.
+
+## 2026-10-02 — T030 επιφάνεια + ids gate (πριν το public)
+
+- **DAY-ONE 9/10:** λογαριασμός Streamlit Community Cloud (συνδεδεμένος με GitHub)· ο συγγραφέας
+  επιβεβαίωσε στην κονσόλα ότι το estate έφυγε.
+- **P1:** το μοναδικό εύρημα στο ιστορικό ήταν ένας project number σε test· αντικαταστάθηκε με
+  ψεύτικο. `scripts/check_ids.py` διαβάζει id/number/org/billing από το git-ignored tfvars ή
+  `STEWARD_*` env, ποτέ hard-coded· finding ονομάζει το αρχείο, όχι την τιμή. 1 μετάλλαξη
+  gate-proof (canary που δεν υπάρχει συνεχόμενος στο `gate_proof.py`).
+- **README** στο readme-standard: MOCK + fictional operator στην πρώτη οθόνη· 353 tests, 122
+  gate-proof· screenshots δίπλα στους ισχυρισμούς. SECURITY / CHANGELOG / CONTRIBUTING /
+  dependabot / `.env.example`.
+- **Απόδειξη:** `check_ids.py` 0 hits · `gate-proof --only ids` REFUSED · `evidence-check` 0 ·
+  `make evidence-gates` 118/118 (χωρίς evidence self-check).
+- **Ανοιχτό:** history rewrite + force-push, gitleaks --all, `gh repo edit --visibility public`,
+  required reviewer στα deploy/destroy, hosted Streamlit link.
 

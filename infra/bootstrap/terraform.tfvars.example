@@ -10,3 +10,7 @@ github_owner         = "CHANGE-ME"
 github_repo          = "steward"
 github_owner_id      = "0"
 github_repository_id = "0"
+
+# Optional. scripts/check_ids.py also reads these when set (git-ignored tfvars or env).
+# project_number = "000000000000"
+# org_id         = "000000000000"

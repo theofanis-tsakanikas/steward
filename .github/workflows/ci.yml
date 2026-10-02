@@ -32,6 +32,11 @@ jobs:
       - run: make lint
       - run: make test
       - run: make check
+        env:
+          STEWARD_PROJECT_ID: ${{ secrets.STEWARD_PROJECT_ID }}
+          STEWARD_PROJECT_NUMBER: ${{ secrets.STEWARD_PROJECT_NUMBER }}
+          STEWARD_ORG_ID: ${{ secrets.STEWARD_ORG_ID }}
+          STEWARD_BILLING_ACCOUNT: ${{ secrets.STEWARD_BILLING_ACCOUNT }}
 
   claims:
     runs-on: ubuntu-latest
