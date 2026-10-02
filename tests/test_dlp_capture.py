@@ -252,3 +252,16 @@ def test_the_dataset_request_asks_for_conditions():
     url, params = capture.dataset_access_request("p", "crm")
     assert url.endswith("/projects/p/datasets/crm")
     assert params == {"accessPolicyVersion": 3}
+
+
+def test_an_unknown_member_never_carries_the_project_id_or_its_number():
+    from steward.adapters import capture
+
+    assert (
+        capture._generic("serviceAccount:seat@proj.iam.gserviceaccount.com", "proj")
+        == "serviceAccount:<service-account>"
+    )
+    assert (
+        capture._generic("serviceAccount:service-999000111222@gcp-sa-logging.iam.gserviceaccount.com", "proj")
+        == "serviceAccount:service-<project-number>@gcp-sa-logging.iam.gserviceaccount.com"
+    )

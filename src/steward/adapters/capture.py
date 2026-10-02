@@ -15,7 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from steward import evidence, io
-from steward.live import PROBE_PERSON, QUERIES, resolve
+from steward.live import ACCESS_REVIEW_SQL, PROBE_PERSON, QUERIES, resolve
 
 SEATS = io.REPO / "infra" / "seats.json"
 
@@ -310,24 +310,12 @@ def access_to_bindings(access: list[dict]) -> list[dict]:
 
 
 def _generic(member: str, project: str) -> str:
-    return re.sub(r"[a-z0-9-]+@" + re.escape(project) + r"\.iam\.gserviceaccount\.com", "<service-account>", member)
+    """A principal that is not a seat, with the project id and its number taken out (the repo will be public)."""
+    member = re.sub(r"[a-z0-9-]+@" + re.escape(project) + r"\.iam\.gserviceaccount\.com", "<service-account>", member)
+    return re.sub(r"service-\d+@", "service-<project-number>@", member)
 
 
 # ── claim 3, 6: the audit sink and the job history ────────────────────────────────────────────────────────────────
-
-ACCESS_REVIEW_SQL = """
-SELECT
-  protopayload_auditlog.authenticationInfo.principalEmail AS principal,
-  protopayload_auditlog.methodName AS method,
-  COUNT(*) AS events,
-  MIN(timestamp) AS first_seen,
-  MAX(timestamp) AS last_seen
-FROM `audit.cloudaudit_googleapis_com_data_access`
-WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
-  AND protopayload_auditlog.methodName IN ('google.cloud.bigquery.v2.JobService.InsertJob', 'jobservice.jobcompleted')
-GROUP BY principal, method
-ORDER BY principal, method
-""".strip()
 
 
 def capture_audit(project: str, run: Callable[[str, str], dict], redact: Callable[[str], str]) -> dict:

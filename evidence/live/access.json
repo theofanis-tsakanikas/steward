@@ -1,0 +1,369 @@
+{
+ "data": {
+  "captured_at": "2026-10-02T08:44:33Z",
+  "limit": 5,
+  "transcripts": [
+   {
+    "bytes_billed": null,
+    "job_id": "8784c72b-a089-482e-a6af-df0454b0eb4c",
+    "outcome": "rows",
+    "query": "customers",
+    "rows": [
+     {
+      "birth_date": "2001-01-01",
+      "country": "GR",
+      "created_at": "2017-10-10T01:10:45Z",
+      "customer_id": "E6SyP6pt/TvuQnJwEHWaJmttWNjSxH6lEkCe0WaFVm0=",
+      "email": "XXXXX@example.net",
+      "msisdn": "U707guKL68qSDXL982nZuy0sZsu4TamrNS/+ZkDDSTc=",
+      "segment": "consumer"
+     },
+     {
+      "birth_date": "1952-01-01",
+      "country": "GR",
+      "created_at": "2017-10-27T21:22:30Z",
+      "customer_id": "btl0yr5vQdEdlo7bBc3022gkh3udRmShHFXv2kVSt3A=",
+      "email": "XXXXX@example.net",
+      "msisdn": "pg9iBijnKlcybKMorcVv2EQFHQ0rkdt5tXT7GoQ4NSM=",
+      "segment": "consumer"
+     },
+     {
+      "birth_date": "1998-01-01",
+      "country": "GR",
+      "created_at": "2017-11-10T05:50:49Z",
+      "customer_id": "hHbmmJl+9d64nafQJJYqSd4yAzdNVlhKMkJDir7F1NE=",
+      "email": "XXXXX@example.org",
+      "msisdn": "iqJ9BgfZuFfMV7b4NJ4jM74fOaJn4YICwFeJ1u1JM/Q=",
+      "segment": "prepaid"
+     },
+     {
+      "birth_date": "1995-01-01",
+      "country": "GR",
+      "created_at": "2017-12-17T08:28:31Z",
+      "customer_id": "epW/FAWr330B0vy33T6q2EBVv7Lb57WV8fklzY6LwtE=",
+      "email": "XXXXX@example.com",
+      "msisdn": "dID9Iv06IPylCRMigPW2DwrLttQImTBs3dtMGh/PDww=",
+      "segment": "consumer"
+     },
+     {
+      "birth_date": "1960-01-01",
+      "country": "GR",
+      "created_at": "2018-01-06T22:54:00Z",
+      "customer_id": "un5DHraJUjVlMIQcof52n+XuEsoJoWN4Qk0C3cXApu0=",
+      "email": "XXXXX@example.net",
+      "msisdn": "0GTOmBTWKq6RRFHhzc8x85lyTp1HvN5KO9yGObJO34w=",
+      "segment": "business"
+     }
+    ],
+    "seat": "analyst@GR",
+    "sql": "SELECT customer_id, msisdn, email, birth_date, country, segment, created_at FROM `crm.customers` ORDER BY created_at, country LIMIT 5",
+    "table": "crm.customers"
+   },
+   {
+    "bytes_billed": null,
+    "job_id": "6227c5b6-b7b7-44f6-a9d5-0c2262bb24cd",
+    "outcome": "rows",
+    "query": "customers",
+    "rows": [
+     {
+      "birth_date": "1996-01-01",
+      "country": "IT",
+      "created_at": "2017-10-09T07:22:41Z",
+      "customer_id": "FqYosCfnXiuqwn4L71oM6MH7AZt8xrRgk3A5uk3p1f0=",
+      "email": "XXXXX@example.net",
+      "msisdn": "XXXXX6536",
+      "segment": "business"
+     },
+     {
+      "birth_date": "2001-01-01",
+      "country": "GR",
+      "created_at": "2017-10-10T01:10:45Z",
+      "customer_id": "E6SyP6pt/TvuQnJwEHWaJmttWNjSxH6lEkCe0WaFVm0=",
+      "email": "XXXXX@example.net",
+      "msisdn": "XXXXX3182",
+      "segment": "consumer"
+     },
+     {
+      "birth_date": "1993-01-01",
+      "country": "IT",
+      "created_at": "2017-10-18T16:57:00Z",
+      "customer_id": "9w3uwl2lLTISgfzKiHxM4rmNTX09HX4vp4HPuZXWkNg=",
+      "email": "XXXXX@example.net",
+      "msisdn": "XXXXX8307",
+      "segment": "consumer"
+     },
+     {
+      "birth_date": "1957-01-01",
+      "country": "IT",
+      "created_at": "2017-10-19T19:16:45Z",
+      "customer_id": "iP/zIJUJ1eGHONS+fjn+EWn0X/gi3tdkd1/fGFJIDak=",
+      "email": "XXXXX@example.org",
+      "msisdn": "XXXXX5690",
+      "segment": "consumer"
+     },
+     {
+      "birth_date": "1962-01-01",
+      "country": "IT",
+      "created_at": "2017-10-22T09:13:33Z",
+      "customer_id": "yu2IzWscRtvxzuIJiBmrw0C/4nj/eaFuu9pxKzmTy4E=",
+      "email": "XXXXX@example.org",
+      "msisdn": "XXXXX2022",
+      "segment": "prepaid"
+     }
+    ],
+    "seat": "group:crm-stewards@halverra.example",
+    "sql": "SELECT customer_id, msisdn, email, birth_date, country, segment, created_at FROM `crm.customers` ORDER BY created_at, country LIMIT 5",
+    "table": "crm.customers"
+   },
+   {
+    "error": "Forbidden: Access Denied: Table <project>:crm.customers: User does not have permission to query table <project>:crm.customers, or perhaps it does not exist.; reason: accessDenied, message: Access Denied: Table <project>:crm.customers: User does not have permission to query table <project>:crm.customers, or perhaps it does not exist.\n\nLocation: EU\nJob ID: 645893ab-7dc9-45c7-883c-2a950dc84d29\n",
+    "outcome": "error",
+    "query": "customers",
+    "rows": [],
+    "seat": "fraud_investigator",
+    "sql": "SELECT customer_id, msisdn, email, birth_date, country, segment, created_at FROM `crm.customers` ORDER BY created_at, country LIMIT 5",
+    "table": "crm.customers"
+   },
+   {
+    "bytes_billed": null,
+    "job_id": "0d1beabc-439f-487d-a0d7-2922a4e7358e",
+    "outcome": "rows",
+    "query": "customers",
+    "rows": [
+     {
+      "birth_date": "1996-01-01",
+      "country": "IT",
+      "created_at": "2017-10-09T07:22:41Z",
+      "customer_id": "FqYosCfnXiuqwn4L71oM6MH7AZt8xrRgk3A5uk3p1f0=",
+      "email": "nl5KcHcbKo9P+0LSsFs7DNZl3QKXfsrHPqYXTfYuXuU=",
+      "msisdn": "BciwiRvrkNXk54l9MApPzjeO8lmHGoouqzAoUbvXLBU=",
+      "segment": "business"
+     },
+     {
+      "birth_date": "2001-01-01",
+      "country": "GR",
+      "created_at": "2017-10-10T01:10:45Z",
+      "customer_id": "E6SyP6pt/TvuQnJwEHWaJmttWNjSxH6lEkCe0WaFVm0=",
+      "email": "nE9077g8IDw71M8vRzSxHTR+fDNfzdiz/g6G4nExrgI=",
+      "msisdn": "U707guKL68qSDXL982nZuy0sZsu4TamrNS/+ZkDDSTc=",
+      "segment": "consumer"
+     },
+     {
+      "birth_date": "1993-01-01",
+      "country": "IT",
+      "created_at": "2017-10-18T16:57:00Z",
+      "customer_id": "9w3uwl2lLTISgfzKiHxM4rmNTX09HX4vp4HPuZXWkNg=",
+      "email": "vF9seYB1jNissB8MTt539/HwGL8NxIuepD2MCA7HiNw=",
+      "msisdn": "mFqBy9EfMYdSw9qsQaanTTn+4igLAUph10z3+TcAvfU=",
+      "segment": "consumer"
+     },
+     {
+      "birth_date": "1957-01-01",
+      "country": "IT",
+      "created_at": "2017-10-19T19:16:45Z",
+      "customer_id": "iP/zIJUJ1eGHONS+fjn+EWn0X/gi3tdkd1/fGFJIDak=",
+      "email": "rrm58bQib2gVU9kztiOsDlwuXwe4Ejehx/uUjmdYphc=",
+      "msisdn": "EAyQzGHIi9VenfNPLMEYEScPH18XBk7Igm3/vudfYYQ=",
+      "segment": "consumer"
+     },
+     {
+      "birth_date": "1962-01-01",
+      "country": "IT",
+      "created_at": "2017-10-22T09:13:33Z",
+      "customer_id": "yu2IzWscRtvxzuIJiBmrw0C/4nj/eaFuu9pxKzmTy4E=",
+      "email": "Y8pRKo536xIoRm0HRX+tiHsnqWIYFt245Br/YbL+zTU=",
+      "msisdn": "FovTL0YLaEW+PgiQIi7w6ASsiJeX3RMR90UtY2Qt40w=",
+      "segment": "prepaid"
+     }
+    ],
+    "seat": "bi_service",
+    "sql": "SELECT customer_id, msisdn, email, birth_date, country, segment, created_at FROM `crm.customers` ORDER BY created_at, country LIMIT 5",
+    "table": "crm.customers"
+   },
+   {
+    "bytes_billed": null,
+    "job_id": "c217c6fb-5463-4ced-ac90-0b323e8d4620",
+    "outcome": "rows",
+    "query": "usage",
+    "rows": [
+     {
+      "country": "DE",
+      "event_id": "E00000001",
+      "event_ts": "2026-09-06T05:49:12Z",
+      "event_type": "sms",
+      "imsi": "262975445528267",
+      "msisdn": "+4915829241104"
+     },
+     {
+      "country": "IT",
+      "event_id": "E00000002",
+      "event_ts": "2026-09-23T13:39:52Z",
+      "event_type": "sms",
+      "imsi": "222975321726347",
+      "msisdn": "+393702109874"
+     },
+     {
+      "country": "IT",
+      "event_id": "E00000003",
+      "event_ts": "2026-09-26T19:09:49Z",
+      "event_type": "data",
+      "imsi": "222977144492414",
+      "msisdn": "+393037720689"
+     },
+     {
+      "country": "DE",
+      "event_id": "E00000004",
+      "event_ts": "2026-08-31T05:00:07Z",
+      "event_type": "voice",
+      "imsi": "262974094704047",
+      "msisdn": "+4915471079644"
+     },
+     {
+      "country": "DE",
+      "event_id": "E00000005",
+      "event_ts": "2026-08-22T01:11:21Z",
+      "event_type": "voice",
+      "imsi": "262978582850558",
+      "msisdn": "+4915960053644"
+     }
+    ],
+    "seat": "fraud_investigator",
+    "sql": "SELECT event_id, event_ts, msisdn, imsi, country, event_type FROM `network.usage_events` WHERE event_date >= DATE '1970-01-01' ORDER BY event_id LIMIT 5",
+    "table": "network.usage_events"
+   },
+   {
+    "bytes_billed": null,
+    "job_id": "0a5b4860-87d8-424b-963b-3d2046164302",
+    "outcome": "rows",
+    "query": "usage",
+    "rows": [
+     {
+      "country": "DE",
+      "event_id": "E00000001",
+      "event_ts": "2026-09-06T05:49:12Z",
+      "event_type": "sms",
+      "imsi": null,
+      "msisdn": "XXXXX1104"
+     },
+     {
+      "country": "IT",
+      "event_id": "E00000002",
+      "event_ts": "2026-09-23T13:39:52Z",
+      "event_type": "sms",
+      "imsi": null,
+      "msisdn": "XXXXX9874"
+     },
+     {
+      "country": "IT",
+      "event_id": "E00000003",
+      "event_ts": "2026-09-26T19:09:49Z",
+      "event_type": "data",
+      "imsi": null,
+      "msisdn": "XXXXX0689"
+     },
+     {
+      "country": "DE",
+      "event_id": "E00000004",
+      "event_ts": "2026-08-31T05:00:07Z",
+      "event_type": "voice",
+      "imsi": null,
+      "msisdn": "XXXXX9644"
+     },
+     {
+      "country": "DE",
+      "event_id": "E00000005",
+      "event_ts": "2026-08-22T01:11:21Z",
+      "event_type": "voice",
+      "imsi": null,
+      "msisdn": "XXXXX3644"
+     }
+    ],
+    "seat": "group:network-stewards@halverra.example",
+    "sql": "SELECT event_id, event_ts, msisdn, imsi, country, event_type FROM `network.usage_events` WHERE event_date >= DATE '1970-01-01' ORDER BY event_id LIMIT 5",
+    "table": "network.usage_events"
+   },
+   {
+    "error": "Forbidden: Access Denied: Table <project>:network.usage_events: User does not have permission to query table <project>:network.usage_events, or perhaps it does not exist.; reason: accessDenied, message: Access Denied: Table <project>:network.usage_events: User does not have permission to query table <project>:network.usage_events, or perhaps it does not exist.\n\nLocation: EU\nJob ID: 6e2aa6fe-6012-48f4-beec-9c55c39b879c\n",
+    "outcome": "error",
+    "query": "usage",
+    "rows": [],
+    "seat": "analyst@GR",
+    "sql": "SELECT event_id, event_ts, msisdn, imsi, country, event_type FROM `network.usage_events` WHERE event_date >= DATE '1970-01-01' ORDER BY event_id LIMIT 5",
+    "table": "network.usage_events"
+   },
+   {
+    "bytes_billed": null,
+    "job_id": "616b580c-2033-4204-82d8-889ed7dbf47f",
+    "outcome": "rows",
+    "query": "usage",
+    "rows": [
+     {
+      "country": "DE",
+      "event_id": "E00000001",
+      "event_ts": "2026-09-06T05:49:12Z",
+      "event_type": "sms",
+      "imsi": "ptHtJbL+EAugYnR90BiUUC5RcYUEo+VRw+TMAGUII1w=",
+      "msisdn": "HkKPVQ/rwZLI3j6Q7Hu3xwBWF4kRlvQH3XrLq9GLH5U="
+     },
+     {
+      "country": "IT",
+      "event_id": "E00000002",
+      "event_ts": "2026-09-23T13:39:52Z",
+      "event_type": "sms",
+      "imsi": "gp34fnF7aqxWwQ5Dp50/QeZ4SvIHQ8H2zXTTaMWY2Yk=",
+      "msisdn": "11kc7Q/C9BFmdRncpcr9204Q+DWfFNrzKvCyccPVnTQ="
+     },
+     {
+      "country": "IT",
+      "event_id": "E00000003",
+      "event_ts": "2026-09-26T19:09:49Z",
+      "event_type": "data",
+      "imsi": "zrbr0Qx3/PET6Nb6IJfqyRCtojv8Uk309QOBKqDNN/s=",
+      "msisdn": "GCFWDRNvDaIZL7GmYJHwn3m5lga8agoF2Iw1609Fqmc="
+     },
+     {
+      "country": "DE",
+      "event_id": "E00000004",
+      "event_ts": "2026-08-31T05:00:07Z",
+      "event_type": "voice",
+      "imsi": "HcLx0zGcw6rWwhq5T7GlgGY3BoNQRC346ETSU+lrI7U=",
+      "msisdn": "uOsDjBuesabDGUPKURLoV8cR9yNoWZKt9QhtrrKaE7Q="
+     },
+     {
+      "country": "DE",
+      "event_id": "E00000005",
+      "event_ts": "2026-08-22T01:11:21Z",
+      "event_type": "voice",
+      "imsi": "rG21LPtnTwV8nhw/zWSECHcPcbchHdzhm0FcGz3af+A=",
+      "msisdn": "iO1vMCzyrDwm/qUpLJfG96HJ/YbOFwsbVXj2hFPzu64="
+     }
+    ],
+    "seat": "bi_service",
+    "sql": "SELECT event_id, event_ts, msisdn, imsi, country, event_type FROM `network.usage_events` WHERE event_date >= DATE '1970-01-01' ORDER BY event_id LIMIT 5",
+    "table": "network.usage_events"
+   },
+   {
+    "error": "Forbidden: POST https://bigquery.googleapis.com/bigquery/v2/projects/<project>/jobs?prettyPrint=false: Access Denied: Project <project>: User does not have bigquery.jobs.create permission in project <project>.\n\nLocation: EU\nJob ID: bf4083c2-d346-4be8-aeb1-72cf451ecd6e\n",
+    "note": "marketplace grantee (B46): the grant opens the dataset, controls are per seat",
+    "outcome": "error",
+    "query": "customers",
+    "rows": [],
+    "seat": "user:paolo.marino@halverra.example",
+    "sql": "SELECT customer_id, msisdn, email, birth_date, country, segment, created_at FROM `crm.customers` ORDER BY created_at, country LIMIT 5",
+    "table": "crm.customers"
+   }
+  ]
+ },
+ "meta": {
+  "as_of": "2026-10-02T08:44:33Z",
+  "captured_at": "2026-10-02T08:44:33Z",
+  "claim": "2",
+  "data": "synthetic",
+  "digest": "143150350d682a596071191bf68819c3624293058f75828ec4740742888f94df",
+  "mode": "live",
+  "name": "access",
+  "operator": "fictional (Halverra Telecom)",
+  "origin": "steward capture: one query per seat, impersonating each seat's service account",
+  "schema": 1
+ }
+}

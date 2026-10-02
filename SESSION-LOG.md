@@ -323,3 +323,35 @@
   `budget notification: cost 1.0 stop at 45.0` και δεν έγινε καμία ενέργεια.
 - **Απόδειξη:** `terraform validate`, `terraform plan` (καμία διαφορά), live έλεγχος guard.
 - **Ανοιχτό:** η IAM Condition του deployer δοκιμάζεται στο πρώτο `deploy` workflow· ακολουθούν T012–T017.
+
+## 2026-10-02 — T012–T016 live evidence committed, κρίση offline (T017 μέρος)
+
+- **Τι έκλεισε:** τα live captures από το deployed estate γράφτηκαν στο `evidence/live/` (access, dlp, dataplex,
+  iam, audit, history) με digests, και κρίνονται offline από `scripts/check_live.py` (gate `live`) και τα harness
+  `evals/dlp` / `evals/dataplex`. Το demo έχει σελίδα Live estate που τα ξανακρίνει χωρίς λογαριασμό.
+- **Claim 2 (masked):** ο analyst βλέπει `XXXXX@example.net` και hashed MSISDN· ο steward βλέπει last-four· ο
+  bi_service αρνείται tagged στήλες. `LIVE_VALUE_NOT_MASKED` αν μια masked στήλη ισούται με την αποθηκευμένη τιμή.
+- **Claim 1 (DLP):** 0 findings σε untagged στήλες. Control sample 200 γραμμές/πίνακα vs planted: 16/18, 2 misses
+  (DLP δεν βρήκε address.street και legacy dt_x birth_date) και 1 beyond (imei διαβάστηκε και ως imsi) — καταγεγραμμένα,
+  όχι κρυμμένα. n=18 (column, kind).
+- **Claim 5:** Dataplex και offline engine αποτυγχάνουν τις ίδιες γραμμές για κάθε compiled rule (q-fin-002: 2,
+  q-fin-004: 3, q-net-006: 4). q-fin-003 και q-net-004 μένουν έξω σκόπιμα (INFO LIVE_DQ_NOT_SCANNED).
+- **Claim 6:** το expiring grant του paolo.marino είναι binding με IAM Condition· κρίση στο timestamp του capture.
+- **P1:** `_generic` κόβει πλέον και `service-<digits>@` (project number του logging agent). Test στο test_dlp_capture.
+- **Απόδειξη:** `scripts/check_live.py` 0 blocking · `evals/dlp` · `evals/dataplex` · 6 μεταλλάξεις live/dlp-eval/dataplex-eval.
+- **Ανοιχτό:** destroy (T017), T030 README/hosting. Catalog aspects του Dataplex δεν γράφτηκαν (T015: deferred).
+
+## 2026-10-02 — T017 review (fresh-context, εχθρικό) — διορθώσεις πριν το merge
+
+14 ευρήματα. Κώδικας, όχι widening της πρόζας:
+
+1. Ο κριτής των transcripts δεν εφάρμοζε το row-access predicate → `LIVE_ROW_POLICY` + mutation.
+2. SHA256 δεχόταν οποιοδήποτε string ≥32 χαρακτήρες → μόνο τα encodings του digest της αληθινής τιμής· EMAIL_MASK μόνο `XXXXX@domain`.
+3. Η `closes` του T017 ονόμαζε λάθος target (`evidence-check` ≠ κρίση) — διορθώθηκε· destroy/spend μένουν ανοιχτά (μετά το merge).
+4. `other_members` ήταν warn → allowlist των default ACL του BigQuery (B55), οτιδήποτε άλλο blocking.
+5. `verify_audit` δεχόταν οποιοδήποτε μη-error → SQL + non-empty rows + ο grantee στον sink.
+8. Το eval DLP δεν είχε τον core detector → τρίτη στήλη (core 18/18, DLP 16/18).
+11. «ίδιες γραμμές» → «ίδιο πλήθος failed rows».
+12. Finding σε στήλη εκτός contract tags στο live scan → `LIVE_DLP_UNTAGGED`.
+
+Δεν άλλαξε claim. Το demo παραμένει recorded (fixtures) με τη σελίδα Live δίπλα, όπως λέει το CLAUDE.md.

@@ -1,0 +1,641 @@
+{
+ "data": {
+  "captured_at": "2026-10-02T08:45:36Z",
+  "control": {
+   "findings": [
+    {
+     "column": "birth_date",
+     "findings": 200,
+     "info_type": "DATE_OF_BIRTH",
+     "kind": "birth_date",
+     "likelihoods": {
+      "LIKELY": 200
+     },
+     "rows_with_a_finding": 200,
+     "table": "crm.customers"
+    },
+    {
+     "column": "email",
+     "findings": 200,
+     "info_type": "EMAIL_ADDRESS",
+     "kind": "email",
+     "likelihoods": {
+      "VERY_LIKELY": 200
+     },
+     "rows_with_a_finding": 200,
+     "table": "crm.customers"
+    },
+    {
+     "column": "msisdn",
+     "findings": 200,
+     "info_type": "PHONE_NUMBER",
+     "kind": "msisdn",
+     "likelihoods": {
+      "POSSIBLE": 200
+     },
+     "rows_with_a_finding": 200,
+     "table": "crm.customers"
+    },
+    {
+     "column": "notes_free_text",
+     "findings": 13,
+     "info_type": "DATE_OF_BIRTH",
+     "kind": "birth_date",
+     "likelihoods": {
+      "LIKELY": 12,
+      "POSSIBLE": 1
+     },
+     "rows_with_a_finding": 13,
+     "table": "crm.support_tickets"
+    },
+    {
+     "column": "notes_free_text",
+     "findings": 9,
+     "info_type": "EMAIL_ADDRESS",
+     "kind": "email",
+     "likelihoods": {
+      "LIKELY": 9
+     },
+     "rows_with_a_finding": 9,
+     "table": "crm.support_tickets"
+    },
+    {
+     "column": "notes_free_text",
+     "findings": 10,
+     "info_type": "IBAN_CODE",
+     "kind": "iban",
+     "likelihoods": {
+      "VERY_LIKELY": 10
+     },
+     "rows_with_a_finding": 10,
+     "table": "crm.support_tickets"
+    },
+    {
+     "column": "notes_free_text",
+     "findings": 18,
+     "info_type": "PHONE_NUMBER",
+     "kind": "msisdn",
+     "likelihoods": {
+      "VERY_LIKELY": 18
+     },
+     "rows_with_a_finding": 18,
+     "table": "crm.support_tickets"
+    },
+    {
+     "column": "ref_2",
+     "findings": 150,
+     "info_type": "PHONE_NUMBER",
+     "kind": "msisdn",
+     "likelihoods": {
+      "POSSIBLE": 150
+     },
+     "rows_with_a_finding": 150,
+     "table": "crm.support_tickets"
+    },
+    {
+     "column": "iban",
+     "findings": 200,
+     "info_type": "IBAN_CODE",
+     "kind": "iban",
+     "likelihoods": {
+      "VERY_LIKELY": 200
+     },
+     "rows_with_a_finding": 200,
+     "table": "finance.billing"
+    },
+    {
+     "column": "adr_l1",
+     "findings": 99,
+     "info_type": "STREET_ADDRESS",
+     "kind": "address",
+     "likelihoods": {
+      "LIKELY": 99
+     },
+     "rows_with_a_finding": 99,
+     "table": "legacy.legacy_crm_export"
+    },
+    {
+     "column": "fld_7",
+     "findings": 150,
+     "info_type": "IBAN_CODE",
+     "kind": "iban",
+     "likelihoods": {
+      "VERY_LIKELY": 150
+     },
+     "rows_with_a_finding": 150,
+     "table": "legacy.legacy_crm_export"
+    },
+    {
+     "column": "tel_a",
+     "findings": 150,
+     "info_type": "PHONE_NUMBER",
+     "kind": "msisdn",
+     "likelihoods": {
+      "VERY_LIKELY": 150
+     },
+     "rows_with_a_finding": 150,
+     "table": "legacy.legacy_crm_export"
+    },
+    {
+     "column": "imei",
+     "findings": 200,
+     "info_type": "IMEI_HARDWARE_ID",
+     "kind": "imei",
+     "likelihoods": {
+      "VERY_LIKELY": 200
+     },
+     "rows_with_a_finding": 200,
+     "table": "network.network_events"
+    },
+    {
+     "column": "imei",
+     "findings": 200,
+     "info_type": "STEWARD_IMSI",
+     "kind": "imsi",
+     "likelihoods": {
+      "POSSIBLE": 200
+     },
+     "rows_with_a_finding": 200,
+     "table": "network.network_events"
+    },
+    {
+     "column": "imsi",
+     "findings": 200,
+     "info_type": "STEWARD_IMSI",
+     "kind": "imsi",
+     "likelihoods": {
+      "POSSIBLE": 200
+     },
+     "rows_with_a_finding": 200,
+     "table": "network.network_events"
+    },
+    {
+     "column": "imsi",
+     "findings": 200,
+     "info_type": "STEWARD_IMSI",
+     "kind": "imsi",
+     "likelihoods": {
+      "POSSIBLE": 200
+     },
+     "rows_with_a_finding": 200,
+     "table": "network.usage_events"
+    },
+    {
+     "column": "msisdn",
+     "findings": 200,
+     "info_type": "PHONE_NUMBER",
+     "kind": "msisdn",
+     "likelihoods": {
+      "POSSIBLE": 200
+     },
+     "rows_with_a_finding": 200,
+     "table": "network.usage_events"
+    }
+   ],
+   "rows_per_table": 200,
+   "tables": [
+    {
+     "columns": [
+      "cell_id",
+      "country",
+      "events",
+      "subscribers",
+      "total_mb",
+      "week_start"
+     ],
+     "requests": 1,
+     "rows": 200,
+     "table": "analytics.weekly_usage_by_cell",
+     "truncated": false
+    },
+    {
+     "columns": [
+      "address.city",
+      "address.postcode",
+      "address.street",
+      "birth_date",
+      "consent.marketing",
+      "consent.profiling",
+      "consent.updated_at",
+      "contracts.contract_id",
+      "contracts.end_date",
+      "contracts.monthly_fee",
+      "contracts.plan",
+      "contracts.start_date",
+      "contracts.status",
+      "country",
+      "created_at",
+      "customer_id",
+      "email",
+      "full_name",
+      "msisdn",
+      "segment"
+     ],
+     "requests": 1,
+     "rows": 200,
+     "table": "crm.customers",
+     "truncated": false
+    },
+    {
+     "columns": [
+      "category",
+      "channel",
+      "country",
+      "customer_id",
+      "notes_free_text",
+      "opened_at",
+      "ref_2",
+      "status",
+      "ticket_id"
+     ],
+     "requests": 1,
+     "rows": 200,
+     "table": "crm.support_tickets",
+     "truncated": false
+    },
+    {
+     "columns": [
+      "amount",
+      "country",
+      "currency",
+      "customer_id",
+      "due_date",
+      "iban",
+      "invoice_id",
+      "issue_date",
+      "status"
+     ],
+     "requests": 1,
+     "rows": 200,
+     "table": "finance.billing",
+     "truncated": false
+    },
+    {
+     "columns": [
+      "adr_l1",
+      "cd_s",
+      "dt_x",
+      "fld_7",
+      "k_id",
+      "nm_1",
+      "tel_a",
+      "upd"
+     ],
+     "requests": 1,
+     "rows": 150,
+     "table": "legacy.legacy_crm_export",
+     "truncated": false
+    },
+    {
+     "columns": [
+      "attach_id",
+      "cell_id",
+      "country",
+      "event_date",
+      "imei",
+      "imsi",
+      "rat",
+      "ts"
+     ],
+     "requests": 1,
+     "rows": 200,
+     "table": "network.network_events",
+     "truncated": false
+    },
+    {
+     "columns": [
+      "cell_id",
+      "country",
+      "duration_s",
+      "event_date",
+      "event_id",
+      "event_ts",
+      "event_type",
+      "imsi",
+      "msisdn",
+      "volume_mb"
+     ],
+     "requests": 1,
+     "rows": 200,
+     "table": "network.usage_events",
+     "truncated": false
+    }
+   ]
+  },
+  "findings": [],
+  "method": "content.inspect over a bounded SELECT (core/sampling.py), untagged columns only, include_quote=false",
+  "region": "europe-west1",
+  "tables": [
+   {
+    "columns_not_scanned": [],
+    "columns_scanned": [
+     "week_start",
+     "country",
+     "cell_id",
+     "events",
+     "total_mb",
+     "subscribers"
+    ],
+    "read_as": "custodian seat",
+    "requests": 1,
+    "rows_read": 570,
+    "sample": {
+     "complete": true,
+     "coverage": 1.0,
+     "estimated_bytes": 27930,
+     "num_rows": 570,
+     "rows_limit": 570,
+     "table": "analytics.weekly_usage_by_cell"
+    },
+    "table": "analytics.weekly_usage_by_cell",
+    "truncated": false
+   },
+   {
+    "columns_not_scanned": [
+     {
+      "column": "customer_id",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "full_name",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "email",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "msisdn",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "birth_date",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "address.street",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "address.postcode",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "contracts.contract_id",
+      "reason": "repeated field (not flattened by the capture)"
+     },
+     {
+      "column": "contracts.plan",
+      "reason": "repeated field (not flattened by the capture)"
+     },
+     {
+      "column": "contracts.start_date",
+      "reason": "repeated field (not flattened by the capture)"
+     },
+     {
+      "column": "contracts.end_date",
+      "reason": "repeated field (not flattened by the capture)"
+     },
+     {
+      "column": "contracts.status",
+      "reason": "repeated field (not flattened by the capture)"
+     },
+     {
+      "column": "contracts.monthly_fee",
+      "reason": "repeated field (not flattened by the capture)"
+     }
+    ],
+    "columns_scanned": [
+     "address.city",
+     "country",
+     "segment",
+     "consent.marketing",
+     "consent.profiling",
+     "consent.updated_at",
+     "created_at"
+    ],
+    "read_as": "custodian seat",
+    "requests": 1,
+    "rows_read": 600,
+    "sample": {
+     "complete": true,
+     "coverage": 1.0,
+     "estimated_bytes": 147637,
+     "num_rows": 600,
+     "rows_limit": 600,
+     "table": "crm.customers"
+    },
+    "table": "crm.customers",
+    "truncated": false
+   },
+   {
+    "columns_not_scanned": [
+     {
+      "column": "customer_id",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "notes_free_text",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "ref_2",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     }
+    ],
+    "columns_scanned": [
+     "ticket_id",
+     "opened_at",
+     "channel",
+     "category",
+     "country",
+     "status"
+    ],
+    "read_as": "custodian seat",
+    "requests": 1,
+    "rows_read": 400,
+    "sample": {
+     "complete": true,
+     "coverage": 1.0,
+     "estimated_bytes": 58166,
+     "num_rows": 400,
+     "rows_limit": 400,
+     "table": "crm.support_tickets"
+    },
+    "table": "crm.support_tickets",
+    "truncated": false
+   },
+   {
+    "columns_not_scanned": [
+     {
+      "column": "customer_id",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "iban",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     }
+    ],
+    "columns_scanned": [
+     "invoice_id",
+     "amount",
+     "currency",
+     "issue_date",
+     "due_date",
+     "status",
+     "country"
+    ],
+    "read_as": "custodian seat",
+    "requests": 1,
+    "rows_read": 1802,
+    "sample": {
+     "complete": true,
+     "coverage": 1.0,
+     "estimated_bytes": 181812,
+     "num_rows": 1802,
+     "rows_limit": 1802,
+     "table": "finance.billing"
+    },
+    "table": "finance.billing",
+    "truncated": false
+   },
+   {
+    "columns_not_scanned": [
+     {
+      "column": "k_id",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "nm_1",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "tel_a",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "fld_7",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "dt_x",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "adr_l1",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "cd_s",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "upd",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     }
+    ],
+    "columns_scanned": [],
+    "read_as": "not read: every column is policy-tagged, so no reader may inspect it",
+    "requests": 0,
+    "rows_read": 0,
+    "sample": {
+     "complete": true,
+     "coverage": 1.0,
+     "estimated_bytes": 17446,
+     "num_rows": 150,
+     "rows_limit": 150,
+     "table": "legacy.legacy_crm_export"
+    },
+    "table": "legacy.legacy_crm_export",
+    "truncated": false
+   },
+   {
+    "columns_not_scanned": [
+     {
+      "column": "imei",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "imsi",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "cell_id",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     }
+    ],
+    "columns_scanned": [
+     "attach_id",
+     "event_date",
+     "ts",
+     "country",
+     "rat"
+    ],
+    "read_as": "custodian seat",
+    "requests": 1,
+    "rows_read": 3000,
+    "sample": {
+     "complete": true,
+     "coverage": 1.0,
+     "estimated_bytes": 246000,
+     "num_rows": 3000,
+     "rows_limit": 3000,
+     "table": "network.network_events"
+    },
+    "table": "network.network_events",
+    "truncated": false
+   },
+   {
+    "columns_not_scanned": [
+     {
+      "column": "msisdn",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "imsi",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     },
+     {
+      "column": "cell_id",
+      "reason": "policy-tagged: already declared sensitive; no reader holds it"
+     }
+    ],
+    "columns_scanned": [
+     "event_id",
+     "event_date",
+     "event_ts",
+     "country",
+     "event_type",
+     "volume_mb",
+     "duration_s"
+    ],
+    "read_as": "custodian seat",
+    "requests": 2,
+    "rows_read": 6000,
+    "sample": {
+     "complete": true,
+     "coverage": 1.0,
+     "estimated_bytes": 589919,
+     "num_rows": 6000,
+     "rows_limit": 6000,
+     "table": "network.usage_events"
+    },
+    "table": "network.usage_events",
+    "truncated": false
+   }
+  ],
+  "template": "steward-inspect"
+ },
+ "meta": {
+  "as_of": "2026-10-02T08:45:36Z",
+  "captured_at": "2026-10-02T08:45:36Z",
+  "claim": "1",
+  "data": "synthetic",
+  "digest": "ee227a9739f15b6d85dc4f8a7eb5e9a9a40c87200df667f46b649fc955d2ba76",
+  "mode": "live",
+  "name": "dlp",
+  "operator": "fictional (Halverra Telecom)",
+  "origin": "steward capture: content.inspect over a bounded SELECT",
+  "schema": 1
+ }
+}

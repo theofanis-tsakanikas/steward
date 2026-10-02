@@ -16,6 +16,40 @@ from steward.core.simulate import answer, model
 
 LIMIT = 5
 
+# Declared here so the capture and the judge share one string (LIVE_AUDIT_SQL fires if they drift).
+ACCESS_REVIEW_SQL = """
+SELECT
+  protopayload_auditlog.authenticationInfo.principalEmail AS principal,
+  protopayload_auditlog.methodName AS method,
+  COUNT(*) AS events,
+  MIN(timestamp) AS first_seen,
+  MAX(timestamp) AS last_seen
+FROM `audit.cloudaudit_googleapis_com_data_access`
+WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
+  AND protopayload_auditlog.methodName IN ('google.cloud.bigquery.v2.JobService.InsertJob', 'jobservice.jobcompleted')
+GROUP BY principal, method
+ORDER BY principal, method
+""".strip()
+
+# BigQuery's default dataset ACL, the deployer who created the dataset (redacted), and the logging
+# sink writer on `audit`. Anything else is a grant nobody approved (DECISIONS B55).
+_DEFAULT_ACL = {
+    ("specialGroup:projectOwners", "roles/bigquery.dataOwner"),
+    ("specialGroup:projectReaders", "roles/bigquery.dataViewer"),
+    ("specialGroup:projectWriters", "roles/bigquery.dataEditor"),
+    ("serviceAccount:<service-account>", "roles/bigquery.dataOwner"),
+}
+
+
+def _iam_explained(m: dict) -> bool:
+    if (m["member"], m["role"]) in _DEFAULT_ACL:
+        return True
+    return (
+        m["dataset"] == "audit"
+        and m["role"] == "roles/bigquery.dataEditor"
+        and str(m["member"]).endswith("@gcp-sa-logging.iam.gserviceaccount.com")
+    )
+
 
 @dataclass(frozen=True)
 class Query:
@@ -100,24 +134,43 @@ def verify_iam(data: dict, e=None) -> list[Finding]:
     if ledger is None:
         return lf
     out = gate(data, decide(ledger, e.contracts, e.roles), e.contracts, e.roles)
-    # a member the demo does not know is not silently ignored: it is listed in the evidence, and reported here
-    out += [
-        Finding(
-            "LIVE_IAM_UNKNOWN_MEMBER",
-            "iam",
-            f"{m['dataset']} {m['member']}",
-            f"{m['role']} held by a principal that is neither a seat nor a requester",
-            severity="warn",
+    for m in data.get("other_members", []):
+        if _iam_explained(m):
+            continue
+        out.append(
+            Finding(
+                "LIVE_IAM_UNKNOWN_MEMBER",
+                "iam",
+                f"{m['dataset']} {m['member']}",
+                f"{m['role']} held by a principal that is neither a seat nor a requester and not a documented default",
+            )
         )
-        for m in data.get("other_members", [])
-    ]
     return out
 
 
 def verify_audit(data: dict, e=None) -> list[Finding]:
     if data.get("outcome") == "error":
         return [Finding("LIVE_AUDIT_ERROR", "audit", "access review", str(data.get("error", "no message"))[:200])]
-    return []
+    out: list[Finding] = []
+    if data.get("sql") != ACCESS_REVIEW_SQL:
+        out.append(
+            Finding(
+                "LIVE_AUDIT_SQL", "audit", "access review", "the capture did not run the declared access-review query"
+            )
+        )
+    if not data.get("rows"):
+        out.append(Finding("LIVE_AUDIT_EMPTY", "audit", "access review", "the sink answered no events"))
+    principals = {r.get("principal") for r in data.get("rows", [])}
+    if PROBE_PERSON not in principals:
+        out.append(
+            Finding(
+                "LIVE_AUDIT_GRANTEE_MISSING",
+                "audit",
+                PROBE_PERSON,
+                "the approved requester left no trail in the sink",
+            )
+        )
+    return out
 
 
 def verify_dlp(data: dict, e=None) -> list[Finding]:
