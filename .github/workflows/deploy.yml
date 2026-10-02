@@ -85,6 +85,16 @@ jobs:
       - name: load the synthetic data and prove the row counts
         run: uv run python scripts/load_synthetic.py --project "$PROJECT"
 
+      # Google creates a service agent the first time something uses it; Terraform grants to it (the Data Transfer
+      # agent may mint tokens for a custodian, B45) need it to exist. The call is idempotent.
+      - name: service agents
+        run: |
+          for service in bigquerydatatransfer dataplex dlp analyticshub; do
+            curl -sf -X POST -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+              -H "x-goog-user-project: $PROJECT" -H "Content-Type: application/json" -d '{}' \
+              "https://serviceusage.googleapis.com/v1beta1/projects/$PROJECT/services/${service}.googleapis.com:generateServiceIdentity" >/dev/null
+          done
+
       - name: governance
         working-directory: infra/governance
         run: |
