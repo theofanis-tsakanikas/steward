@@ -29,7 +29,7 @@ fixture evidence — so that a demo exists **before** any money is spent.
 **Closes when.** `make demo` opens all eight pages from fixtures; `make evals` covers claims 3 and 4;
 the Collibra sync is idempotent (second run: 0 changes) against the mock.
 
-Closed 2026-10-01: T020–T022. LookML lineage (claim 3), Collibra validating mock (claim 4), recorded Streamlit demo from fixtures. T024 waits on a trial (D2, expiry 2026-10-05).
+Closed 2026-10-01: T020–T022. LookML lineage (claim 3), Collibra validating mock (claim 4), recorded Streamlit demo from fixtures. T024 waits on a trial (D2, expiry 2026-11-03).
 Open: T024 only.
 
 ---

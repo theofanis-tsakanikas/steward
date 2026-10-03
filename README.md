@@ -157,7 +157,7 @@ CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) is offline by constr
 
 ## What this does not do
 
-- **Collibra was never called.** The adapter has a real REST client; the evidence and the demo say MOCK. A trial was not completed (deferred, expiry 2026-10-05).
+- **Collibra was never called.** The adapter has a real REST client; the evidence and the demo say MOCK. A trial was requested and has not arrived (deferred, expiry 2026-11-03).
 - **Looker was parsed, not subscribed.** Lineage from LookML is cross-checked against independent query history. There is no Looker trial.
 - **BigQuery deletion is not immediate.** Time travel and fail-safe keep data recoverable for up to about 14 days; the retention report's first line says so.
 - **The live estate is gone.** Screenshots and `evidence/live/` are what remain. Bootstrap is still in the project until it is deleted.
