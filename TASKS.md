@@ -198,7 +198,7 @@ closes        the same sync runs against the real instance; evidence captured wi
 out_of_scope  anything that needs a paid licence
 stop_at       first real sync result
 review        yes
-status        open (blocked until a trial exists — expiry 2026-10-05: if no trial by then, close as not done, mock stands)
+status        open (blocked until a trial exists — expiry 2026-11-03: the interview demo uses the mock regardless; if a trial arrives by then, run the real sync; if not, close as not done, mock stands)
 ```
 
 ---

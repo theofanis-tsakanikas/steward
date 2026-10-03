@@ -29,6 +29,6 @@ unchanged**. Read, in order: `CLAUDE.md` → `KICKOFF.md` → `PLAN.md` → `TAS
 
 - Closed and merged: T000–T022, T010–T017 (PRs through #41). Claims 1–7 offline; live estate applied, captured, destroyed.
 - **T030 open.** Hosted demo: https://steward-governance.streamlit.app (public, no login). D7 done. Remaining unlock: **D8** — INTERVIEW 3-minute script spoken with the author. Dry-run against the URL is dated in `SESSION-LOG.md`. T031 is cut.
-- **T024** blocked on a Collibra trial (D2 expiry 2026-10-05). Mock stands until then.
+- **T024** blocked on a Collibra trial (D2 expiry 2026-11-03). Mock stands until then.
 - Bootstrap still in the GCP project until it is deleted. DAY-ONE 4 / 7 / 8 still open (author).
 - Deadline: done before **2026-10-06**. Cut order is in `KICKOFF.md`.

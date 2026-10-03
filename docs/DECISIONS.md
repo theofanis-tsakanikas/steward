@@ -38,7 +38,7 @@ Schema: **Scope · Technology · Method · Deliberately deferred**. Every entry:
 | Id | What | Unlock / expiry |
 |---|---|---|
 | D1 | OpenLineage from Airflow via a one-day Cloud Composer environment | unlock: phases 1–3 closed and ≥ €20 budget left |
-| D2 | Real Collibra sync (T024) | **expiry 2026-10-05**: no trial by then → mock stands, stated everywhere |
+| D2 | Real Collibra sync (T024) | **expiry 2026-11-03** (extended 2026-10-03 from 2026-10-05: the original date only served the interview; the project outlives it). The interview demo uses the mock either way. A trial by 2026-11-03 → real sync, evidence `mode: REAL`; none → mock stands, stated everywhere |
 | D3 | Looker API (usage-based report expiry from real System Activity) | unlock: a Looker trial exists; until then usage is a fixture, stated |
 | D4 | Model-proposed descriptions (T031) | unlock: T030 closed before 2026-10-06 |
 | D5 | Dataform for transformations | unlock: never for this timebox unless asked |
